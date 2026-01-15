@@ -1,0 +1,187 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, 'feature/*']
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect project type
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "type=npm" >> $GITHUB_OUTPUT
+            echo "Detected Node.js project"
+          elif [ -f requirements.txt ] || [ -f pyproject.toml ]; then
+            echo "type=python" >> $GITHUB_OUTPUT
+            echo "Detected Python project"
+          elif [ -f go.mod ]; then
+            echo "type=go" >> $GITHUB_OUTPUT
+            echo "Detected Go project"
+          else
+            echo "type=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ Unknown project type"
+          fi
+
+      # Node.js/npm setup and test
+      - name: Setup Node.js
+        if: steps.detect.outputs.type == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        if: steps.detect.outputs.type == 'npm'
+        run: npm ci
+
+      - name: Run npm tests
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          if npm run test --if-present; then
+            echo "✅ Tests passed"
+          else
+            echo "❌ Tests failed"
+            exit 1
+          fi
+
+      - name: Check npm build
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          if npm run build --if-present; then
+            echo "✅ Build passed"
+          else
+            echo "❌ Build failed"
+            exit 1
+          fi
+
+      # Python setup and test
+      - name: Setup Python
+        if: steps.detect.outputs.type == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        if: steps.detect.outputs.type == 'python'
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          elif [ -f pyproject.toml ]; then
+            pip install -e .
+          fi
+
+      - name: Run pytest
+        if: steps.detect.outputs.type == 'python'
+        run: |
+          if python -m pytest --version >/dev/null 2>&1; then
+            if pytest -v; then
+              echo "✅ Tests passed"
+            else
+              echo "❌ Tests failed"
+              exit 1
+            fi
+          else
+            echo "⚠️ pytest not found, skipping tests"
+          fi
+
+      # Go setup and test
+      - name: Setup Go
+        if: steps.detect.outputs.type == 'go'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Run Go tests
+        if: steps.detect.outputs.type == 'go'
+        run: |
+          if go test -v ./...; then
+            echo "✅ Tests passed"
+          else
+            echo "❌ Tests failed"
+            exit 1
+          fi
+
+      - name: Check Go build
+        if: steps.detect.outputs.type == 'go'
+        run: |
+          if go build -v ./...; then
+            echo "✅ Build passed"
+          else
+            echo "❌ Build failed"
+            exit 1
+          fi
+
+      # Unknown project type
+      - name: Unknown project type
+        if: steps.detect.outputs.type == 'unknown'
+        run: |
+          echo "❌ Cannot determine project type"
+          echo "Expected one of: package.json, requirements.txt, pyproject.toml, go.mod"
+          exit 1
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect project type
+        id: detect
+        run: |
+          if [ -f package.json ]; then
+            echo "type=npm" >> $GITHUB_OUTPUT
+          elif [ -f requirements.txt ] || [ -f pyproject.toml ]; then
+            echo "type=python" >> $GITHUB_OUTPUT
+          else
+            echo "type=unknown" >> $GITHUB_OUTPUT
+          fi
+
+      # npm lint
+      - name: Setup Node.js
+        if: steps.detect.outputs.type == 'npm'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        if: steps.detect.outputs.type == 'npm'
+        run: npm ci
+
+      - name: Run lint
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          if npm run lint --if-present; then
+            echo "✅ Lint passed"
+          else
+            echo "⚠️ Lint not configured or failed"
+          fi
+
+      # Python lint (ruff/black/flake8)
+      - name: Setup Python
+        if: steps.detect.outputs.type == 'python'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python linters
+        if: steps.detect.outputs.type == 'python'
+        run: |
+          pip install ruff black flake8
+
+      - name: Run Python lint
+        if: steps.detect.outputs.type == 'python'
+        run: |
+          echo "Running ruff..."
+          ruff check . || echo "⚠️ ruff warnings"
+          echo "Running black..."
+          black --check . || echo "⚠️ black formatting issues"

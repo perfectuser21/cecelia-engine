@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# project-detect.sh - 检测当前目录是否是已初始化的项目
+# 这是信息性 hook，只提示不阻止
+
+set -euo pipefail
+
+# 颜色定义
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 获取当前目录
+PROJECT_ROOT=$(pwd)
+
+# 检测标志
+MISSING_ITEMS=()
+
+# 1. 检测 .git 目录
+if [[ ! -d ".git" ]]; then
+    MISSING_ITEMS+=("⚠️  缺少 .git 目录 - 项目未初始化为 git 仓库")
+fi
+
+# 2. 检测 remote
+if [[ -d ".git" ]]; then
+    if ! git remote -v &>/dev/null || [[ -z $(git remote) ]]; then
+        MISSING_ITEMS+=("⚠️  缺少 git remote - 没有配置远程仓库")
+    fi
+fi
+
+# 3. 检测 .github/workflows/ci.yml
+if [[ ! -f ".github/workflows/ci.yml" ]]; then
+    MISSING_ITEMS+=("⚠️  缺少 .github/workflows/ci.yml - 没有配置 CI/CD")
+fi
+
+# 4. 检测 CLAUDE.md
+if [[ ! -f "CLAUDE.md" ]]; then
+    MISSING_ITEMS+=("⚠️  缺少 CLAUDE.md - 没有项目说明文档")
+fi
+
+# 如果有缺失项，输出提示信息
+if [[ ${#MISSING_ITEMS[@]} -gt 0 ]]; then
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}" >&2
+    echo -e "${YELLOW}  项目初始化检测${NC}" >&2
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}" >&2
+    echo "" >&2
+    echo -e "${BLUE}当前目录:${NC} ${PROJECT_ROOT}" >&2
+    echo "" >&2
+
+    for item in "${MISSING_ITEMS[@]}"; do
+        echo -e "  ${item}" >&2
+    done
+
+    echo "" >&2
+    echo -e "${BLUE}建议操作:${NC}" >&2
+    echo -e "  运行 ${YELLOW}/init-project${NC} 初始化项目" >&2
+    echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}" >&2
+    echo "" >&2
+fi
+
+# 信息性 hook，不阻止任何操作
+exit 0
