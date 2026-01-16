@@ -226,12 +226,34 @@ else
 fi
 ```
 
-### 5.2 提交和创建 PR
+### 5.2 版本号更新（必须！）
 
-**如果没有已存在的 PR：**
+**提交前必须更新版本号：**
 
 ```bash
-# 提交
+echo "📦 更新版本号..."
+CURRENT_VERSION=$(jq -r '.version' package.json)
+echo "   当前版本: $CURRENT_VERSION"
+
+# 根据 commit 类型决定 bump 类型
+# fix: → patch, feat: → minor, BREAKING: → major
+# 例如：npm version patch --no-git-tag-version
+
+echo ""
+echo "   semver 规则："
+echo "   - fix: → patch (+0.0.1)"
+echo "   - feat: → minor (+0.1.0)"
+echo "   - BREAKING: → major (+1.0.0)"
+echo ""
+echo "   请更新 package.json 版本号后继续"
+```
+
+### 5.3 提交和创建 PR
+
+**版本号更新后：**
+
+```bash
+# 提交（包含版本号更新）
 git add -A
 git commit -m "feat: <功能描述>
 
