@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# 读取 stdin（Claude Code hooks 需要）
+cat > /dev/null
+
 # 颜色定义
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -53,7 +56,7 @@ if [[ ${#MISSING_ITEMS[@]} -gt 0 ]]; then
 
     echo "" >&2
     echo -e "${BLUE}建议操作:${NC}" >&2
-    echo -e "  运行 ${YELLOW}/init-project${NC} 初始化项目" >&2
+    echo -e "  运行 ${YELLOW}/dev${NC} 开始开发流程" >&2
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}" >&2
     echo "" >&2
 fi

@@ -1,6 +1,8 @@
 #!/bin/bash
-# ZenithJoy Core - 分支保护 Hook v4.0 (简化版)
-# 只检查：必须在 cp-* 分支才能写代码
+# ZenithJoy Core - 分支保护 Hook（版本见 package.json）
+# 检查：必须在 cp-* 分支
+# 保护：代码文件 + 重要目录（skills/, hooks/, .github/）
+# 不需要状态文件 — 纯 git 检测
 
 set -e
 
@@ -22,15 +24,30 @@ if [[ -z "$FILE_PATH" ]]; then
     exit 0
 fi
 
-# Get file extension
-EXT="${FILE_PATH##*.}"
+# ===== 判断是否需要保护 =====
+NEEDS_PROTECTION=false
 
-# Allow non-code files (config, docs, scripts, state)
+# 1. 重要目录：skills/, hooks/, .github/ 下的所有文件都要保护
+if [[ "$FILE_PATH" == *"/skills/"* ]] || \
+   [[ "$FILE_PATH" == *"/hooks/"* ]] || \
+   [[ "$FILE_PATH" == *"/.github/"* ]]; then
+    NEEDS_PROTECTION=true
+fi
+
+# 2. 代码文件：根据扩展名判断
+EXT="${FILE_PATH##*.}"
 case "$EXT" in
-    md|json|txt|yml|yaml|sh|toml|ini|env)
-        exit 0
+    ts|tsx|js|jsx|py|go|rs|java|c|cpp|h|hpp|rb|php|swift|kt)
+        NEEDS_PROTECTION=true
         ;;
 esac
+
+# 不需要保护的文件直接放行
+if [[ "$NEEDS_PROTECTION" == "false" ]]; then
+    exit 0
+fi
+
+# ===== 以下是需要保护的文件，执行检查 =====
 
 # Get current git branch
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
@@ -40,24 +57,24 @@ if [[ -z "$CURRENT_BRANCH" ]]; then
     exit 0
 fi
 
-# Must be on cp-* branch to write code
+# ===== 唯一检查: 必须在 cp-* 分支 =====
 if [[ ! "$CURRENT_BRANCH" =~ ^cp- ]]; then
     echo "" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    echo "  ❌ 只能在 checkpoint 分支写代码" >&2
+    echo "  ❌ 只能在 checkpoint 分支修改代码" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     echo "" >&2
     echo "当前分支: $CURRENT_BRANCH" >&2
+    echo "要修改的文件: $FILE_PATH" >&2
     echo "" >&2
     echo "正确流程:" >&2
-    echo "  1. 运行 /new-task 创建 checkpoint 分支" >&2
-    echo "  2. 在 cp-xxx 分支上开发" >&2
-    echo "  3. 运行 /finish 完成任务" >&2
+    echo "  1. 运行 /dev 开始开发工作流" >&2
+    echo "  2. 在 cp-* 分支上开发" >&2
     echo "" >&2
-    echo "[SKILL_REQUIRED: new-task]" >&2
+    echo "[SKILL_REQUIRED: dev]" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
 fi
 
-# On cp-* branch = allow
+# All checks passed
 exit 0
