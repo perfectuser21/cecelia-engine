@@ -94,7 +94,7 @@ npm run dev
 ## Git 规范
 
 - [ ] Commit 信息清晰
-- [ ] 分支命名符合规范（{产品线}/{功能}/{任务}）
+- [ ] 分支命名符合规范（cp-{YYYYMMDD}-{HHMM}-{任务名}）
 - [ ] 无敏感信息（.env, credentials 等）
 
 ## 备注

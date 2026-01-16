@@ -14,6 +14,7 @@ AI 开发工作流核心组件。提供 Hooks、Skills 和 CI 模板，实现强
 
 ```bash
 ln -sf /path/to/zenithjoy-core/hooks/branch-protect.sh ~/.claude/hooks/
+ln -sf /path/to/zenithjoy-core/hooks/project-detect.sh ~/.claude/hooks/
 ```
 
 ### 2. 链接 Skills
@@ -40,14 +41,21 @@ cp /path/to/zenithjoy-core/.github/workflows/ci.yml your-project/.github/workflo
         "matcher": "Write|Edit",
         "hooks": [{"type": "command", "command": "~/.claude/hooks/branch-protect.sh"}]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [{"type": "command", "command": "~/.claude/hooks/project-detect.sh"}]
+      }
     ]
   }
 }
 ```
 
-| Hook | 用途 |
-|------|------|
-| PreToolUse | 写代码前检查分支 |
+| Hook | 触发时机 | 用途 |
+|------|----------|------|
+| branch-protect.sh | PreToolUse (Write/Edit) | 强制在 cp-* 分支写代码 |
+| project-detect.sh | PostToolUse (Bash) | 检测项目初始化状态 |
 
 ## Usage
 
