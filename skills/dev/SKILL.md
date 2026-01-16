@@ -22,6 +22,7 @@ description: |
 ```
 准备阶段 (Step 0)
   □ 依赖检查
+  ○ 多 Feature 状态检测
 
 创建阶段 (Step 1-2)
   □ 检测当前分支类型
@@ -51,6 +52,7 @@ description: |
   □ 删除本地 cp-* 分支
   □ 删除远程 cp-* 分支
   □ 清理 stale 远程引用
+  ○ 同步其他 Feature 分支
 
 总结阶段 (Step 7)
   ○ Engine Learn
@@ -123,6 +125,7 @@ Step 7: Learn（可选）
 | Step | 说明 | 详情 |
 |------|------|------|
 | 0 | 检查 gh/jq 依赖和登录状态 | → [STEPS.md#step-0](references/STEPS.md#step-0-依赖检查) |
+| 0.5 | (可选) 检测多 feature 分支状态 | `bash scripts/multi-feature.sh detect` |
 | 1 | 检测 main/feature/cp-* 分支 | → [STEPS.md#step-1](references/STEPS.md#step-1-检查分支) |
 | 2 | 创建 cp-{时间戳}-{任务名} 分支 | → [STEPS.md#step-2](references/STEPS.md#step-2-创建-cp-分支) |
 | 2.5 | 回顾 CHANGELOG/PR/架构/踩坑 | → [STEPS.md#step-25](references/STEPS.md#step-25-上下文回顾) |
@@ -130,6 +133,7 @@ Step 7: Learn（可选）
 | 4 | 写代码，执行 DoD 中的 TEST | → [STEPS.md#step-4](references/STEPS.md#step-4-写代码-自测) |
 | 5 | 会话恢复检测 + 版本号 + PR + CI | → [STEPS.md#step-5](references/STEPS.md#step-5-pr-等待-ci) |
 | 6 | 清理 config/分支/远程 | → [STEPS.md#step-6](references/STEPS.md#step-6-cleanup) |
+| 6.5 | (可选) 同步其他 feature 分支 | `bash scripts/multi-feature.sh sync` |
 | 7 | 记录 Engine/项目经验 | → [STEPS.md#step-7](references/STEPS.md#step-7-双层-learn) |
 
 ---
@@ -181,12 +185,38 @@ bash skills/dev/scripts/check.sh "$BRANCH_NAME" "$FEATURE_BRANCH"
 
 ## 并行开发
 
-如需同时在多个 feature 上工作，使用 worktree：
+如需同时在多个 feature 上工作：
+
+### 1. 使用 worktree 管理多目录
 
 ```bash
-git worktree add ../zenithjoy-engine-cecilia feature/cecilia
-cd ../zenithjoy-engine-cecilia
+git worktree add ../project-feat-a feature/feat-a
+git worktree add ../project-feat-b feature/feat-b
+cd ../project-feat-a
 # 在新目录运行 /dev
 ```
+
+### 2. 检测多 feature 状态
+
+```bash
+bash skills/dev/scripts/multi-feature.sh detect
+```
+
+输出示例：
+```
+  ✅ feature/feat-a (当前)
+     已同步 main (+3 commits)
+
+  ⚠️  feature/feat-b
+     落后 main 5 commits, 领先 2 commits
+```
+
+### 3. 同步其他 feature 到 main
+
+```bash
+bash skills/dev/scripts/multi-feature.sh sync
+```
+
+**规则**：每次合并一个 feature 到 main 后，其他 feature 需要同步。
 
 详见 → [STEPS.md#并行开发](references/STEPS.md#并行开发worktree)

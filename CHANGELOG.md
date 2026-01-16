@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.12.0] - 2026-01-16
+
+### Added
+- 多 Feature 并行开发支持
+- scripts/multi-feature.sh: 检测和同步多个 feature 分支
+- Step 0.5: 开始时检测多 feature 状态（可选）
+- Step 6.5: 结束时同步其他 feature 分支（可选）
+- SKILL.md: 并行开发文档更新
+
 ## [7.11.1] - 2026-01-16
 
 ### Removed
@@ -306,7 +315,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Previous iterations were experimental development versions leading up to the 7.0.0 stable release.
 
-[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.1...HEAD
+[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.12.0...HEAD
+[7.12.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.1...v7.12.0
 [7.11.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.0...v7.11.1
 [7.11.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.10.0...v7.11.0
 [7.10.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.9...v7.10.0
