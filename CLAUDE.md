@@ -9,6 +9,7 @@ AI 开发工作流引擎。
 | 内容 | 位置 |
 |------|------|
 | 版本号 | `package.json` |
+| 变更历史 | `CHANGELOG.md` |
 | 工作流定义 | `skills/dev/SKILL.md` |
 | 知识架构 | `docs/ARCHITECTURE.md` |
 | 开发经验 | `docs/LEARNINGS.md` |
@@ -19,7 +20,7 @@ AI 开发工作流引擎。
 
 1. **只在 cp-* 分支写代码** - Hook 强制
 2. **每个 PR 更新版本号** - semver
-3. **20/20 检查必须跑** - 不能偷懒
+3. **完成度检查必须跑** - □ 必要项全部完成
 4. **CI 绿是唯一完成标准**
 
 ---
@@ -41,7 +42,9 @@ zenithjoy-engine/
 ├── docs/            # 详细文档
 │   ├── ARCHITECTURE.md  # 知识分层架构
 │   └── LEARNINGS.md     # 开发经验
-└── src/             # 示例代码
+├── templates/       # 文档模板
+├── .github/         # CI 配置
+└── src/             # 代码
 ```
 
 ---

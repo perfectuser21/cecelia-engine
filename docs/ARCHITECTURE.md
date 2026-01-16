@@ -23,7 +23,9 @@
 │                 │ │                 │ │                 │
 │ docs/:          │ │ docs/:          │ │ docs/:          │
 │ - LEARNINGS.md  │ │ - 项目经验      │ │ - 项目经验      │
-│ - ARCHITECTURE  │ │                 │ │                 │
+│ - ARCHITECTURE.md││                 │ │                 │
+│                 │ │                 │ │                 │
+│ CHANGELOG.md    │ │                 │ │                 │
 └─────────────────┘ └─────────────────┘ └─────────────────┘
                            │
                            ▼
@@ -43,10 +45,11 @@
 | Engine bug | GitHub Issues | 可追踪、可关闭 |
 | Engine 开发经验 | `docs/LEARNINGS.md` | 踩的坑、学到的 |
 | Engine 架构决策 | `docs/ARCHITECTURE.md` | 本文件 |
+| 版本记录 | `CHANGELOG.md` | 版本更新、PR 摘要 |
 | 项目特定规则 | 项目的 `CLAUDE.md` | 简洁入口 |
 | 项目开发经验 | 项目的 `docs/` | 详细记录 |
 | 跨项目通用经验 | `~/.claude/CLAUDE.md` | 全局规则 |
-| 长期知识库 | Notion | 会话摘要、搜索 |
+| 长期知识库 | Notion（可选） | 会话摘要、搜索 |
 
 ---
 

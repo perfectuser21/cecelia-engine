@@ -56,7 +56,7 @@ description: |
 **版本号规则 (semver)：**
 - `fix:` → patch (+0.0.1)
 - `feat:` → minor (+0.1.0)
-- `BREAKING:` → major (+1.0.0)
+- `feat!:` 或 `BREAKING CHANGE:` → major (+1.0.0)
 
 ---
 
@@ -424,7 +424,8 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 # 从 SKILL.md 动态计算必要项和可选项数量
 # 只匹配清单行（以两个空格 + □/○ 开头）
-SKILL_FILE="/home/xx/dev/zenithjoy-engine/skills/dev/SKILL.md"
+ZENITHJOY_ENGINE="${ZENITHJOY_ENGINE:-/home/xx/dev/zenithjoy-engine}"
+SKILL_FILE="$ZENITHJOY_ENGINE/skills/dev/SKILL.md"
 REQUIRED=$(grep -c '^  □' "$SKILL_FILE" 2>/dev/null || echo 0)
 OPTIONAL=$(grep -c '^  ○' "$SKILL_FILE" 2>/dev/null || echo 0)
 TOTAL=$REQUIRED
@@ -537,9 +538,10 @@ fi
 
 ```bash
 # 追加到 Engine 的 LEARNINGS
-echo "" >> /home/xx/dev/zenithjoy-engine/docs/LEARNINGS.md
-echo "## $(date +%Y-%m-%d) - <任务名>" >> /home/xx/dev/zenithjoy-engine/docs/LEARNINGS.md
-echo "<用户输入的内容>" >> /home/xx/dev/zenithjoy-engine/docs/LEARNINGS.md
+ZENITHJOY_ENGINE="${ZENITHJOY_ENGINE:-/home/xx/dev/zenithjoy-engine}"
+echo "" >> "$ZENITHJOY_ENGINE/docs/LEARNINGS.md"
+echo "## $(date +%Y-%m-%d) - <任务名>" >> "$ZENITHJOY_ENGINE/docs/LEARNINGS.md"
+echo "<用户输入的内容>" >> "$ZENITHJOY_ENGINE/docs/LEARNINGS.md"
 ```
 
 ### 7.2 项目层面

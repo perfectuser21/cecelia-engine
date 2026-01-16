@@ -5,6 +5,23 @@ All notable changes to ZenithJoy Engine will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [7.6.0] - 2026-01-16
+
+### Fixed
+- SKILL.md: Hardcoded paths now use `ZENITHJOY_ENGINE` env variable
+- SKILL.md: Semver rule `BREAKING:` → standard `feat!:` or `BREAKING CHANGE:`
+- hooks/branch-protect.sh: "ZenithJoy Core" → "ZenithJoy Engine"
+- CLAUDE.md: Added CHANGELOG.md to "唯一真实源", updated directory structure
+- ARCHITECTURE.md: Added CHANGELOG.md, fixed .md extension, clarified Notion as optional
+- LEARNINGS.md: Updated "20/20" to dynamic description, added new learnings section
+- CHANGELOG.md: Fixed GitHub username (ZenithJoy → perfectuser21), added missing links
+- package-lock.json: "zenithjoy-core" → "zenithjoy-engine"
+
+### Added
+- `.gitignore` file for node_modules, dist, logs, IDE files
+
 ## [7.5.2] - 2026-01-16
 
 ### Fixed
@@ -96,9 +113,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Previous iterations were experimental development versions leading up to the 7.0.0 stable release.
 
-[7.4.1]: https://github.com/ZenithJoy/zenithjoy-engine/compare/v7.4.0...v7.4.1
-[7.4.0]: https://github.com/ZenithJoy/zenithjoy-engine/compare/v7.3.1...v7.4.0
-[7.3.1]: https://github.com/ZenithJoy/zenithjoy-engine/compare/v7.3.0...v7.3.1
-[7.3.0]: https://github.com/ZenithJoy/zenithjoy-engine/compare/v7.1.0...v7.3.0
-[7.1.0]: https://github.com/ZenithJoy/zenithjoy-engine/compare/v7.0.0...v7.1.0
-[7.0.0]: https://github.com/ZenithJoy/zenithjoy-engine/releases/tag/v7.0.0
+[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.5.2...HEAD
+[7.5.2]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.5.1...v7.5.2
+[7.5.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.5.0...v7.5.1
+[7.5.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.4.1...v7.5.0
+[7.4.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.4.0...v7.4.1
+[7.4.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.3.1...v7.4.0
+[7.3.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.3.0...v7.3.1
+[7.3.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.1.0...v7.3.0
+[7.1.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.0.0...v7.1.0
+[7.0.0]: https://github.com/perfectuser21/zenithjoy-engine/releases/tag/v7.0.0
