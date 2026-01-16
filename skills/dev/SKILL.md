@@ -1,11 +1,10 @@
 ---
 name: dev
 description: |
-  统一开发工作流入口。每次对话开始自动触发。
-  检查状态 → 根据阶段决定下一步 → 执行到下一个暂停点。
+  统一开发工作流入口。一个对话完成整个开发流程。
+  检查状态 → 执行任务 → sleep 等待 CI → cleanup → 完成
 
   触发条件：
-  - 对话开始时自动触发
   - 用户说任何开发相关的需求
   - 用户说 /dev
 ---
@@ -14,7 +13,7 @@ description: |
 
 ## 核心逻辑
 
-**每次对话开始，执行一次，根据状态决定做什么：**
+**一个对话完成整个流程（正常情况）：**
 
 ```
 对话开始
@@ -30,7 +29,7 @@ description: |
     │
     ├─ 有未完成任务？
     │     │
-    │     ├─ PR_CREATED → 检查 CI → cleanup → learn → 删除状态
+    │     ├─ PR_CREATED → sleep 等待 → merged? → cleanup → learn → 完成
     │     ├─ EXECUTING → 继续写代码/自测
     │     ├─ CLEANUP_DONE → learn → 删除状态
     │     └─ TASK_CREATED → 生成 PRD/DoD
@@ -38,15 +37,16 @@ description: |
     └─ 没有未完成任务？
           │
           ▼
-      新任务流程
+      新任务流程（一个对话完成）
           │
           ├─ 检查 Branch/Worktree
-          ├─ 没有 feature 分支？→ 创建 feature 分支
           ├─ 创建 cp-* 分支
-          ├─ 生成 PRD + DoD
-          ├─ 写代码
-          ├─ 自测
-          └─ 创建 PR → 暂停（等 CI）
+          ├─ 生成 PRD + DoD → 等用户确认
+          ├─ 写代码 + 自测
+          ├─ 创建 PR
+          ├─ sleep 等待 CI (10s 间隔)
+          ├─ PR merged → cleanup
+          └─ learn → 完成 🎉
 ```
 
 ---
@@ -295,7 +295,7 @@ fi
 
 ---
 
-## Step 5: 创建 PR（暂停点）
+## Step 5: 创建 PR + 等待 CI
 
 ```bash
 # 提交
@@ -316,46 +316,68 @@ echo "📌 PR base 分支: $BASE_BRANCH"
 # 创建 PR
 PR_URL=$(gh pr create --base "$BASE_BRANCH" --title "feat: <功能描述>" --body "...")
 
+echo "✅ PR 已创建: $PR_URL"
+echo "⏳ 等待 CI..."
+
 # 更新状态
 jq --arg url "$PR_URL" '.phase = "PR_CREATED" | .pr_url = $url' "$STATE_FILE" > "${STATE_FILE}.tmp" \
   && mv "${STATE_FILE}.tmp" "$STATE_FILE"
-
-echo "✅ PR 已创建: $PR_URL"
-echo "⏸️  等待 CI，下次对话继续..."
 ```
 
-**此时对话结束，等待 CI。**
+### 等待 CI 并检查结果
+
+```bash
+# 循环等待 CI 完成（最多等 2 分钟）
+MAX_WAIT=120
+WAITED=0
+INTERVAL=10
+
+while [ $WAITED -lt $MAX_WAIT ]; do
+  sleep $INTERVAL
+  WAITED=$((WAITED + INTERVAL))
+
+  # 检查 PR 状态
+  PR_STATE=$(gh pr view "$PR_URL" --json state)
+  STATE=$(echo "$PR_STATE" | jq -r '.state')
+
+  if [ "$STATE" = "MERGED" ]; then
+    echo "✅ PR 已合并！(等待了 ${WAITED}s)"
+    break
+  fi
+
+  echo "⏳ CI 进行中... (${WAITED}s)"
+done
+
+# 最终检查
+if [ "$STATE" != "MERGED" ]; then
+  echo "⚠️ CI 超时或未通过，下次对话继续检查"
+  # 状态保持 PR_CREATED，下次对话会从 Step 6 继续
+fi
+```
+
+**通常 CI 会在 30s 内完成，一个对话就能搞定整个流程。**
 
 ---
 
-## Step 6: 检查 CI（下次对话）
+## Step 6: 检查 CI（仅超时/失败时）
 
-**PHASE=PR_CREATED 时执行：**
+**如果 Step 5 等待超时，下次对话从这里继续：**
 
 ```bash
 PR_URL=$(jq -r '.pr_url' "$STATE_FILE")
 
 # 检查 PR 状态
-PR_STATE=$(gh pr view "$PR_URL" --json state,mergedAt)
-MERGED=$(echo "$PR_STATE" | jq -r '.mergedAt // empty')
+PR_STATE=$(gh pr view "$PR_URL" --json state)
+STATE=$(echo "$PR_STATE" | jq -r '.state')
 
-if [ -n "$MERGED" ]; then
+if [ "$STATE" = "MERGED" ]; then
   echo "✅ PR 已合并！"
   # 继续 cleanup
+elif [ "$STATE" = "CLOSED" ]; then
+  echo "❌ PR 被关闭，需要检查原因"
 else
-  # 检查 CI 状态
-  CI_STATUS=$(gh pr checks "$PR_URL" 2>/dev/null || echo "pending")
-
-  if [[ "$CI_STATUS" == *"fail"* ]]; then
-    echo "❌ CI 失败，需要修复"
-    echo "切回分支继续修复..."
-    BRANCH=$(jq -r '.branch' "$STATE_FILE")
-    git checkout "$BRANCH"
-    jq '.phase = "EXECUTING"' "$STATE_FILE" > "${STATE_FILE}.tmp" \
-      && mv "${STATE_FILE}.tmp" "$STATE_FILE"
-  else
-    echo "⏳ CI 进行中或等待中..."
-  fi
+  echo "⏳ PR 仍在等待，继续等待..."
+  # 可以再次 sleep 等待
 fi
 ```
 
@@ -414,27 +436,34 @@ echo "下次对话可以开始新任务。"
 
 ## 完整流程图
 
+### 正常情况：一个对话完成
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    一个对话搞定                              │
+├─────────────────────────────────────────────────────────────┤
+│ /dev → 检查状态(无) → 新任务 → cp-* 分支 → PRD → DoD       │
+│      → 写代码 → 自测 → PR                                   │
+│      → sleep 等待 CI (10s 间隔，最多 2 分钟)                │
+│      → PR merged → cleanup → learn → 完成 🎉               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 异常情况：CI 超时/失败
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    对话 1                                   │
 ├─────────────────────────────────────────────────────────────┤
-│ /dev → 检查状态(无) → 新任务 → cp-* 分支 → PRD → DoD       │
-│      → 写代码 → 自测 → PR → 状态=PR_CREATED               │
-│      → 对话结束，等 CI                                      │
+│ /dev → ... → PR → 等待 CI → 超时（2分钟没合并）            │
+│      → 状态=PR_CREATED，对话结束                            │
 └─────────────────────────────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    对话 2                                   │
 ├─────────────────────────────────────────────────────────────┤
-│ /dev → 检查状态(PR_CREATED) → 检查 CI                      │
-│      → CI 过了 → cleanup → 状态=CLEANUP_DONE               │
-│      → learn → 删除状态文件 → 完成                         │
-└─────────────────────────────────────────────────────────────┘
-                           ↓
-┌─────────────────────────────────────────────────────────────┐
-│                    对话 3                                   │
-├─────────────────────────────────────────────────────────────┤
-│ /dev → 检查状态(无) → 新任务...                            │
+│ /dev → 检查状态(PR_CREATED) → 检查 PR state                │
+│      → merged? → cleanup → learn → 完成                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -442,13 +471,11 @@ echo "下次对话可以开始新任务。"
 
 ## 暂停点总结
 
-| 暂停点 | 状态 | 下次对话做什么 |
-|--------|------|---------------|
-| 项目初始化后 | - | 创建 feature 分支 |
-| PR 创建后 | PR_CREATED | 检查 CI |
-| CI 失败 | EXECUTING | 继续修复 |
-| Cleanup 后 | CLEANUP_DONE | Learn |
-| Learn 后 | (删除文件) | 新任务 |
+| 情况 | 状态 | 说明 |
+|------|------|------|
+| 正常 | - | 一个对话完成，无暂停 |
+| CI 超时 | PR_CREATED | 下次对话继续检查 |
+| CI 失败 | EXECUTING | 切回分支修复 |
 
 ---
 
