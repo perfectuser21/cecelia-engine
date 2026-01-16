@@ -1,0 +1,22 @@
+{
+  "name": "zenithjoy-core",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Calculator module with chainable operations",
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
