@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.9.0] - 2026-01-16
+
+### Added
+- SKILL.md: 渐进式加载架构 - 710行精简至192行
+- references/STEPS.md: 详细步骤实现（按需加载）
+- scripts/check.sh: 完成度检查脚本
+
+### Changed
+- 统一清单标记：□ 必须 / □⏭ 可跳过 / ○ 可选
+- 合并正常模式和快速修复模式清单
+
 ## [7.8.1] - 2026-01-16
 
 ### Fixed
