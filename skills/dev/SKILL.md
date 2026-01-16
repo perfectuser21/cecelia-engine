@@ -20,6 +20,12 @@ description: |
 对话开始
     │
     ▼
+检查项目状态
+    │
+    ├─ 没有 git？→ Step 0.1: 初始化项目
+    ├─ 没有 remote？→ Step 0.1: 初始化项目
+    │
+    ▼
 检查状态文件 (~/.ai-factory/state/current-task.json)
     │
     ├─ 有未完成任务？
@@ -35,6 +41,7 @@ description: |
       新任务流程
           │
           ├─ 检查 Branch/Worktree
+          ├─ 没有 feature 分支？→ 创建 feature 分支
           ├─ 创建 cp-* 分支
           ├─ 生成 PRD + DoD
           ├─ 写代码
@@ -44,7 +51,68 @@ description: |
 
 ---
 
-## Step 0: 检查状态（每次对话必做！）
+## Step 0: 检查项目状态（每次对话必做！）
+
+```bash
+# 检查是否有 git
+if [ ! -d .git ]; then
+  echo "❌ 不是 git 仓库，需要初始化"
+  PROJECT_STATUS="NO_GIT"
+elif ! git remote get-url origin >/dev/null 2>&1; then
+  echo "❌ 没有 remote，需要初始化"
+  PROJECT_STATUS="NO_REMOTE"
+else
+  PROJECT_STATUS="OK"
+fi
+```
+
+**如果 PROJECT_STATUS != OK，跳转到 Step 0.1**
+
+---
+
+## Step 0.1: 初始化项目（仅新项目）
+
+```bash
+# 1. 初始化 git（如果需要）
+if [ ! -d .git ]; then
+  git init
+  echo "✅ Git 已初始化"
+fi
+
+# 2. 创建 GitHub 仓库
+REPO_NAME=$(basename $(pwd))
+gh repo create "$REPO_NAME" --private --source=. --remote=origin
+echo "✅ GitHub 仓库已创建"
+
+# 3. 创建基础文件
+cat > README.md << EOF
+# $REPO_NAME
+
+项目描述
+
+## 开发
+
+使用 /dev 工作流开发。
+EOF
+
+# 4. 初始提交
+git add -A
+git commit -m "chore: initial commit"
+git push -u origin main
+
+# 5. 创建 feature 分支
+read -p "Feature 分支名称: feature/" FEATURE_NAME
+git checkout -b "feature/$FEATURE_NAME"
+git push -u origin "feature/$FEATURE_NAME"
+
+echo "✅ 项目初始化完成"
+echo "   仓库: https://github.com/$(gh api user --jq .login)/$REPO_NAME"
+echo "   分支: feature/$FEATURE_NAME"
+```
+
+---
+
+## Step 0.2: 检查任务状态
 
 ```bash
 STATE_FILE=~/.ai-factory/state/current-task.json
@@ -70,15 +138,15 @@ fi
 
 | PHASE | 跳转到 |
 |-------|--------|
-| `NONE` | Step 1: 新任务 |
-| `TASK_CREATED` | Step 2: 生成 PRD/DoD |
-| `EXECUTING` | Step 3: 继续写代码 |
-| `PR_CREATED` | Step 5: 检查 CI |
-| `CLEANUP_DONE` | Step 7: Learn |
+| `NONE` | Step 1: 检查分支 |
+| `TASK_CREATED` | Step 3: 生成 PRD/DoD |
+| `EXECUTING` | Step 4: 继续写代码 |
+| `PR_CREATED` | Step 6: 检查 CI |
+| `CLEANUP_DONE` | Step 8: Learn |
 
 ---
 
-## Step 1: 新任务 - 检查 Branch/Worktree
+## Step 1: 检查 Branch/Worktree
 
 **只有 PHASE=NONE 时执行**
 
@@ -376,7 +444,16 @@ echo "下次对话可以开始新任务。"
 
 | 暂停点 | 状态 | 下次对话做什么 |
 |--------|------|---------------|
+| 项目初始化后 | - | 创建 feature 分支 |
 | PR 创建后 | PR_CREATED | 检查 CI |
 | CI 失败 | EXECUTING | 继续修复 |
 | Cleanup 后 | CLEANUP_DONE | Learn |
 | Learn 后 | (删除文件) | 新任务 |
+
+---
+
+## 唯一入口
+
+**/dev 是唯一的开发工作流入口。**
+
+不需要单独的 `/new-task`、`/finish`、`/init-project` 命令 — 全部统一到 `/dev`。
