@@ -53,7 +53,7 @@ if [[ ${#MISSING_ITEMS[@]} -gt 0 ]]; then
 
     echo "" >&2
     echo -e "${BLUE}建议操作:${NC}" >&2
-    echo -e "  运行 ${YELLOW}/init-project${NC} 初始化项目" >&2
+    echo -e "  运行 ${YELLOW}/dev${NC} 开始开发流程" >&2
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}" >&2
     echo "" >&2
 fi
