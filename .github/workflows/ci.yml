@@ -64,9 +64,8 @@ jobs:
         if: steps.detect.outputs.type == 'go'
         run: go test -v ./...
 
-      # Shell scripts - just syntax check
+      # Shell scripts - always syntax check (hooks exist in all project types)
       - name: Check shell scripts
-        if: steps.detect.outputs.type == 'shell'
         run: |
           shopt -s nullglob
           files=$(find . -name "*.sh" -type f)
@@ -74,9 +73,17 @@ jobs:
             echo "ℹ️ No .sh files found"
             exit 0
           fi
+          echo "🔍 Checking shell scripts..."
+          FAILED=0
           for f in $files; do
-            bash -n "$f" && echo "✅ $f"
+            if bash -n "$f" 2>/dev/null; then
+              echo "  ✅ $f"
+            else
+              echo "  ❌ $f"
+              FAILED=1
+            fi
           done
+          exit $FAILED
 
   # 自动合并 PR（CI 通过后）
   auto-merge:
@@ -98,10 +105,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           echo "✅ CI passed, merging PR #${{ github.event.pull_request.number }}"
-          gh pr merge ${{ github.event.pull_request.number }} \
+          if gh pr merge ${{ github.event.pull_request.number }} \
             --squash \
             --delete-branch \
-            --body "Auto-merged after CI passed"
+            --body "Auto-merged after CI passed"; then
+            echo "🎉 PR merged successfully"
+          else
+            echo "⚠️ Auto-merge failed (might need manual merge due to conflicts)"
+            exit 0  # Don't fail CI, just notify
+          fi
 
   # CI 失败时通知 Notion
   notify-failure:
