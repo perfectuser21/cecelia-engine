@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.11.1] - 2026-01-16
+
+### Removed
+- cecilia/ 目录（应在 zenithjoy-core 实现）
+- dashboard/ 目录（应在 zenithjoy-core 实现）
+- docs/CECILIA-ARCHITECTURE.md（移至 zenithjoy-core）
+
 ## [7.11.0] - 2026-01-16
 
 ### Added
@@ -299,7 +306,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Previous iterations were experimental development versions leading up to the 7.0.0 stable release.
 
-[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.0...HEAD
+[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.1...HEAD
+[7.11.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.0...v7.11.1
 [7.11.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.10.0...v7.11.0
 [7.10.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.9...v7.10.0
 [7.9.9]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.8...v7.9.9
