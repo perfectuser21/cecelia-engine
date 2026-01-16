@@ -1,4 +1,4 @@
-# zenithjoy-core
+# zenithjoy-engine
 
 AI 开发工作流核心组件。提供 Hooks、Skills 和 CI 模板，实现强制的开发流程保护。
 
@@ -13,20 +13,20 @@ AI 开发工作流核心组件。提供 Hooks、Skills 和 CI 模板，实现强
 ### 1. 链接 Hooks
 
 ```bash
-ln -sf /path/to/zenithjoy-core/hooks/branch-protect.sh ~/.claude/hooks/
-ln -sf /path/to/zenithjoy-core/hooks/project-detect.sh ~/.claude/hooks/
+ln -sf /path/to/zenithjoy-engine/hooks/branch-protect.sh ~/.claude/hooks/
+ln -sf /path/to/zenithjoy-engine/hooks/project-detect.sh ~/.claude/hooks/
 ```
 
 ### 2. 链接 Skills
 
 ```bash
-ln -sf /path/to/zenithjoy-core/skills/dev ~/.claude/skills/
+ln -sf /path/to/zenithjoy-engine/skills/dev ~/.claude/skills/
 ```
 
 ### 3. 复制 CI 模板
 
 ```bash
-cp /path/to/zenithjoy-core/.github/workflows/ci.yml your-project/.github/workflows/
+cp /path/to/zenithjoy-engine/.github/workflows/ci.yml your-project/.github/workflows/
 ```
 
 ## Hooks 配置

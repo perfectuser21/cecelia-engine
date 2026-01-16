@@ -1,4 +1,4 @@
-# ZenithJoy Core
+# ZenithJoy Engine
 
 AI 开发工作流系统 - 把 AI Factory 全局化。
 
@@ -17,7 +17,7 @@ AI 开发工作流系统 - 把 AI Factory 全局化。
 ## 目录结构
 
 ```
-zenithjoy-core/
+zenithjoy-engine/
 ├── .github/workflows/    # CI 配置
 │   └── ci.yml
 ├── hooks/                # Claude Code Hooks（全局 ~/.claude/hooks/ 符号链接指向这里）
@@ -101,14 +101,62 @@ main (受保护)
 如果要同时在多个 feature 上工作：
 
 ```bash
-# 当前在 zenithjoy-core，feature/zenith-engine
+# 当前在 zenithjoy-engine，feature/zenith-engine
 # 想同时做 feature/cecilia
 
-git worktree add ../zenithjoy-core-cecilia feature/cecilia
-cd ../zenithjoy-core-cecilia
+git worktree add ../zenithjoy-engine-cecilia feature/cecilia
+cd ../zenithjoy-engine-cecilia
 
 # 在新目录开始 /dev
 ```
+
+---
+
+## 知识分层架构
+
+开发过程中的经验和问题应该记在哪里？
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                 全局层 (~/.claude/CLAUDE.md)            │
+│           跨项目通用规则、个人习惯、全局配置             │
+└─────────────────────────────────────────────────────────┘
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ zenithjoy-engine│ │   项目 A        │ │   项目 B        │
+│                 │ │                 │ │                 │
+│ CLAUDE.md:      │ │ CLAUDE.md:      │ │ CLAUDE.md:      │
+│ - Engine 文档   │ │ - 项目规则      │ │ - 项目规则      │
+│                 │ │ - 项目经验      │ │ - 项目经验      │
+│ docs/LEARNINGS: │ │                 │ │                 │
+│ - Engine 开发   │ │                 │ │                 │
+│   过程的经验    │ │                 │ │                 │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+                           │
+                           ▼
+                  ┌─────────────────┐
+                  │ Notion (可选)   │
+                  │ - 长期知识库    │
+                  │ - 会话摘要      │
+                  └─────────────────┘
+```
+
+### 记录规则
+
+| 场景 | 记录位置 |
+|------|----------|
+| Engine 自身的 bug | engine 的 GitHub Issues |
+| Engine 开发过程的经验 | engine 的 `docs/LEARNINGS.md` |
+| 项目特定的规则 | 项目的 `CLAUDE.md` |
+| 项目开发过程的经验 | 项目的 `docs/` 或 Notion |
+| 跨项目通用经验 | `~/.claude/CLAUDE.md` |
+
+### 自动化
+
+- `/dev` 流程的 Step 7 (Learn) 会询问本次开发学到的经验
+- 经验可以选择保存到：项目本地 / Notion / 全局配置
 
 ---
 
@@ -117,6 +165,7 @@ cd ../zenithjoy-core-cecilia
 - [ ] Cecilia（AI 助手）
 - [ ] Dashboard（开发流程可视化）
 - [ ] CI 失败通知（Notion）
+- [ ] 自动 Learn → Notion 同步
 
 ---
 
