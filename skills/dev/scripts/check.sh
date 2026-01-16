@@ -23,6 +23,13 @@ fi
 ZENITHJOY_ENGINE="${ZENITHJOY_ENGINE:-/home/xx/dev/zenithjoy-engine}"
 SKILL_FILE="$ZENITHJOY_ENGINE/skills/dev/SKILL.md"
 
+# SKILL.md 存在性检查
+if [[ ! -f "$SKILL_FILE" ]]; then
+  echo "❌ SKILL.md 不存在: $SKILL_FILE"
+  echo "   请检查 ZENITHJOY_ENGINE 环境变量"
+  exit 1
+fi
+
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "  📋 关键节点完成度检查"

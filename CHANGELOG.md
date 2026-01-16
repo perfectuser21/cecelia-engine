@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.9.4] - 2026-01-16
+
+### Fixed
+- check.sh: 添加 SKILL.md 存在性检查
+
 ## [7.9.3] - 2026-01-16
 
 ### Fixed
