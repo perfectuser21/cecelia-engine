@@ -66,8 +66,13 @@ elif [[ "$BRANCH" == feature/* ]]; then
 
 elif [[ "$BRANCH" == cp-* ]]; then
   echo "✅ 在 cp-* 分支，继续当前任务"
-  # 从 git log 找到 feature 分支
-  FEATURE_BRANCH=$(git log --oneline --decorate | grep -oP 'feature/[^ ]+' | head -1)
+  # 从 git config 读取 base 分支（创建时保存的）
+  FEATURE_BRANCH=$(git config branch.$BRANCH.base 2>/dev/null)
+  if [[ -z "$FEATURE_BRANCH" ]]; then
+    # 兜底：从远程分支推断
+    FEATURE_BRANCH=$(git branch -r --contains HEAD 2>/dev/null | grep 'origin/feature/' | head -1 | sed 's|origin/||' | xargs)
+  fi
+  echo "   Base: $FEATURE_BRANCH"
 fi
 
 # 检查 worktree（并行开发）
@@ -100,6 +105,9 @@ FEATURE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
 # 创建分支
 git checkout -b "$BRANCH_NAME"
+
+# 保存 base 分支到 git config（用于恢复会话）
+git config branch.$BRANCH_NAME.base "$FEATURE_BRANCH"
 
 echo "✅ 分支已创建: $BRANCH_NAME"
 echo "   Base: $FEATURE_BRANCH"
@@ -163,21 +171,31 @@ echo "✅ PR 已创建: $PR_URL"
 echo "⏳ 等待 CI..."
 
 # 等待 CI 完成
-MAX_WAIT=120
+MAX_WAIT=180
 WAITED=0
 
 while [ $WAITED -lt $MAX_WAIT ]; do
   sleep 10
   WAITED=$((WAITED + 10))
 
-  STATE=$(gh pr view "$PR_URL" --json state -q '.state')
+  # 获取 PR 状态和 CI 检查状态
+  PR_INFO=$(gh pr view "$PR_URL" --json state,statusCheckRollup)
+  STATE=$(echo "$PR_INFO" | jq -r '.state')
+  CI_STATUS=$(echo "$PR_INFO" | jq -r '.statusCheckRollup[0].conclusion // "PENDING"')
 
   if [ "$STATE" = "MERGED" ]; then
     echo "✅ PR 已合并！(${WAITED}s)"
     break
+  elif [ "$STATE" = "CLOSED" ]; then
+    echo "❌ PR 被关闭"
+    break
+  elif [ "$CI_STATUS" = "FAILURE" ]; then
+    echo "❌ CI 失败，请检查: $PR_URL"
+    echo "修复后重新 push，CI 会自动重跑"
+    break
   fi
 
-  echo "⏳ 等待中... (${WAITED}s)"
+  echo "⏳ 等待中... STATE=$STATE, CI=$CI_STATUS (${WAITED}s)"
 done
 ```
 
