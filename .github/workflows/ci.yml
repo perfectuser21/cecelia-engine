@@ -68,7 +68,13 @@ jobs:
       - name: Check shell scripts
         if: steps.detect.outputs.type == 'shell'
         run: |
-          for f in $(find . -name "*.sh" -type f); do
+          shopt -s nullglob
+          files=$(find . -name "*.sh" -type f)
+          if [ -z "$files" ]; then
+            echo "ℹ️ No .sh files found"
+            exit 0
+          fi
+          for f in $files; do
             bash -n "$f" && echo "✅ $f"
           done
 

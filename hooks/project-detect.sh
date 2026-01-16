@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# 读取 stdin（Claude Code hooks 需要）
+cat > /dev/null
+
 # 颜色定义
 RED='\033[0;31m'
 YELLOW='\033[1;33m'

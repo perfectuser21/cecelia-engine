@@ -73,6 +73,14 @@ elif [[ "$BRANCH" == cp-* ]]; then
     FEATURE_BRANCH=$(git branch -r --contains HEAD 2>/dev/null | grep 'origin/feature/' | head -1 | sed 's|origin/||' | xargs)
   fi
   echo "   Base: $FEATURE_BRANCH"
+
+else
+  echo "⚠️ 当前分支: $BRANCH"
+  echo "   不是 main/feature/cp-* 分支"
+  echo ""
+  echo "建议："
+  echo "  1. 切换到 feature/* 分支开始新任务"
+  echo "  2. 或从当前分支创建 feature 分支"
 fi
 
 # 检查 worktree（并行开发）
@@ -178,10 +186,11 @@ while [ $WAITED -lt $MAX_WAIT ]; do
   sleep 10
   WAITED=$((WAITED + 10))
 
-  # 获取 PR 状态和 CI 检查状态
-  PR_INFO=$(gh pr view "$PR_URL" --json state,statusCheckRollup)
-  STATE=$(echo "$PR_INFO" | jq -r '.state')
-  CI_STATUS=$(echo "$PR_INFO" | jq -r '.statusCheckRollup[0].conclusion // "PENDING"')
+  # 获取 PR 状态（降级处理：如果 statusCheckRollup 权限不足，只用 state）
+  STATE=$(gh pr view "$PR_URL" --json state -q '.state' 2>/dev/null || echo "UNKNOWN")
+
+  # 尝试获取 CI 状态（可能因权限失败）
+  CI_STATUS=$(gh pr view "$PR_URL" --json statusCheckRollup -q '.statusCheckRollup[0].conclusion // "PENDING"' 2>/dev/null || echo "UNKNOWN")
 
   if [ "$STATE" = "MERGED" ]; then
     echo "✅ PR 已合并！(${WAITED}s)"
@@ -195,7 +204,12 @@ while [ $WAITED -lt $MAX_WAIT ]; do
     break
   fi
 
-  echo "⏳ 等待中... STATE=$STATE, CI=$CI_STATUS (${WAITED}s)"
+  # 显示状态（CI_STATUS 可能是 UNKNOWN）
+  if [ "$CI_STATUS" = "UNKNOWN" ]; then
+    echo "⏳ 等待中... STATE=$STATE (${WAITED}s)"
+  else
+    echo "⏳ 等待中... STATE=$STATE, CI=$CI_STATUS (${WAITED}s)"
+  fi
 done
 ```
 
@@ -205,6 +219,9 @@ done
 
 ```bash
 echo "🧹 清理..."
+
+# 清理 git config 中保存的 base 分支信息
+git config --unset branch.$BRANCH_NAME.base 2>/dev/null || true
 
 # 切回 feature 分支
 git checkout "$FEATURE_BRANCH"
