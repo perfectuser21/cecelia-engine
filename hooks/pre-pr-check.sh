@@ -14,8 +14,11 @@ fi
 # Read JSON input from stdin
 INPUT=$(cat)
 
-# Extract command
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+# Extract command (with error handling)
+if ! COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>&1); then
+    echo "⚠️ Hook 无法解析输入 JSON: $COMMAND" >&2
+    exit 0  # 不阻止操作，但警告用户
+fi
 
 # 只检查 gh pr create 命令
 if [[ "$COMMAND" != *"gh pr create"* ]]; then

@@ -83,7 +83,7 @@ case $ACTION in
         else
           echo "     已同步 main，领先 $AHEAD commits:"
           get_ahead_commits "$branch" | head -5 | sed 's/^/       /'
-          if [ "$AHEAD" -gt 5 ] 2>/dev/null; then
+          if [[ "$AHEAD" =~ ^[0-9]+$ ]] && [ "$AHEAD" -gt 5 ]; then
             echo "       ... 还有 $((AHEAD - 5)) 个"
           fi
         fi
@@ -98,7 +98,7 @@ case $ACTION in
         echo -e "  ${YELLOW}⚠️${NC}  $branch${MARKER}"
         echo "     落后 main $BEHIND commits，领先 $AHEAD commits:"
         get_ahead_commits "$branch" | head -5 | sed 's/^/       /'
-        if [ "$AHEAD" -gt 5 ] 2>/dev/null; then
+        if [[ "$AHEAD" =~ ^[0-9]+$ ]] && [ "$AHEAD" -gt 5 ]; then
           echo "       ... 还有 $((AHEAD - 5)) 个"
         fi
         NEED_SYNC=$((NEED_SYNC + 1))

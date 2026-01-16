@@ -66,8 +66,13 @@ if [[ -z "$LOCAL_BRANCH" && -z "$REMOTE_BRANCH" ]]; then
   echo "   这可能是因为分支已被清理，或者名称拼写错误"
 fi
 
-ZENITHJOY_ENGINE="${ZENITHJOY_ENGINE:-/home/xx/dev/zenithjoy-engine}"
-SKILL_FILE="$ZENITHJOY_ENGINE/skills/dev/SKILL.md"
+# 自动检测项目根目录（优先使用环境变量，其次使用 git）
+if [[ -n "${ZENITHJOY_ENGINE:-}" ]]; then
+  PROJECT_ROOT="$ZENITHJOY_ENGINE"
+else
+  PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+fi
+SKILL_FILE="$PROJECT_ROOT/skills/dev/SKILL.md"
 
 # SKILL.md 存在性检查
 if [[ ! -f "$SKILL_FILE" ]]; then
@@ -89,8 +94,8 @@ REQUIRED_COUNT=$(grep -E '^  □[^⏭]' "$SKILL_FILE" 2>/dev/null | wc -l || ech
 OPTIONAL_COUNT=$(grep -c '^  ○' "$SKILL_FILE" 2>/dev/null || echo 0)
 
 # 动态计算清理阶段的检查项数量（Step 6 下的 □ 项）
-# 查找 Step 6 到下一个 Step 或文件末尾之间的 □ 数量
-CLEANUP_ITEM_COUNT=$(awk '/^## Step 6/,/^## Step [0-9]|^$/ { if (/^  □[^⏭]/) count++ } END { print count+0 }' "$SKILL_FILE")
+# 查找 "清理阶段 (Step 6)" 到 "总结阶段 (Step 7)" 之间的 □ 数量
+CLEANUP_ITEM_COUNT=$(awk '/清理阶段 \(Step 6\)/,/总结阶段 \(Step 7\)/ { if (/^  □[^⏭]/) count++ } END { print count+0 }' "$SKILL_FILE")
 
 COMPLETED_COUNT=0
 MISSING_COMMANDS=()
