@@ -12,7 +12,7 @@ description: |
 
 # /dev - 统一开发工作流
 
-## 关键节点清单 (20 必要 + 1 可选 = 21)
+## 关键节点清单 (20 必要 + 2 可选 = 22)
 
 ```
 创建阶段 (Step 1-2)
@@ -20,7 +20,7 @@ description: |
   □ 2. 创建 cp-* 分支
   □ 3. 保存 base 分支到 git config
 
-开发阶段 (Step 3-4)
+开发阶段 (Step 2.5, 3-4)
   □ 4. PRD 确认
   □ 5. DoD 确认
   □ 6. 代码编写
@@ -44,7 +44,8 @@ description: |
   □ 20. 清理 stale 远程引用
 
 总结阶段 (Step 7)
-  □ 21. Learn 记录（可选）
+  □ 21. Engine Learn（可选）
+  □ 22. 项目 Learn（可选）
 ```
 
 **每次 cleanup 必须检查 20/20 完成，否则报告缺失项。**
@@ -164,6 +165,41 @@ git config branch.$BRANCH_NAME.base "$FEATURE_BRANCH"
 echo "✅ 分支已创建: $BRANCH_NAME"
 echo "   Base: $FEATURE_BRANCH"
 ```
+
+---
+
+## Step 2.5: 上下文回顾
+
+**在写 PRD 之前，先了解项目当前状态：**
+
+```bash
+echo "📖 上下文回顾..."
+
+# 1. 最近的版本变更
+echo ""
+echo "=== 最近变更 (CHANGELOG) ==="
+head -30 CHANGELOG.md 2>/dev/null || echo "（无 CHANGELOG）"
+
+# 2. 最近的 PR
+echo ""
+echo "=== 最近 PR ==="
+gh pr list --state merged -L 5 2>/dev/null || echo "（无法获取）"
+
+# 3. 项目架构（快速浏览）
+echo ""
+echo "=== 项目架构 ==="
+head -50 docs/ARCHITECTURE.md 2>/dev/null || echo "（无架构文档）"
+
+# 4. 踩坑记录
+echo ""
+echo "=== 踩坑记录 ==="
+head -30 docs/LEARNINGS.md 2>/dev/null || echo "（无踩坑记录）"
+```
+
+**回顾后再写 PRD，确保：**
+- 不违反已有架构
+- 不重复踩坑
+- 与最近改动保持一致
 
 ---
 
@@ -467,19 +503,63 @@ fi
 
 ---
 
-## Step 7: Learn
+## Step 7: 双层 Learn
+
+**完成开发后，分两层记录经验：**
+
+### 7.1 Engine 层面
 
 ```
-这次开发学到了什么？
-1. 踩的坑
-2. 学到的
-3. 最佳实践
+这次开发中，工作流（ZenithJoy Engine）有什么可以改进的？
+
+例如：
+- /dev 流程哪里不顺？
+- 缺少什么步骤？
+- 哪个步骤可以优化？
 
 （输入或说"跳过"）
 ```
 
+如果有内容，追加到 **zenithjoy-engine** 的 `docs/LEARNINGS.md`：
+
+```bash
+# 追加到 Engine 的 LEARNINGS
+echo "" >> /home/xx/dev/zenithjoy-engine/docs/LEARNINGS.md
+echo "## $(date +%Y-%m-%d) - <任务名>" >> /home/xx/dev/zenithjoy-engine/docs/LEARNINGS.md
+echo "<用户输入的内容>" >> /home/xx/dev/zenithjoy-engine/docs/LEARNINGS.md
+```
+
+### 7.2 项目层面
+
+```
+这次开发中，目标项目有什么值得记录的？
+
+例如：
+- 踩了什么坑？
+- 学到了什么？
+- 有什么最佳实践？
+
+（输入或说"跳过"）
+```
+
+如果有内容，追加到 **目标项目** 的 `docs/LEARNINGS.md`：
+
+```bash
+# 追加到目标项目的 LEARNINGS
+PROJECT_ROOT=$(git rev-parse --show-toplevel)
+echo "" >> $PROJECT_ROOT/docs/LEARNINGS.md
+echo "## $(date +%Y-%m-%d) - <任务名>" >> $PROJECT_ROOT/docs/LEARNINGS.md
+echo "<用户输入的内容>" >> $PROJECT_ROOT/docs/LEARNINGS.md
+```
+
+### 7.3 完成
+
 ```bash
 echo "🎉 本轮开发完成！"
+echo ""
+echo "已记录："
+echo "  - Engine 经验: zenithjoy-engine/docs/LEARNINGS.md"
+echo "  - 项目经验: <项目>/docs/LEARNINGS.md"
 ```
 
 ---
