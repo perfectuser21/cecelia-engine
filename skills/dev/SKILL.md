@@ -92,6 +92,30 @@ Step 1: 检查当前分支
 ## Step 1: 检查分支
 
 ```bash
+# 依赖检查
+echo "🔍 检查依赖..."
+
+# gh CLI
+if ! command -v gh &> /dev/null; then
+  echo "❌ 需要安装 gh CLI: https://cli.github.com/"
+  exit 1
+fi
+
+# jq
+if ! command -v jq &> /dev/null; then
+  echo "❌ 需要安装 jq: apt install jq"
+  exit 1
+fi
+
+# gh 登录状态
+if ! gh auth status &> /dev/null; then
+  echo "❌ 需要登录 gh: gh auth login"
+  exit 1
+fi
+
+echo "✅ 依赖检查通过"
+echo ""
+
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 REPO=$(basename $(git rev-parse --show-toplevel))
 
