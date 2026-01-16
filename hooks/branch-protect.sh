@@ -67,11 +67,11 @@ if [[ ! "$CURRENT_BRANCH" =~ ^cp- ]]; then
     echo "要修改的文件: $FILE_PATH" >&2
     echo "" >&2
     echo "正确流程:" >&2
-    echo "  1. 运行 /new-task 创建 checkpoint 分支" >&2
-    echo "  2. 在 cp-xxx 分支上开发" >&2
-    echo "  3. 运行 /finish 完成任务" >&2
+    echo "  1. 运行 /dev 开始开发工作流" >&2
+    echo "  2. 确认 PRD + DoD" >&2
+    echo "  3. 在 cp-xxx 分支上开发" >&2
     echo "" >&2
-    echo "[SKILL_REQUIRED: new-task]" >&2
+    echo "[SKILL_REQUIRED: dev]" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
 fi
@@ -87,9 +87,9 @@ if [[ ! -f "$STATE_FILE" ]]; then
     echo "" >&2
     echo "状态文件不存在: $STATE_FILE" >&2
     echo "" >&2
-    echo "请先运行 /new-task 创建任务" >&2
+    echo "请先运行 /dev 开始开发工作流" >&2
     echo "" >&2
-    echo "[SKILL_REQUIRED: new-task]" >&2
+    echo "[SKILL_REQUIRED: dev]" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
 fi
