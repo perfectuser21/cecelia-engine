@@ -213,14 +213,28 @@ echo "=== 自测 ==="
 ```bash
 echo "🔍 检测会话状态..."
 
-# 检查远程是否已有这个分支的 PR
-EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --json number,url -q '.[0]' 2>/dev/null)
+# 检查远程是否已有这个分支的 PR（包括已关闭的）
+EXISTING_PR=$(gh pr list --head "$BRANCH_NAME" --state all --json number,url,state -q '.[0]' 2>/dev/null)
 
 if [ ! -z "$EXISTING_PR" ]; then
   PR_URL=$(echo "$EXISTING_PR" | jq -r '.url')
-  echo "✅ 检测到已存在的 PR: $PR_URL"
-  echo "   跳过创建，直接等待 CI..."
-  # 跳到等待 CI 的循环
+  PR_STATE=$(echo "$EXISTING_PR" | jq -r '.state')
+
+  if [ "$PR_STATE" = "MERGED" ]; then
+    echo "✅ PR 已合并: $PR_URL"
+    echo "   跳到 cleanup..."
+    # 直接跳到 Step 6 cleanup
+
+  elif [ "$PR_STATE" = "CLOSED" ]; then
+    echo "⚠️ PR 已关闭（未合并）: $PR_URL"
+    echo "   需要重新创建 PR"
+    # 继续走创建流程
+
+  else
+    echo "✅ 检测到已存在的 PR: $PR_URL (state=$PR_STATE)"
+    echo "   跳过创建，直接等待 CI..."
+    # 跳到等待 CI 的循环
+  fi
 else
   echo "📝 需要创建新 PR"
 fi
