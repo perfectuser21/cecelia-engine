@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.11.0] - 2026-01-16
+
+### Added
+- N8N workflow 接口规范文档 (docs/INTERFACE-SPEC.md)
+- N8N 工作流模板 (n8n/workflows/prd-executor.json)
+- N8N 目录 README (n8n/README.md)
+- Cecilia CLI 接口定义
+- Dashboard API 接口定义
+
 ## [7.10.0] - 2026-01-16
 
 ### Fixed
@@ -290,7 +299,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Previous iterations were experimental development versions leading up to the 7.0.0 stable release.
 
-[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.10.0...HEAD
+[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.0...HEAD
+[7.11.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.10.0...v7.11.0
 [7.10.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.9...v7.10.0
 [7.9.9]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.8...v7.9.9
 [7.9.8]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.7...v7.9.8
