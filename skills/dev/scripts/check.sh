@@ -49,7 +49,7 @@ echo ""
 echo "清理阶段 (Step 6):"
 
 # git config 已清理？
-CONFIG_EXISTS=$(git config branch.$BRANCH_NAME.base 2>/dev/null || echo "")
+CONFIG_EXISTS=$(git config "branch.$BRANCH_NAME.base" 2>/dev/null || echo "")
 if [ -z "$CONFIG_EXISTS" ]; then
   echo "  ✅ git config 已清理"
   ((DONE++))
@@ -127,7 +127,7 @@ if [ ${#MISSING[@]} -gt 0 ]; then
   exit 1
 fi
 
-if [ $DONE -eq $TOTAL ]; then
+if [ "$DONE" -eq "$TOTAL" ]; then
   echo ""
   echo "🎉 所有必要节点已完成！"
   exit 0

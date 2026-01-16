@@ -163,7 +163,7 @@ skills/dev/
 **加载策略**：
 1. 首次执行：只加载 SKILL.md（本文件）
 2. 需要详情时：Read references/STEPS.md 中相关章节
-3. 完成后：运行 `bash scripts/check.sh` 验证
+3. 完成后：运行 `bash skills/dev/scripts/check.sh` 验证
 
 ---
 

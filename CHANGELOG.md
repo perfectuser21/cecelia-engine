@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.9.5] - 2026-01-16
+
+### Fixed
+- package-lock.json: 版本号同步 (7.8.1/7.7.0 → 7.9.5)
+- CHANGELOG.md: 补充 7.9.0-7.9.4 版本链接
+- ci.yml: auto-merge 依赖逻辑修复，避免 version-check skip 时失败
+- ci.yml: notify-failure 改为监听 version-check 和 test 两个 job
+- ci.yml: Python 测试改为显式检测，避免静默错误
+- ci.yml: shell 脚本检查改用 while read 处理含空格路径
+- SKILL.md: 统一脚本路径为 skills/dev/scripts/check.sh
+- DOD-TEMPLATE.md: 术语统一 Checkpoint → cp-*
+- check.sh: 变量引用加双引号
+
 ## [7.9.4] - 2026-01-16
 
 ### Fixed
@@ -190,7 +203,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Previous iterations were experimental development versions leading up to the 7.0.0 stable release.
 
-[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.8.1...HEAD
+[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.5...HEAD
+[7.9.5]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.4...v7.9.5
+[7.9.4]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.3...v7.9.4
+[7.9.3]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.2...v7.9.3
+[7.9.2]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.1...v7.9.2
+[7.9.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.9.0...v7.9.1
+[7.9.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.8.1...v7.9.0
 [7.8.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.8.0...v7.8.1
 [7.8.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.7.2...v7.8.0
 [7.7.2]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.7.1...v7.7.2
