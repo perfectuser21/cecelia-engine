@@ -80,20 +80,37 @@ git checkout -b cp-<task-name>-01
 <checkpoint-branch-name>
 ```
 
-### 5. 更新本地状态
+### 5. 更新全局状态文件
 
-创建或更新 `.ai-factory/state.json`:
+**重要：记录 feature_branch，用于后续 PR 指向正确分支！**
 
-```json
+```bash
+STATE_FILE=~/.ai-factory/state/current-task.json
+mkdir -p ~/.ai-factory/state
+
+# 获取当前所在的 feature 分支（创建 cp-* 之前的分支）
+FEATURE_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+cat > "$STATE_FILE" << EOF
 {
-  "current_task": "<task-name>",
-  "checkpoint_branch": "cp-<task-name>-01",
-  "feature_branch": "<feature-branch-name>",
-  "created_at": "<ISO-timestamp>",
-  "status": "in_progress",
-  "dod_file": "DoD.md"
+  "task_id": "cp-<task-name>-01",
+  "branch": "cp-<task-name>-01",
+  "feature_branch": "$FEATURE_BRANCH",
+  "phase": "TASK_CREATED",
+  "checkpoints": {
+    "prd_confirmed": false,
+    "dod_defined": false,
+    "self_test_passed": false
+  },
+  "created_at": "$(date -Iseconds)"
 }
+EOF
 ```
+
+**关键字段**:
+- `feature_branch`: 用于 PR base 分支（不是 main！）
+- `phase`: 当前阶段
+- `checkpoints`: Hook 检查用
 
 ### 6. 提交初始状态
 
