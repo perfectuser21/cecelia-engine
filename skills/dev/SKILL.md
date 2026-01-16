@@ -12,7 +12,7 @@ description: |
 
 # /dev - 统一开发工作流
 
-## 关键节点清单 (19 必要 + 1 可选 = 20)
+## 关键节点清单 (20 必要 + 1 可选 = 21)
 
 ```
 创建阶段 (Step 1-2)
@@ -28,25 +28,31 @@ description: |
 
 提交阶段 (Step 5)
   □ 8. 会话恢复检测
-  □ 9. git commit
-  □ 10. git push
-  □ 11. PR 创建
-  □ 12. CI 通过
-  □ 13. PR 合并
+  □ 9. 版本号更新（semver）  ← 新增！
+  □ 10. git commit
+  □ 11. git push
+  □ 12. PR 创建
+  □ 13. CI 通过
+  □ 14. PR 合并
 
 清理阶段 (Step 6)
-  □ 14. 清理 git config
-  □ 15. 切回 feature 分支
-  □ 16. git pull
-  □ 17. 删除本地 cp-* 分支
-  □ 18. 删除远程 cp-* 分支
-  □ 19. 清理 stale 远程引用
+  □ 15. 清理 git config
+  □ 16. 切回 feature 分支
+  □ 17. git pull
+  □ 18. 删除本地 cp-* 分支
+  □ 19. 删除远程 cp-* 分支
+  □ 20. 清理 stale 远程引用
 
 总结阶段 (Step 7)
-  □ 20. Learn 记录（可选）
+  □ 21. Learn 记录（可选）
 ```
 
-**每次 cleanup 必须检查 19/19 完成，否则报告缺失项。**
+**每次 cleanup 必须检查 20/20 完成，否则报告缺失项。**
+
+**版本号规则 (semver)：**
+- `fix:` → patch (+0.0.1)
+- `feat:` → minor (+0.1.0)
+- `BREAKING:` → major (+1.0.0)
 
 ---
 
@@ -316,11 +322,17 @@ git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
 # 5. 清理远程已删除分支的本地引用
 git remote prune origin 2>/dev/null || true
 
-# 6. 检查是否需要更新版本号
+# 6. 更新版本号（必须！每个 PR 都要更新）
 echo ""
-echo "📦 版本检查："
+echo "📦 版本更新（semver 规则）："
 echo "   当前版本: $(jq -r '.version' package.json)"
-echo "   如果是重要功能/修复，考虑更新 package.json 版本号"
+echo ""
+echo "   规则："
+echo "   - fix: → patch (+0.0.1)"
+echo "   - feat: → minor (+0.1.0)"
+echo "   - BREAKING: → major (+1.0.0)"
+echo ""
+echo "   ⚠️ 每个 PR 必须更新版本号！"
 
 echo "✅ 清理完成"
 ```
