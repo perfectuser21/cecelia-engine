@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.26.0] - 2026-01-17
+
+### Added
+- `hello()` 函数：/dev 流程验证测试
+
 ## [7.25.0] - 2026-01-17
 
 ### Fixed

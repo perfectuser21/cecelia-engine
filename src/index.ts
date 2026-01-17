@@ -6,3 +6,10 @@
  */
 
 export * from './calculator';
+
+/**
+ * Simple hello function for /dev flow testing
+ */
+export function hello(name: string): string {
+  return `Hello, ${name}!`;
+}
