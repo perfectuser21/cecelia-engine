@@ -175,7 +175,16 @@ head -30 docs/LEARNINGS.md 2>/dev/null || echo "（无踩坑记录）"
 - CHECK: <需要用户确认的点>
 ```
 
-**用户确认后继续。**
+**用户确认后，设置 PRD 确认标记：**
+
+```bash
+# PRD 确认后立即执行
+BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+git config branch."$BRANCH_NAME".prd-confirmed true
+echo "✅ PRD 已确认，可以开始写代码"
+```
+
+**然后继续开发。**
 
 ---
 
@@ -433,8 +442,9 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$FEATURE_BRANCH"
 ```bash
 echo "🧹 清理..."
 
-# 1. 清理 git config 中保存的 base 分支信息
+# 1. 清理 git config 中保存的分支信息
 git config --unset branch.$BRANCH_NAME.base 2>/dev/null || true
+git config --unset branch.$BRANCH_NAME.prd-confirmed 2>/dev/null || true
 
 # 2. 切回 feature 分支并拉取最新代码
 git checkout "$FEATURE_BRANCH"

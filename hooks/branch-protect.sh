@@ -79,8 +79,33 @@ fi
 # ===== 检查: 必须在 cp-* 或 feature/* 分支 =====
 # 允许: cp-xxx, feature/xxx
 # 禁止: main, develop, 其他
-if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]] || [[ "$CURRENT_BRANCH" =~ ^feature/ ]]; then
-    # 允许的分支，放行
+
+# feature/* 分支直接放行（不需要 PRD）
+if [[ "$CURRENT_BRANCH" =~ ^feature/ ]]; then
+    exit 0
+fi
+
+# cp-* 分支需要额外检查 PRD 是否已确认
+if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+    PRD_CONFIRMED=$(git config --get branch."$CURRENT_BRANCH".prd-confirmed 2>/dev/null || echo "")
+    if [[ "$PRD_CONFIRMED" != "true" ]]; then
+        echo "" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "  ❌ PRD 未确认，请先运行 /dev 完成流程" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "" >&2
+        echo "当前分支: $CURRENT_BRANCH" >&2
+        echo "要修改的文件: $FILE_PATH" >&2
+        echo "" >&2
+        echo "正确流程:" >&2
+        echo "  1. 运行 /dev 开始开发工作流" >&2
+        echo "  2. 确认 PRD 后才能写代码" >&2
+        echo "" >&2
+        echo "[SKILL_REQUIRED: dev]" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        exit 2
+    fi
+    # PRD 已确认，放行
     exit 0
 fi
 

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.18.0] - 2026-01-17
+
+### Added
+- PRD Gate 机制：cp-* 分支必须确认 PRD 后才能写代码
+- git config branch.*.prd-confirmed 标记追踪 PRD 确认状态
+
+### Changed
+- branch-protect.sh：在 cp-* 分支额外检查 prd-confirmed
+- cleanup.sh：清理时同时清理 prd-confirmed 标记
+- check.sh：检查时同时检查 prd-confirmed 清理状态
+- STEPS.md：Step 3 加设置 prd-confirmed，Step 6 加清理
+
 ## [7.17.0] - 2026-01-17
 
 ### Added

@@ -99,12 +99,20 @@ else
 fi
 
 # ========================================
-# 5. 清理 git config 中的 base 分支记录
+# 5. 清理 git config 中的分支记录
 # ========================================
 echo ""
 echo "5️⃣  清理 git config..."
+CLEANED=false
 if git config --get "branch.$CP_BRANCH.base" &>/dev/null; then
     git config --unset "branch.$CP_BRANCH.base" 2>/dev/null || true
+    CLEANED=true
+fi
+if git config --get "branch.$CP_BRANCH.prd-confirmed" &>/dev/null; then
+    git config --unset "branch.$CP_BRANCH.prd-confirmed" 2>/dev/null || true
+    CLEANED=true
+fi
+if [ "$CLEANED" = true ]; then
     echo -e "   ${GREEN}✅ 已清理 git config${NC}"
 else
     echo -e "   ${GREEN}✅ 无需清理 git config${NC}"
