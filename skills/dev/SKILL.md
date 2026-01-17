@@ -125,6 +125,9 @@ Step 7: Learn（可选）
 
 ## 步骤摘要
 
+> **路径说明**: 下表中的链接相对于 `skills/dev/` 目录。
+> 例如 `references/STEPS.md` = `skills/dev/references/STEPS.md`
+
 | Step | 说明 | 详情 |
 |------|------|------|
 | 0 | 检查 gh/jq 依赖和登录状态 | → [STEPS.md#step-0](references/STEPS.md#step-0-依赖检查) |

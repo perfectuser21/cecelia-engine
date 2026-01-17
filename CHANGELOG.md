@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.14.3] - 2026-01-17
+
+### Improved
+- project-detect.sh: 优化 git remote 检查逻辑
+- SKILL.md: 添加相对路径说明
+- branch-protect.sh: 添加项目边界检查（防止多项目误保护）
+
 ## [7.14.2] - 2026-01-17
 
 ### Fixed

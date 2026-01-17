@@ -64,6 +64,13 @@ if [[ -z "$CURRENT_BRANCH" ]]; then
     exit 0
 fi
 
+# 验证文件是否属于当前 git 仓库（防止多项目环境误保护）
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+if [[ -n "$PROJECT_ROOT" && "$FILE_PATH" != "$PROJECT_ROOT"* ]]; then
+    # 文件不在当前 git 仓库中，不需要保护
+    exit 0
+fi
+
 # ===== 检查: 必须在 cp-* 或 feature/* 分支 =====
 # 允许: cp-xxx, feature/xxx
 # 禁止: main, develop, 其他
