@@ -4,7 +4,7 @@ AI 开发工作流核心组件。提供 Hooks、Skills 和 CI 模板，实现强
 
 ## 功能
 
-- **分支保护 Hook**: 强制在 `cp-*` 分支开发
+- **分支保护 Hook**: 强制在 `cp-*` 或 `feature/*` 分支开发
 - **CI 自动合并**: PR 通过 CI 后自动合并
 - **统一开发 Skill**: `/dev` 一个对话完成整个开发流程
 
@@ -71,7 +71,7 @@ cp $ZENITHJOY_ENGINE/.github/workflows/ci.yml your-project/.github/workflows/
 
 | Hook | 触发时机 | 用途 |
 |------|----------|------|
-| branch-protect.sh | PreToolUse (Write/Edit) | 强制在 cp-* 分支修改代码及重要目录 (skills/, hooks/, .github/) |
+| branch-protect.sh | PreToolUse (Write/Edit) | 强制在 cp-* 或 feature/* 分支修改代码及重要目录 (skills/, hooks/, .github/) |
 | project-detect.sh | PostToolUse (Bash) | 检测项目初始化状态 |
 
 ## Usage

@@ -88,7 +88,7 @@ git worktree list
 **询问用户（如果在 feature 分支）：**
 
 ```
-当前在 feature/zenith-engine
+当前在 feature/some-feature
 
 1. 在这个 feature 上开新任务
 2. 切换到其他 feature（需要 worktree）
@@ -432,8 +432,8 @@ echo "  - 项目经验: <项目>/docs/LEARNINGS.md"
 如果要同时在多个 feature 上工作：
 
 ```bash
-# 当前在 zenithjoy-engine，feature/zenith-engine
-# 想同时做 feature/cecilia
+# 当前在 zenithjoy-engine 目录，develop 分支
+# 想同时做 feature/new-feature
 
 git worktree add ../zenithjoy-engine-cecilia feature/cecilia
 cd ../zenithjoy-engine-cecilia
