@@ -83,7 +83,8 @@ case $ACTION in
 
     NEED_SYNC=0
 
-    for branch in $BRANCHES; do
+    # 使用 while read 替代 for，避免 word splitting 问题
+    while IFS= read -r branch; do
       BEHIND=$(get_behind_count "$branch")
       AHEAD=$(get_ahead_count "$branch")
 
@@ -129,7 +130,7 @@ case $ACTION in
         NEED_SYNC=$((NEED_SYNC + 1))
       fi
       echo ""
-    done
+    done <<< "$BRANCHES"
 
     if [ $NEED_SYNC -gt 0 ]; then
       echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -164,7 +165,8 @@ case $ACTION in
     SYNCED=0
     FAILED=0
 
-    for branch in $BRANCHES; do
+    # 使用 while read 替代 for，避免 word splitting 问题
+    while IFS= read -r branch; do
       BEHIND=$(get_behind_count "$branch")
 
       if [ "$BEHIND" = "0" ] || [ "$BEHIND" = "?" ]; then
@@ -193,7 +195,7 @@ case $ACTION in
         echo "        3. 解决冲突后: git add . && git commit"
         FAILED=$((FAILED + 1))
       fi
-    done
+    done <<< "$BRANCHES"
 
     # 切回原分支
     if [ -n "$ORIGINAL_BRANCH" ]; then

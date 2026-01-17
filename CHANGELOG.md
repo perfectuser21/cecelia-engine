@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.14.8] - 2026-01-17
+
+### Fixed
+- multi-feature.sh: 使用 `while read` 替代 `for` 循环避免 word splitting 问题
+- CI: 为 version-check 和 test jobs 添加显式 `permissions: contents: read`
+
 ## [7.14.7] - 2026-01-17
 
 ### Fixed
