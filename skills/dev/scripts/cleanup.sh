@@ -124,10 +124,10 @@ else
 fi
 
 # ========================================
-# 5.5. 删除 .project-info.json 缓存
+# 6. 删除 .project-info.json 缓存
 # ========================================
 echo ""
-echo "5.5️⃣ 删除 .project-info.json 缓存..."
+echo "6️⃣  删除 .project-info.json 缓存..."
 if [[ -f ".project-info.json" ]]; then
     if rm -f ".project-info.json" 2>/dev/null; then
         echo -e "   ${GREEN}✅ 已删除 .project-info.json${NC}"
@@ -140,10 +140,10 @@ else
 fi
 
 # ========================================
-# 6. 清理 stale remote refs
+# 7. 清理 stale remote refs
 # ========================================
 echo ""
-echo "6️⃣  清理 stale remote refs..."
+echo "7️⃣  清理 stale remote refs..."
 PRUNED=$(git remote prune origin 2>&1 || true)
 if echo "$PRUNED" | grep -q "pruning"; then
     echo -e "   ${GREEN}✅ 已清理 stale refs${NC}"
@@ -152,10 +152,10 @@ else
 fi
 
 # ========================================
-# 7. 检查未提交的文件
+# 8. 检查未提交的文件
 # ========================================
 echo ""
-echo "7️⃣  检查未提交文件..."
+echo "8️⃣  检查未提交文件..."
 UNCOMMITTED=$(git status --porcelain 2>/dev/null | grep -v "node_modules" | head -5 || true)
 if [[ -n "$UNCOMMITTED" ]]; then
     echo -e "   ${YELLOW}⚠️  有未提交的文件:${NC}"
@@ -166,10 +166,10 @@ else
 fi
 
 # ========================================
-# 8. 检查是否有其他 cp-* 分支遗留
+# 9. 检查是否有其他 cp-* 分支遗留
 # ========================================
 echo ""
-echo "8️⃣  检查其他遗留的 cp-* 分支..."
+echo "9️⃣  检查其他遗留的 cp-* 分支..."
 OTHER_CP=$(git branch --list "cp-*" 2>/dev/null | grep -v "^\*" || true)
 if [[ -n "$OTHER_CP" ]]; then
     echo -e "   ${YELLOW}⚠️  发现其他 cp-* 分支:${NC}"

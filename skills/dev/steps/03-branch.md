@@ -139,7 +139,7 @@ BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 git config branch."$BRANCH_NAME".step 3
 echo "✅ Step 3 完成 (分支创建)"
 echo ""
-echo "📝 下一步: Step 4 (写代码)"
+echo "📝 下一步: Step 4 (DoD)"
 ```
 
 ---

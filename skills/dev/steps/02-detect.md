@@ -115,16 +115,16 @@ echo "  包管理器: $PACKAGE_MANAGER"
 # 确定测试策略
 if [[ "$MAX_LEVEL" -ge 6 ]]; then
     echo "✅ 完整测试能力 (L1-L6)"
-    echo "   → Step 5: 写完整测试"
-    echo "   → Step 6: 运行三层质检"
+    echo "   → Step 6: 写完整测试"
+    echo "   → Step 7: 运行三层质检"
 elif [[ "$MAX_LEVEL" -ge 3 ]]; then
     echo "⚠️ 中等测试能力 (L1-L3)"
-    echo "   → Step 5: 写基础测试"
-    echo "   → Step 6: 运行基础质检"
+    echo "   → Step 6: 写基础测试"
+    echo "   → Step 7: 运行基础质检"
 else
     echo "⚠️ 无自动测试能力 (L0)"
-    echo "   → Step 5: 跳过"
-    echo "   → Step 6: 手动验证"
+    echo "   → Step 6: 跳过"
+    echo "   → Step 7: 手动验证"
 fi
 
 # 确定构建策略

@@ -55,57 +55,56 @@ echo "" >&2
 # 10: Learning 完成
 # 11: 已清理
 
-if [[ "$CURRENT_STEP" -lt 8 ]]; then
-    echo "  ⚠️  还没创建 PR (step=$CURRENT_STEP)" >&2
-    echo "" >&2
-    echo "  当前进度:" >&2
-    case $CURRENT_STEP in
-        0) echo "    → 准备阶段" >&2 ;;
-        1) echo "    → PRD 确定" >&2 ;;
-        2) echo "    → 项目环境检测完成" >&2 ;;
-        3) echo "    → 分支已创建" >&2 ;;
-        4) echo "    → DoD 完成，可以写代码" >&2 ;;
-        5) echo "    → 代码完成" >&2 ;;
-        6) echo "    → 测试完成" >&2 ;;
-        7) echo "    → 质检通过，可以提交" >&2 ;;
-    esac
-    echo "" >&2
-    echo "  建议: 继续完成任务或运行 /dev" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    # 警告但不阻止（step < 8 可能是正常中断）
-    exit 0
-fi
-
-if [[ "$CURRENT_STEP" -eq 8 ]]; then
-    echo "  ⚠️  PR 已创建但 CI 还未通过 (step=8)" >&2
-    echo "" >&2
-    echo "  建议: 等 CI 通过" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    # 警告但不阻止
-    exit 0
-fi
-
-if [[ "$CURRENT_STEP" -eq 9 ]]; then
-    echo "  ⚠️  CI 通过但还没完成 Learning (step=9)" >&2
-    echo "" >&2
-    echo "  建议: 完成 Learning 总结" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    # 警告但不阻止
-    exit 0
-fi
-
-if [[ "$CURRENT_STEP" -eq 10 ]]; then
-    echo "  ✅ Learning 完成 (step=10)" >&2
-    echo "" >&2
-    echo "  建议: 运行 cleanup 清理分支" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    exit 0
-fi
-
-if [[ "$CURRENT_STEP" -ge 11 ]]; then
-    echo "  ✅ 任务已完成 (step=$CURRENT_STEP)" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    exit 0
-fi
+# 使用统一的 case 语句处理所有步骤
+case $CURRENT_STEP in
+    0)
+        echo "  ⚠️  准备阶段 (step=0)" >&2
+        echo "  建议: 运行 /dev 开始任务" >&2
+        ;;
+    1)
+        echo "  ⚠️  PRD 确定 (step=1)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    2)
+        echo "  ⚠️  项目环境检测完成 (step=2)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    3)
+        echo "  ⚠️  分支已创建 (step=3)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    4)
+        echo "  ⚠️  DoD 完成，可以写代码 (step=4)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    5)
+        echo "  ⚠️  代码完成 (step=5)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    6)
+        echo "  ⚠️  测试完成 (step=6)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    7)
+        echo "  ⚠️  质检通过，可以提交 (step=7)" >&2
+        echo "  建议: 继续完成任务" >&2
+        ;;
+    8)
+        echo "  ⚠️  PR 已创建，等待 CI (step=8)" >&2
+        echo "  建议: 等 CI 通过" >&2
+        ;;
+    9)
+        echo "  ⚠️  CI 通过，等待 Learning (step=9)" >&2
+        echo "  建议: 完成 Learning 总结" >&2
+        ;;
+    10)
+        echo "  ✅ Learning 完成 (step=10)" >&2
+        echo "  建议: 运行 cleanup 清理分支" >&2
+        ;;
+    *)
+        echo "  ✅ 任务已完成 (step=$CURRENT_STEP)" >&2
+        ;;
+esac
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
 exit 0
