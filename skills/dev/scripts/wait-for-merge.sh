@@ -89,11 +89,11 @@ while [ $WAITED -lt $MAX_WAIT ]; do
         gh run list --repo "$REPO" --limit 1 --json databaseId,conclusion -q '.[0].databaseId' | xargs -I {} gh run view {} --repo "$REPO" --log-failed 2>/dev/null | tail -50 || echo "(无法获取日志)"
         echo ""
 
-        # 回退，从 Step 4 重新开始
+        # 回退到 step 3（DoD 完成），允许从 Step 4 重新开始
         CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
         if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
             git config branch."$CURRENT_BRANCH".step 3
-            echo -e "${YELLOW}  ⟲ 打回到 Step 4，重新循环 4→5→6${NC}"
+            echo -e "${YELLOW}  ⟲ step 回退到 3，从 Step 4 重新循环 4→5→6${NC}"
             echo ""
             echo -e "${YELLOW}  请继续：${NC}"
             echo -e "${YELLOW}    Step 4: 修复代码${NC}"

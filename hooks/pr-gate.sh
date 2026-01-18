@@ -216,10 +216,10 @@ if [[ $FAILED -eq 1 ]]; then
     echo "  ❌ 质检未通过，不能提交 PR" >&2
     echo "" >&2
 
-    # 回退，从 Step 4 重新开始
+    # 回退到 step 3（DoD 完成），允许从 Step 4 重新开始
     if [[ -n "$CURRENT_BRANCH" && "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
         git config branch."$CURRENT_BRANCH".step 3
-        echo "  ⟲ 打回到 Step 4，重新循环 4→5→6" >&2
+        echo "  ⟲ step 回退到 3，从 Step 4 重新循环 4→5→6" >&2
         echo "" >&2
         echo "  请继续：" >&2
         echo "    Step 4: 修复代码" >&2
