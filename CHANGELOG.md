@@ -7,14 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.36.1] - 2026-01-18
+
+### Fixed
+- 移除 cleanup.sh 中的自动部署（避免 develop 污染生产环境）
+- deploy.sh 改为手动执行，添加 `--from-main` 参数
+
 ## [7.36.0] - 2026-01-18
 
 ### Added
 - 部署机制：`scripts/deploy.sh`
   - 同步 hooks/ → ~/.claude/hooks/
   - 同步 skills/ → ~/.claude/skills/
-  - `--from-main` 参数：从 main 分支部署稳定版本
-  - **手动执行**，不自动部署（避免 develop 污染生产环境）
 
 ## [7.35.1] - 2026-01-18
 
