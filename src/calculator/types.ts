@@ -9,6 +9,8 @@ export enum Operation {
   MUL = 'MUL',
   DIV = 'DIV',
   POW = 'POW',
+  MOD = 'MOD',
+  SQRT = 'SQRT',
 }
 
 export interface CalculatorInput {
@@ -31,5 +33,7 @@ export interface ChainableCalculator {
   mul(n: number): ChainableCalculator;
   div(n: number): ChainableCalculator;
   pow(n: number): ChainableCalculator;
+  mod(n: number): ChainableCalculator;
+  sqrt(): ChainableCalculator;
   result(): CalculatorResult;
 }

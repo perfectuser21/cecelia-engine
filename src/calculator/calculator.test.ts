@@ -119,6 +119,108 @@ describe('calculate', () => {
     });
   });
 
+  describe('Modulo (MOD)', () => {
+    it('calculates modulo of two positive numbers', () => {
+      const result = calculate({ a: 10, b: 3, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(1);
+    });
+
+    it('calculates modulo with zero result', () => {
+      const result = calculate({ a: 10, b: 5, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(0);
+    });
+
+    it('handles modulo by zero', () => {
+      const result = calculate({ a: 10, b: 0, operation: Operation.MOD });
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Modulo by zero');
+      expect(result.value).toBeNaN();
+    });
+
+    it('calculates modulo with negative dividend', () => {
+      const result = calculate({ a: -10, b: 3, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(-1);
+    });
+
+    it('calculates modulo with negative divisor', () => {
+      const result = calculate({ a: 10, b: -3, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(1);
+    });
+
+    it('calculates modulo with both negative numbers', () => {
+      const result = calculate({ a: -10, b: -3, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(-1);
+    });
+
+    it('calculates modulo with decimal numbers', () => {
+      const result = calculate({ a: 10.5, b: 3, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBeCloseTo(1.5);
+    });
+
+    it('calculates modulo when dividend is smaller than divisor', () => {
+      const result = calculate({ a: 3, b: 10, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(3);
+    });
+
+    it('calculates modulo of zero', () => {
+      const result = calculate({ a: 0, b: 5, operation: Operation.MOD });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(0);
+    });
+  });
+
+  describe('Square Root (SQRT)', () => {
+    it('calculates square root of positive number', () => {
+      const result = calculate({ a: 16, b: 0, operation: Operation.SQRT });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(4);
+    });
+
+    it('calculates square root of zero', () => {
+      const result = calculate({ a: 0, b: 0, operation: Operation.SQRT });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(0);
+    });
+
+    it('calculates square root with decimal result', () => {
+      const result = calculate({ a: 2, b: 0, operation: Operation.SQRT });
+      expect(result.success).toBe(true);
+      expect(result.value).toBeCloseTo(1.414213, 5);
+    });
+
+    it('handles square root of negative number', () => {
+      const result = calculate({ a: -4, b: 0, operation: Operation.SQRT });
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Square root of negative number');
+      expect(result.value).toBeNaN();
+    });
+
+    it('calculates square root of large number', () => {
+      const result = calculate({ a: 1000000, b: 0, operation: Operation.SQRT });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(1000);
+    });
+
+    it('calculates square root of decimal', () => {
+      const result = calculate({ a: 0.25, b: 0, operation: Operation.SQRT });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(0.5);
+    });
+
+    it('ignores b parameter', () => {
+      const result = calculate({ a: 9, b: 999, operation: Operation.SQRT });
+      expect(result.success).toBe(true);
+      expect(result.value).toBe(3);
+    });
+  });
+
   describe('Power (POW)', () => {
     it('calculates positive power', () => {
       const result = calculate({ a: 2, b: 3, operation: Operation.POW });
@@ -296,6 +398,26 @@ describe('chain', () => {
       const result = chain(2).pow(3).pow(2).result();
       expect(result.value).toBe(64); // (2^3)^2 = 8^2 = 64
     });
+
+    it('chains mod operations', () => {
+      const result = chain(100).mod(30).mod(5).result();
+      expect(result.value).toBe(0); // (100 % 30) % 5 = 10 % 5 = 0
+    });
+
+    it('chains mixed operations with mod', () => {
+      const result = chain(17).add(3).mod(5).mul(2).result();
+      expect(result.value).toBe(0); // ((17 + 3) % 5) * 2 = (20 % 5) * 2 = 0 * 2 = 0
+    });
+
+    it('chains sqrt operations', () => {
+      const result = chain(256).sqrt().sqrt().result();
+      expect(result.value).toBe(4); // sqrt(sqrt(256)) = sqrt(16) = 4
+    });
+
+    it('chains sqrt with other operations', () => {
+      const result = chain(16).sqrt().add(1).mul(2).result();
+      expect(result.value).toBe(10); // (sqrt(16) + 1) * 2 = (4 + 1) * 2 = 10
+    });
   });
 
   describe('Chain Value Access', () => {
@@ -317,6 +439,25 @@ describe('chain', () => {
 
     it('continues chain after error with NaN', () => {
       const result = chain(10).div(0).mul(2).result();
+      expect(result.success).toBe(false);
+      expect(result.value).toBeNaN();
+    });
+
+    it('propagates modulo by zero error', () => {
+      const result = chain(10).mod(0).add(5).result();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Modulo by zero');
+    });
+
+    it('propagates square root of negative error', () => {
+      const result = chain(-9).sqrt().add(5).result();
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Square root of negative number');
+      expect(result.value).toBeNaN();
+    });
+
+    it('continues chain after sqrt error with NaN', () => {
+      const result = chain(-4).sqrt().mul(2).result();
       expect(result.success).toBe(false);
       expect(result.value).toBeNaN();
     });

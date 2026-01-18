@@ -75,6 +75,28 @@ export function calculate(input: CalculatorInput): CalculatorResult {
     case Operation.POW:
       value = Math.pow(a, b);
       break;
+    case Operation.MOD:
+      if (b === 0) {
+        return {
+          success: false,
+          value: NaN,
+          error: 'Modulo by zero',
+          input,
+        };
+      }
+      value = a % b;
+      break;
+    case Operation.SQRT:
+      if (a < 0) {
+        return {
+          success: false,
+          value: NaN,
+          error: 'Square root of negative number',
+          input,
+        };
+      }
+      value = Math.sqrt(a);
+      break;
     default:
       // 编译时穷举性检查：如果添加新操作但忘记处理，这里会报类型错误
       return assertNever(operation);
@@ -160,6 +182,16 @@ export function chain(initialValue: number): ChainableCalculator {
 
     pow(n: number): ChainableCalculator {
       performOp(n, Operation.POW);
+      return calculator;
+    },
+
+    mod(n: number): ChainableCalculator {
+      performOp(n, Operation.MOD);
+      return calculator;
+    },
+
+    sqrt(): ChainableCalculator {
+      performOp(0, Operation.SQRT);
       return calculator;
     },
 
