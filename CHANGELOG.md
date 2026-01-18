@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.32.0] - 2026-01-18
+
+### Added
+- Stop Hook (stop-gate.sh)：Claude 退出时检查任务完成状态
+  - 检测当前 step 进度
+  - 提示还有哪些工作没完成
+  - 建议下一步操作
+
+### 三个 Gate 完成
+1. pr-gate.sh (PreToolUse) - PR 前流程+质检
+2. GitHub CI - PR 后验证
+3. stop-gate.sh (Stop) - 退出时检查
+
 ## [7.31.0] - 2026-01-18
 
 ### Changed
