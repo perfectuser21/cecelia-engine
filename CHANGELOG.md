@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.28.0] - 2026-01-18
+
+### Changed
+- Hooks 架构简化：移除实验性状态机，保留 3 个核心 hook
+- `bash-guard.sh` 重命名为 `pr-gate.sh`，专注 PR 前检查
+- 删除 `hooks/state-machine/` 目录（实验证明不可靠）
+
+### Removed
+- 状态机相关文件：checkpoint.sh, state-tracker.sh, step-gate*.sh, stop-validator.sh
+- 实验性 PRD/DoD 文档
+
 ## [7.27.1] - 2026-01-17
 
 ### Fixed
