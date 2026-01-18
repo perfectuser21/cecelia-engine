@@ -4,15 +4,15 @@
 # ============================================================================
 #
 # 触发：拦截 gh pr create
-# 作用：提交 PR 前跑 DoD 所有检查，不过不让提
+# 作用：提交 PR 前检查流程完成情况 + 跑 DoD 检查
 #
-# DoD 检查项（按顺序）：
-#   1. typecheck  - 类型检查
-#   2. lint       - 代码规范
-#   3. format     - 格式检查
-#   4. test       - 单元测试
-#   5. build      - 构建验证
-#   6. shell      - Shell 脚本语法
+# 检查项：
+#   Part 1 - 流程检查：
+#     - .test-level.json 存在（跑过测试层级检测）
+#     - step >= 6（本地测试通过）
+#
+#   Part 2 - DoD 检查：
+#     - typecheck, lint, format, test, build, shell
 #
 # ============================================================================
 
@@ -41,12 +41,45 @@ cd "$PROJECT_ROOT"
 
 echo "" >&2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-echo "  PR GATE: DoD 质检" >&2
+echo "  PR GATE: 流程 + 质检" >&2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 echo "" >&2
 
 FAILED=0
 CHECKED=0
+
+# ===== Part 1: 流程检查 =====
+echo "  [流程检查]" >&2
+
+# 1. 检查 .test-level.json 是否存在
+echo -n "  测试层级检测... " >&2
+CHECKED=$((CHECKED + 1))
+if [[ -f "$PROJECT_ROOT/.test-level.json" ]]; then
+    LEVEL=$(jq -r '.max_level // 0' "$PROJECT_ROOT/.test-level.json" 2>/dev/null || echo "0")
+    echo "✅ (L$LEVEL)" >&2
+else
+    echo "❌ (未检测)" >&2
+    echo "    → 请先运行 detect-test-level.sh --save" >&2
+    FAILED=1
+fi
+
+# 2. 检查分支步骤
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+    echo -n "  分支步骤... " >&2
+    CHECKED=$((CHECKED + 1))
+    CURRENT_STEP=$(git config --get branch."$CURRENT_BRANCH".step 2>/dev/null || echo "0")
+    if [[ "$CURRENT_STEP" -ge 6 ]]; then
+        echo "✅ (step=$CURRENT_STEP)" >&2
+    else
+        echo "❌ (step=$CURRENT_STEP, 需要>=6)" >&2
+        echo "    → 请先完成本地测试 (Step 6)" >&2
+        FAILED=1
+    fi
+fi
+
+echo "" >&2
+echo "  [质检]" >&2
 
 # 检测项目类型
 HAS_PACKAGE_JSON=false
