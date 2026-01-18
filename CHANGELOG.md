@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.29.0] - 2026-01-18
+
+### Changed
+- PR Gate 完整实现 DoD 检查：typecheck → lint → format → test → build → shell
+- CI 补全 DoD 检查：新增 typecheck、lint、format:check
+
+### 质检覆盖
+本地 Gate 和 CI 现在都跑完整的 DoD 检查项，两层保证。
+
 ## [7.28.0] - 2026-01-18
 
 ### Changed
