@@ -769,7 +769,7 @@ CI: 最终验证
 
 Previous iterations were experimental development versions leading up to the 7.0.0 stable release.
 
-[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.12.1...HEAD
+[Unreleased]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.37.4...HEAD
 [7.12.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.12.0...v7.12.1
 [7.12.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.1...v7.12.0
 [7.11.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.11.0...v7.11.1
@@ -801,3 +801,47 @@ Previous iterations were experimental development versions leading up to the 7.0
 [7.3.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.1.0...v7.3.0
 [7.1.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.0.0...v7.1.0
 [7.0.0]: https://github.com/perfectuser21/zenithjoy-engine/releases/tag/v7.0.0
+[7.37.4]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.37.3...v7.37.4
+[7.37.3]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.37.2...v7.37.3
+[7.37.2]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.37.1...v7.37.2
+[7.37.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.37.0...v7.37.1
+[7.37.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.36.1...v7.37.0
+[7.36.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.36.0...v7.36.1
+[7.36.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.35.1...v7.36.0
+[7.35.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.35.0...v7.35.1
+[7.35.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.34.2...v7.35.0
+[7.34.2]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.34.1...v7.34.2
+[7.34.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.34.0...v7.34.1
+[7.34.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.33.0...v7.34.0
+[7.33.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.32.1...v7.33.0
+[7.32.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.32.0...v7.32.1
+[7.32.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.31.0...v7.32.0
+[7.31.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.30.0...v7.31.0
+[7.30.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.29.0...v7.30.0
+[7.29.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.28.0...v7.29.0
+[7.28.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.27.1...v7.28.0
+[7.27.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.27.0...v7.27.1
+[7.27.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.26.0...v7.27.0
+[7.26.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.25.0...v7.26.0
+[7.25.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.24.0...v7.25.0
+[7.24.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.23.0...v7.24.0
+[7.23.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.22.0...v7.23.0
+[7.22.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.21.0...v7.22.0
+[7.21.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.20.0...v7.21.0
+[7.20.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.19.0...v7.20.0
+[7.19.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.18.0...v7.19.0
+[7.18.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.17.0...v7.18.0
+[7.17.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.16.0...v7.17.0
+[7.16.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.15.1...v7.16.0
+[7.15.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.15.0...v7.15.1
+[7.15.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.8...v7.15.0
+[7.14.8]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.7...v7.14.8
+[7.14.7]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.6...v7.14.7
+[7.14.6]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.5...v7.14.6
+[7.14.5]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.4...v7.14.5
+[7.14.4]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.3...v7.14.4
+[7.14.3]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.2...v7.14.3
+[7.14.2]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.1...v7.14.2
+[7.14.1]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.14.0...v7.14.1
+[7.14.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.13.0...v7.14.0
+[7.13.0]: https://github.com/perfectuser21/zenithjoy-engine/compare/v7.12.1...v7.13.0
