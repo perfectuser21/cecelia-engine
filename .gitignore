@@ -30,3 +30,9 @@ coverage/
 # Skill validation (temporary)
 skills/dev/SKILL.md.backup
 skills/dev/VALIDATION.md
+
+# Generated state files (runtime)
+.project-info.json
+.dev-step
+.quality-report.json
+.test-level.json

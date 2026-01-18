@@ -124,23 +124,23 @@ if [[ "$IS_MONOREPO" == "true" ]]; then
     DEPENDENCY_GRAPH="{"
     first=true
     if [[ ${#PACKAGES[@]} -gt 0 ]]; then
-    for pkg in "${PACKAGES[@]}"; do
-        pkg_path=""
-        if [[ -f "packages/$pkg/package.json" ]]; then
-            pkg_path="packages/$pkg/package.json"
-        elif [[ -f "packages/${pkg#@*/}/package.json" ]]; then
-            pkg_path="packages/${pkg#@*/}/package.json"
-        fi
-
-        if [[ -n "$pkg_path" && -f "$pkg_path" ]]; then
-            deps=$(jq -r '(.dependencies // {}) + (.devDependencies // {}) | keys[]' "$pkg_path" 2>/dev/null | grep -E "^@" | sed 's/.*/"&"/' | tr '\n' ',' | sed 's/,$//')
-            if [[ -n "$deps" ]]; then
-                [[ "$first" != "true" ]] && DEPENDENCY_GRAPH+=","
-                DEPENDENCY_GRAPH+="\"$pkg\":[$deps]"
-                first=false
+        for pkg in "${PACKAGES[@]}"; do
+            pkg_path=""
+            if [[ -f "packages/$pkg/package.json" ]]; then
+                pkg_path="packages/$pkg/package.json"
+            elif [[ -f "packages/${pkg#@*/}/package.json" ]]; then
+                pkg_path="packages/${pkg#@*/}/package.json"
             fi
-        fi
-    done
+
+            if [[ -n "$pkg_path" && -f "$pkg_path" ]]; then
+                deps=$(jq -r '(.dependencies // {}) + (.devDependencies // {}) | keys[]' "$pkg_path" 2>/dev/null | grep -E "^@" | sed 's/.*/"&"/' | tr '\n' ',' | sed 's/,$//')
+                if [[ -n "$deps" ]]; then
+                    [[ "$first" != "true" ]] && DEPENDENCY_GRAPH+=","
+                    DEPENDENCY_GRAPH+="\"$pkg\":[$deps]"
+                    first=false
+                fi
+            fi
+        done
     fi
     DEPENDENCY_GRAPH+="}"
 fi
@@ -195,14 +195,27 @@ MAX_LEVEL=0
 [[ "$L6" == "true" ]] && MAX_LEVEL=6
 
 # ===== 5. 生成 JSON =====
+
+# JSON 字符串转义（防止注入）
+json_escape() {
+    local str="$1"
+    # 转义反斜杠、双引号、控制字符
+    str="${str//\\/\\\\}"
+    str="${str//\"/\\\"}"
+    str="${str//$'\n'/\\n}"
+    str="${str//$'\r'/\\r}"
+    str="${str//$'\t'/\\t}"
+    echo "$str"
+}
+
 array_to_json() {
     if [[ $# -eq 0 ]]; then
         echo "[]"
     else
         local arr=("$@")
-        printf '["%s"' "${arr[0]}"
+        printf '["%s"' "$(json_escape "${arr[0]}")"
         for ((i=1; i<${#arr[@]}; i++)); do
-            printf ',"%s"' "${arr[$i]}"
+            printf ',"%s"' "$(json_escape "${arr[$i]}")"
         done
         printf ']'
     fi
@@ -222,8 +235,8 @@ cat > "$INFO_FILE" << EOF
   "hash": "$NEW_HASH",
   "detected_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
   "project": {
-    "name": "$PROJECT_NAME",
-    "type": "$PROJECT_TYPE",
+    "name": "$(json_escape "$PROJECT_NAME")",
+    "type": "$(json_escape "$PROJECT_TYPE")",
     "is_monorepo": $IS_MONOREPO,
     "packages": $packages_json,
     "dependency_graph": $DEPENDENCY_GRAPH
