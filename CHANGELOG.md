@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.37.2] - 2026-01-18
+
+### Fixed
+- 文档一致性修复：
+  - CLAUDE.md: hooks 数量 4 个 → 5 个，添加 session-init.sh
+  - SKILL.md: scripts 列表添加 scan-change-level.sh, multi-feature.sh
+  - SKILL.md: Hooks 列表添加 project-detect.sh, session-init.sh
+  - README.md: 添加 session-init.sh 链接、SessionStart hook 配置、表格说明
+
 ## [7.37.1] - 2026-01-18
 
 ### Fixed

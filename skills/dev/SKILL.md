@@ -126,6 +126,14 @@ Step 10: Cleanup
 - 退出时检查任务完成度
 - 显示进度建议
 
+**project-detect.sh** (PostToolUse - Bash):
+- 检测项目初始化状态
+- 生成 .project-info.json
+
+**session-init.sh** (SessionStart):
+- 会话初始化，恢复上下文
+- 读取已保存的步骤状态
+
 **注意**：所有 Hook 都是引导性的，CI 是唯一强制检查。
 
 ---
@@ -164,7 +172,9 @@ skills/dev/
 └── scripts/        ← 辅助脚本
     ├── cleanup.sh
     ├── check.sh
-    └── wait-for-merge.sh
+    ├── wait-for-merge.sh
+    ├── scan-change-level.sh
+    └── multi-feature.sh
 ```
 
 **执行时按需加载对应步骤文件，减少上下文开销。**
