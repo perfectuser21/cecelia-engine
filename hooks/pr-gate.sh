@@ -215,7 +215,15 @@ if [[ $FAILED -eq 1 ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     echo "  ❌ 质检未通过，不能提交 PR" >&2
     echo "" >&2
-    echo "  请先修复问题再提交。" >&2
+
+    # 回退到 step 3（可以写代码的状态）
+    if [[ -n "$CURRENT_BRANCH" && "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+        git config branch."$CURRENT_BRANCH".step 3
+        echo "  ⟲ 已回退到 step 3" >&2
+        echo "" >&2
+        echo "  循环: 修代码(4) → 改测试(5) → 跑测试(6) → 再提PR(7)" >&2
+    fi
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
 fi

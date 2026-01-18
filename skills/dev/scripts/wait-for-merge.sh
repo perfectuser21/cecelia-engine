@@ -91,7 +91,16 @@ while [ $WAITED -lt $MAX_WAIT ]; do
         echo "CI 错误日志:"
         gh run list --repo "$REPO" --limit 1 --json databaseId,conclusion -q '.[0].databaseId' | xargs -I {} gh run view {} --repo "$REPO" --log-failed 2>/dev/null | tail -50 || echo "(无法获取日志)"
         echo ""
-        echo -e "${YELLOW}请修复后重新 push${NC}"
+
+        # 回退到 step 3
+        CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+        if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+            git config branch."$CURRENT_BRANCH".step 3
+            echo -e "${YELLOW}  ⟲ 已回退到 step 3${NC}"
+            echo ""
+            echo -e "${YELLOW}  循环: 修代码(4) → 改测试(5) → 跑测试(6) → 再提PR(7)${NC}"
+        fi
+
         exit 1
     fi
 
@@ -122,7 +131,16 @@ while [ $WAITED -lt $MAX_WAIT ]; do
                 echo "Codex 评论:"
                 echo "$CODEX_BODY" | head -30
                 echo ""
-                echo -e "${YELLOW}请根据反馈修复后重新 push${NC}"
+
+                # 回退到 step 3
+                CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+                if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+                    git config branch."$CURRENT_BRANCH".step 3
+                    echo -e "${YELLOW}  ⟲ 已回退到 step 3${NC}"
+                    echo ""
+                    echo -e "${YELLOW}  循环: 修代码(4) → 改测试(5) → 跑测试(6) → 再提PR(7)${NC}"
+                fi
+
                 exit 1
             fi
         fi
