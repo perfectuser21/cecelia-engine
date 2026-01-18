@@ -106,7 +106,7 @@ Step 10: Cleanup
 
 **pr-gate.sh** (PreToolUse - Bash):
 - 拦截 `gh pr create`
-- 检查 .test-level.json 存在
+- 检查 .project-info.json 存在
 - 检查 step >= 6
 - 运行质检（typecheck, lint, test, build）
 

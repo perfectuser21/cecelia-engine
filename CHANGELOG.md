@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.34.1] - 2026-01-18
+
+### Fixed
+- 修复文档引用不一致：
+  - SKILL.md: `.test-level.json` → `.project-info.json`
+  - 10-cleanup.md: `detect-test-level.sh` → 删除缓存触发重新检测
+  - DOD-TEMPLATE.md: `detect-test-level.sh` → `project-detect.sh`
+
 ## [7.34.0] - 2026-01-18
 
 ### Changed

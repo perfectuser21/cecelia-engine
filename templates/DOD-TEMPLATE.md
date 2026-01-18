@@ -10,7 +10,7 @@
 
 > 根据任务性质确定测试层级
 
-### 项目能力（由 detect-test-level.sh 检测）
+### 项目能力（由 project-detect.sh 自动检测）
 
 - **项目能力上限**: L<X>
 - **检测时间**: <YYYY-MM-DD>
