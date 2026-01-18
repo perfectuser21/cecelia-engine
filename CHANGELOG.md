@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.37.0] - 2026-01-18
+
+### Added
+- `session-init.sh`: 会话初始化 Hook（Notification）
+  - 显示项目信息、分支状态、测试能力
+  - 进行中任务显示 step 和下一步
+  - 环境检查（gh, jq）
+
 ## [7.36.1] - 2026-01-18
 
 ### Fixed
