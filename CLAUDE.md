@@ -51,6 +51,8 @@ zenithjoy-engine/
 │   ├── LEARNINGS.md       # 开发经验
 │   └── INTERFACE-SPEC.md  # 接口规范
 ├── templates/       # 文档模板
+├── scripts/         # 部署脚本
+│   └── deploy.sh    # 部署到 ~/.claude/
 ├── .github/         # CI 配置
 ├── n8n/             # n8n 工作流
 └── src/             # 代码

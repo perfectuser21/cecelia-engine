@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.36.0] - 2026-01-18
+
+### Added
+- 部署机制：`scripts/deploy.sh`
+  - 同步 hooks/ → ~/.claude/hooks/
+  - 同步 skills/ → ~/.claude/skills/
+  - 在 cleanup 时自动执行（仅限 zenithjoy-engine）
+- 解决了源码与运行时不同步的问题
+
 ## [7.35.1] - 2026-01-18
 
 ### Fixed

@@ -189,6 +189,24 @@ else
 fi
 
 # ========================================
+# 10. 部署到 ~/.claude/（仅限 zenithjoy-engine）
+# ========================================
+echo ""
+echo "🔟 检查是否需要部署..."
+PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+if [[ -f "$PROJECT_ROOT/scripts/deploy.sh" ]]; then
+    echo "   → 检测到 zenithjoy-engine，执行部署..."
+    if bash "$PROJECT_ROOT/scripts/deploy.sh"; then
+        echo -e "   ${GREEN}✅ 部署完成${NC}"
+    else
+        echo -e "   ${YELLOW}⚠️  部署失败${NC}"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+else
+    echo -e "   ${GREEN}✓${NC} 非 engine 项目，跳过部署"
+fi
+
+# ========================================
 # 总结
 # ========================================
 echo ""
