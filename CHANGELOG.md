@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.40.0] - 2026-01-18
+
+### Fixed
+- **[CRITICAL]** 从 git 移除 node_modules（1038 个文件，占仓库 95%）
+- **[CRITICAL]** `project-detect.sh`: 添加 JSON 字符串转义，防止项目名含引号时破坏 JSON
+- **[CRITICAL]** `project-detect.sh`: 修复 for 循环缩进，Monorepo 依赖图生成逻辑正确
+- **[HIGH]** `session-init.sh`: 修复步骤映射错位，"下一步"提示与 11 步流程对齐
+- **[HIGH]** `.git/hooks/pre-commit`: 修复新分支无上游时的语法错误
+- `.gitignore`: 添加生成文件忽略（.project-info.json, .dev-step, .quality-report.json, .test-level.json）
+
+### Changed
+- 版本号跳跃到 7.40.0 标记重大修复（仓库瘦身 95%）
+
 ## [7.39.4] - 2026-01-18
 
 ### Fixed
