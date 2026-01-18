@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.37.1] - 2026-01-18
+
+### Fixed
+- `pr-gate.sh`: 修复跨仓库文件写入时 hook 检查错误仓库的 bug
+  - step=0 时质检失败不再错误地设为 step=3
+  - 只有 step >= 3（DoD 已完成）时才回退到 step=3 重新循环
+  - step < 3 时提示运行 /dev 完成 PRD 和 DoD
+
 ## [7.37.0] - 2026-01-18
 
 ### Added

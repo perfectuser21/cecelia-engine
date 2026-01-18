@@ -217,17 +217,25 @@ if [[ $FAILED -eq 1 ]]; then
     echo "" >&2
 
     # 回退到 step 3（DoD 完成），允许从 Step 4 重新开始
+    # 只有 step >= 3 时才回退，否则说明 DoD 还没完成
     if [[ -n "$CURRENT_BRANCH" && "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
-        git config branch."$CURRENT_BRANCH".step 3
-        echo "  ⟲ step 回退到 3，从 Step 4 重新循环 4→5→6" >&2
-        echo "" >&2
-        echo "  请继续：" >&2
-        echo "    Step 4: 修复代码" >&2
-        echo "    Step 5: 更新测试" >&2
-        echo "    Step 6: 跑测试通过" >&2
-        echo "    然后再提 PR" >&2
-        echo "" >&2
-        echo "  注意：DoD 不变，只改代码。" >&2
+        CURRENT_STEP=$(git config --get branch."$CURRENT_BRANCH".step 2>/dev/null || echo "0")
+        if [[ "$CURRENT_STEP" -ge 3 ]]; then
+            git config branch."$CURRENT_BRANCH".step 3
+            echo "  ⟲ step 回退到 3，从 Step 4 重新循环 4→5→6" >&2
+            echo "" >&2
+            echo "  请继续：" >&2
+            echo "    Step 4: 修复代码" >&2
+            echo "    Step 5: 更新测试" >&2
+            echo "    Step 6: 跑测试通过" >&2
+            echo "    然后再提 PR" >&2
+            echo "" >&2
+            echo "  注意：DoD 不变，只改代码。" >&2
+        else
+            echo "  请先运行 /dev 完成 PRD 和 DoD（Step 1-3）" >&2
+            echo "" >&2
+            echo "  [SKILL_REQUIRED: dev]" >&2
+        fi
     fi
 
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
