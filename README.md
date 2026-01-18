@@ -33,6 +33,7 @@ export ZENITHJOY_ENGINE="/path/to/zenithjoy-engine"
 ln -sf $ZENITHJOY_ENGINE/hooks/branch-protect.sh ~/.claude/hooks/
 ln -sf $ZENITHJOY_ENGINE/hooks/pr-gate.sh ~/.claude/hooks/
 ln -sf $ZENITHJOY_ENGINE/hooks/project-detect.sh ~/.claude/hooks/
+ln -sf $ZENITHJOY_ENGINE/hooks/session-init.sh ~/.claude/hooks/
 ln -sf $ZENITHJOY_ENGINE/hooks/stop-gate.sh ~/.claude/hooks/
 ```
 
@@ -71,6 +72,12 @@ cp $ZENITHJOY_ENGINE/.github/workflows/ci.yml your-project/.github/workflows/
         "hooks": [{"type": "command", "command": "~/.claude/hooks/project-detect.sh"}]
       }
     ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [{"type": "command", "command": "~/.claude/hooks/session-init.sh"}]
+      }
+    ],
     "Stop": [
       {
         "matcher": "",
@@ -86,6 +93,7 @@ cp $ZENITHJOY_ENGINE/.github/workflows/ci.yml your-project/.github/workflows/
 | branch-protect.sh | PreToolUse (Write/Edit) | 引导在 cp-* 或 feature/* 分支修改代码 |
 | pr-gate.sh | PreToolUse (Bash) | 拦截 gh pr create，检查流程 + 质检 |
 | project-detect.sh | PostToolUse (Bash) | 检测项目初始化状态 |
+| session-init.sh | SessionStart | 会话初始化，恢复上下文 |
 | stop-gate.sh | Stop | 退出时检查任务完成度 |
 
 ## Usage

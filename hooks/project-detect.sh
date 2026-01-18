@@ -111,6 +111,7 @@ if [[ "$IS_MONOREPO" == "true" ]]; then
     # 构建依赖图
     DEPENDENCY_GRAPH="{"
     first=true
+    if [[ ${#PACKAGES[@]} -gt 0 ]]; then
     for pkg in "${PACKAGES[@]}"; do
         pkg_path=""
         if [[ -f "packages/$pkg/package.json" ]]; then
@@ -120,7 +121,7 @@ if [[ "$IS_MONOREPO" == "true" ]]; then
         fi
 
         if [[ -n "$pkg_path" && -f "$pkg_path" ]]; then
-            deps=$(jq -r '(.dependencies // {}) + (.devDependencies // {}) | keys[]' "$pkg_path" 2>/dev/null | grep -E "^@" | tr '\n' ',' | sed 's/,$//')
+            deps=$(jq -r '(.dependencies // {}) + (.devDependencies // {}) | keys[]' "$pkg_path" 2>/dev/null | grep -E "^@" | sed 's/.*/"&"/' | tr '\n' ',' | sed 's/,$//')
             if [[ -n "$deps" ]]; then
                 [[ "$first" != "true" ]] && DEPENDENCY_GRAPH+=","
                 DEPENDENCY_GRAPH+="\"$pkg\":[$deps]"
@@ -128,6 +129,7 @@ if [[ "$IS_MONOREPO" == "true" ]]; then
             fi
         fi
     done
+    fi
     DEPENDENCY_GRAPH+="}"
 fi
 
@@ -182,10 +184,10 @@ MAX_LEVEL=0
 
 # ===== 5. 生成 JSON =====
 array_to_json() {
-    local arr=("$@")
-    if [[ ${#arr[@]} -eq 0 ]]; then
+    if [[ $# -eq 0 ]]; then
         echo "[]"
     else
+        local arr=("$@")
         printf '["%s"' "${arr[0]}"
         for ((i=1; i<${#arr[@]}; i++)); do
             printf ',"%s"' "${arr[$i]}"
@@ -223,12 +225,12 @@ cat > "$INFO_FILE" << EOF
     "L5": $L5,
     "L6": $L6,
     "details": {
-      "L1": $(array_to_json "${L1_DETAILS[@]}"),
-      "L2": $(array_to_json "${L2_DETAILS[@]}"),
-      "L3": $(array_to_json "${L3_DETAILS[@]}"),
-      "L4": $(array_to_json "${L4_DETAILS[@]}"),
-      "L5": $(array_to_json "${L5_DETAILS[@]}"),
-      "L6": $(array_to_json "${L6_DETAILS[@]}")
+      "L1": $(array_to_json ${L1_DETAILS[@]+"${L1_DETAILS[@]}"}),
+      "L2": $(array_to_json ${L2_DETAILS[@]+"${L2_DETAILS[@]}"}),
+      "L3": $(array_to_json ${L3_DETAILS[@]+"${L3_DETAILS[@]}"}),
+      "L4": $(array_to_json ${L4_DETAILS[@]+"${L4_DETAILS[@]}"}),
+      "L5": $(array_to_json ${L5_DETAILS[@]+"${L5_DETAILS[@]}"}),
+      "L6": $(array_to_json ${L6_DETAILS[@]+"${L6_DETAILS[@]}"})
     }
   }
 }

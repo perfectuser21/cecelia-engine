@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ============================================================================
 # Stop Hook: 任务完成检查
 # ============================================================================
@@ -12,10 +12,10 @@
 #
 # ============================================================================
 
-set -e
+set -euo pipefail
 
-# 读取输入
-INPUT=$(cat)
+# 读取输入（丢弃，stop hook 不需要）
+cat > /dev/null
 
 # 获取项目根目录
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
@@ -25,7 +25,7 @@ cd "$PROJECT_ROOT"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
 
 # 只检查 cp-* 分支
-if [[ ! "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+if [[ ! "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9] ]]; then
     # 不在 cp-* 分支，直接放行
     exit 0
 fi
