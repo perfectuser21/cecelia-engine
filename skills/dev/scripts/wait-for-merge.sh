@@ -76,8 +76,13 @@ while [ $WAITED -lt $MAX_WAIT ]; do
     # 2. 检查 CI 状态
     # ========================================
     # 尝试获取 CI 状态（可能因权限失败）
-    CI_CONCLUSION=$(gh api "repos/$REPO/commits/$(gh pr view $PR_URL --json headRefOid -q '.headRefOid')/check-runs" \
-        --jq '.check_runs | map(select(.conclusion != null)) | .[0].conclusion // "pending"' 2>/dev/null || echo "unknown")
+    HEAD_REF=$(gh pr view "$PR_URL" --json headRefOid -q '.headRefOid' 2>/dev/null || echo "")
+    if [ -n "$HEAD_REF" ]; then
+        CI_CONCLUSION=$(gh api "repos/$REPO/commits/$HEAD_REF/check-runs" \
+            --jq '.check_runs | map(select(.conclusion != null)) | .[0].conclusion // "pending"' 2>/dev/null || echo "unknown")
+    else
+        CI_CONCLUSION="unknown"
+    fi
 
     if [ "$CI_CONCLUSION" = "failure" ]; then
         echo ""

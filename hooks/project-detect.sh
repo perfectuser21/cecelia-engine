@@ -111,6 +111,7 @@ if [[ "$IS_MONOREPO" == "true" ]]; then
     # 构建依赖图
     DEPENDENCY_GRAPH="{"
     first=true
+    if [[ ${#PACKAGES[@]} -gt 0 ]]; then
     for pkg in "${PACKAGES[@]}"; do
         pkg_path=""
         if [[ -f "packages/$pkg/package.json" ]]; then
@@ -128,6 +129,7 @@ if [[ "$IS_MONOREPO" == "true" ]]; then
             fi
         fi
     done
+    fi
     DEPENDENCY_GRAPH+="}"
 fi
 
@@ -223,12 +225,12 @@ cat > "$INFO_FILE" << EOF
     "L5": $L5,
     "L6": $L6,
     "details": {
-      "L1": $(array_to_json "${L1_DETAILS[@]}"),
-      "L2": $(array_to_json "${L2_DETAILS[@]}"),
-      "L3": $(array_to_json "${L3_DETAILS[@]}"),
-      "L4": $(array_to_json "${L4_DETAILS[@]}"),
-      "L5": $(array_to_json "${L5_DETAILS[@]}"),
-      "L6": $(array_to_json "${L6_DETAILS[@]}")
+      "L1": $(array_to_json ${L1_DETAILS[@]+"${L1_DETAILS[@]}"}),
+      "L2": $(array_to_json ${L2_DETAILS[@]+"${L2_DETAILS[@]}"}),
+      "L3": $(array_to_json ${L3_DETAILS[@]+"${L3_DETAILS[@]}"}),
+      "L4": $(array_to_json ${L4_DETAILS[@]+"${L4_DETAILS[@]}"}),
+      "L5": $(array_to_json ${L5_DETAILS[@]+"${L5_DETAILS[@]}"}),
+      "L6": $(array_to_json ${L6_DETAILS[@]+"${L6_DETAILS[@]}"})
     }
   }
 }

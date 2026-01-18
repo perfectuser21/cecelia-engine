@@ -440,5 +440,5 @@ DASHBOARD_URL=http://dashboard:3000/api/cecilia
 
 - [x] `templates/prd-schema.json` - PRD 格式定义
 - [x] `templates/prd-example.json` - PRD 示例
-- [ ] `n8n/workflows/prd-executor.json` - N8N 工作流模板
+- [x] `n8n/workflows/prd-executor.json` - N8N 工作流模板
 - [x] `docs/INTERFACE-SPEC.md` - 本文档

@@ -34,6 +34,7 @@ echo ""
 
 FAILED=0
 WARNINGS=0
+CHECKOUT_FAILED=0
 
 # ========================================
 # 1. 检查当前分支
@@ -44,10 +45,13 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$CURRENT_BRANCH" == "$CP_BRANCH" ]]; then
     echo -e "   ${YELLOW}⚠️  还在 $CP_BRANCH 分支，需要切换${NC}"
     echo "   → 切换到 $BASE_BRANCH..."
-    git checkout "$BASE_BRANCH" 2>/dev/null || {
-        echo -e "   ${RED}❌ 切换失败${NC}"
+    if git checkout "$BASE_BRANCH" 2>/dev/null; then
+        CURRENT_BRANCH="$BASE_BRANCH"
+    else
+        echo -e "   ${RED}❌ 切换失败，无法继续删除本地分支${NC}"
         FAILED=1
-    }
+        CHECKOUT_FAILED=1
+    fi
 else
     echo -e "   ${GREEN}✅ 当前在 $CURRENT_BRANCH${NC}"
 fi
@@ -69,7 +73,9 @@ fi
 # ========================================
 echo ""
 echo "3️⃣  检查本地 cp-* 分支..."
-if git branch --list "$CP_BRANCH" | grep -q "$CP_BRANCH"; then
+if [[ $CHECKOUT_FAILED -eq 1 ]]; then
+    echo -e "   ${YELLOW}⚠️  跳过（checkout 失败，无法删除当前所在分支）${NC}"
+elif git branch --list "$CP_BRANCH" | grep -q "$CP_BRANCH"; then
     echo "   → 删除本地分支 $CP_BRANCH..."
     if git branch -D "$CP_BRANCH" 2>/dev/null; then
         echo -e "   ${GREEN}✅ 已删除本地分支${NC}"

@@ -199,7 +199,7 @@ case $ACTION in
 
     # 切回原分支
     if [ -n "$ORIGINAL_BRANCH" ]; then
-      git checkout "$ORIGINAL_BRANCH" --quiet 2>/dev/null || git checkout main --quiet
+      git checkout "$ORIGINAL_BRANCH" --quiet 2>/dev/null || git checkout develop --quiet 2>/dev/null || true
     fi
 
     echo ""

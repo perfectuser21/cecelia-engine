@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.37.4] - 2026-01-18
+
+### Fixed
+- `project-detect.sh`: 修复空数组在 `set -u` 下报错
+  - 循环前检查 `${#PACKAGES[@]} -gt 0`
+  - 使用 `${arr[@]+"${arr[@]}"}` 安全展开空数组
+- `multi-feature.sh`: fallback 分支从 main 改为 develop
+- `wait-for-merge.sh`: 嵌套命令失败未处理，拆分为独立步骤
+- `check.sh`: 未完成检查时静默退出，添加 else 分支 exit 1
+- `cleanup.sh`: checkout 失败后跳过删除本地分支操作
+- `pr-gate.sh`, `stop-gate.sh`: 统一 `set -euo pipefail`，添加空变量保护
+- `INTERFACE-SPEC.md`: prd-executor.json 标记为已完成
+
 ## [7.37.3] - 2026-01-18
 
 ### Fixed

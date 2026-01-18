@@ -246,4 +246,11 @@ if [[ "$COMPLETED_COUNT" -eq "$REQUIRED_COUNT" ]]; then
   echo ""
   echo "🎉 所有必要节点已完成！"
   exit 0
+else
+  # COMPLETED_COUNT < REQUIRED_COUNT 但 MISSING_COMMANDS 为空
+  # 这种情况可能是网络问题导致无法确认某些状态
+  echo ""
+  echo "⚠️ 完成度不足 ($COMPLETED_COUNT/$REQUIRED_COUNT)，但无法确定具体缺失项"
+  echo "   请手动检查远程分支状态和网络连接"
+  exit 1
 fi

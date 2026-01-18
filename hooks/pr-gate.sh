@@ -16,7 +16,7 @@
 #
 # ============================================================================
 
-set -e
+set -euo pipefail
 
 INPUT=$(cat)
 
@@ -70,7 +70,7 @@ fi
 
 # 2. 检查分支步骤
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+if [[ "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9] ]]; then
     echo -n "  分支步骤... " >&2
     CHECKED=$((CHECKED + 1))
     CURRENT_STEP=$(git config --get branch."$CURRENT_BRANCH".step 2>/dev/null || echo "0")
@@ -186,8 +186,8 @@ if [[ "$HAS_GO" == "true" ]]; then
 fi
 
 # ===== Shell 脚本检查（所有项目）=====
-SHELL_FILES=$(find "$PROJECT_ROOT" -name "*.sh" -type f -not -path "*/node_modules/*" 2>/dev/null)
-if [[ -n "$SHELL_FILES" ]]; then
+SHELL_FILES=$(find "$PROJECT_ROOT" -name "*.sh" -type f -not -path "*/node_modules/*" 2>/dev/null || true)
+if [[ -n "${SHELL_FILES:-}" ]]; then
     echo -n "  Shell syntax... " >&2
     CHECKED=$((CHECKED + 1))
     SHELL_FAILED=0
@@ -218,7 +218,7 @@ if [[ $FAILED -eq 1 ]]; then
 
     # 回退到 step 3（DoD 完成），允许从 Step 4 重新开始
     # 只有 step >= 3 时才回退，否则说明 DoD 还没完成
-    if [[ -n "$CURRENT_BRANCH" && "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+    if [[ -n "${CURRENT_BRANCH:-}" && "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9] ]]; then
         CURRENT_STEP=$(git config --get branch."$CURRENT_BRANCH".step 2>/dev/null || echo "0")
         if [[ "$CURRENT_STEP" -ge 3 ]]; then
             git config branch."$CURRENT_BRANCH".step 3
