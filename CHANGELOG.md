@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.31.0] - 2026-01-18
+
+### Changed
+- pr-gate.sh 增加流程检查：
+  - 检查 .test-level.json 是否存在（证明跑过检测）
+  - 检查分支 step >= 6（本地测试通过）
+- 现在 PR Gate 分两部分：流程检查 + 质检
+
 ## [7.30.0] - 2026-01-18
 
 ### Added
