@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.33.0] - 2026-01-18
+
+### Added
+- 自动扫描质检层级脚本 `scan-change-level.sh`
+  - `--desc "描述"`: 根据需求描述推断层级
+  - `--staged`: 扫描已暂存文件
+  - 默认: 扫描 git diff 改动
+- DoD 阶段自动扫描：根据 PRD 描述推断质检层级
+- 本地测试阶段验证：扫描实际改动确认层级
+
+### 自动推断规则
+| 关键词 | 层级 |
+|--------|------|
+| 安全/认证/密码 | L6 |
+| 性能/优化/缓存 | L5 |
+| 页面/组件/UI | L4 |
+| API/接口/数据库 | L3 |
+| 函数/工具/逻辑 | L2 |
+| 文档/配置 | L1 |
+
 ## [7.32.1] - 2026-01-18
 
 ### Fixed

@@ -10,7 +10,39 @@ git config branch."$BRANCH_NAME".step 6
 
 ---
 
-## 运行测试
+## 6.1 扫描实际改动
+
+代码写完后，扫描实际改动确认质检层级。
+
+```bash
+# 扫描已暂存的改动
+bash "$ZENITHJOY_ENGINE/skills/dev/scripts/scan-change-level.sh" --staged
+
+# 或扫描所有改动
+bash "$ZENITHJOY_ENGINE/skills/dev/scripts/scan-change-level.sh"
+```
+
+**输出示例**：
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  改动扫描结果
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  改动文件: 5 个
+  建议层级: L3
+
+  判断依据:
+    - API/服务: src/api/users.ts
+    - 代码文件: src/utils/helper.ts
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**对比 DoD 预估**：如果实际层级 > 预估层级，需要补测试。
+
+---
+
+## 6.2 运行测试
 
 ```bash
 npm test
