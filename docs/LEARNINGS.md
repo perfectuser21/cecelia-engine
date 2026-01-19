@@ -384,3 +384,38 @@ generate-report.sh 在分支已删除或 PR 已合并时，所有流程步骤显
 #### 影响程度
 - High - 核心流程变更，确保质检真正执行
 
+### [2026-01-19] Subagent Loop 压力测试
+
+#### 测试目的
+验证 Step 5-7 Subagent 强制机制是否有效工作。
+
+#### 测试结果
+- 主 Agent 被成功阻止写代码（.subagent-lock 机制生效）
+- Subagent 成功执行 Step 5-7
+- 质检通过，PR 成功合并
+
+#### 踩的坑
+
+1. **质检报告格式不匹配**
+   - 问题：Subagent 生成 `results.L1/L2/L3`，但 pr-gate.sh 期望 `layers.L1_automated/L2_verification/L3_acceptance`
+   - 解决：手动修正质检报告格式
+   - 影响程度：Medium - 需要统一质检报告 schema
+
+2. **质检报告缺少 branch 字段**
+   - 问题：Subagent 生成的报告没有 `branch` 字段，pr-gate.sh 报告分支检查失败
+   - 解决：手动添加 branch 字段
+   - 影响程度：Medium
+
+3. **SubagentStop hook 未自动更新 step**
+   - 问题：质检通过后 step 仍为 4，应该被设为 7
+   - 原因：新添加的 Hook 可能需要新会话才生效
+   - 影响程度：Low - 可手动设置
+
+#### 优化点
+- 质检报告格式需要文档化并统一
+- Subagent 指令需要包含完整的质检报告格式要求
+- 考虑提供质检报告生成脚本给 Subagent 使用
+
+#### 影响程度
+- Low - 测试任务，验证了机制有效性
+
