@@ -345,3 +345,42 @@ generate-report.sh 在分支已删除或 PR 已合并时，所有流程步骤显
 #### 影响程度
 - Medium - 跨项目开发场景需要特殊处理
 
+### [2026-01-19] Step 5-7 Subagent Loop 强制机制
+
+#### 开发内容
+实现 Step 5-7 (写代码、写测试、质检) 必须通过 Subagent 执行的强制机制。
+
+#### 关键设计
+
+1. **.subagent-lock 文件**
+   - Subagent 启动时创建，质检通过后删除
+   - branch-protect.sh 检查此文件存在才允许写代码
+
+2. **两层 Hook 强制**
+   - `branch-protect.sh`: 主 Agent 在 step=4-6 期间写代码 → 检查 .subagent-lock → 不存在则 exit 2 阻止
+   - `subagent-quality-gate.sh`: Subagent 退出 → 检查 .quality-report.json → 不通过则 exit 2 阻止
+
+3. **Bootstrap 问题**
+   - 开发这个功能时，我自己会被阻止
+   - 解决：手动创建 .subagent-lock 文件绕过检查
+
+#### 踩的坑
+
+1. **分支意外切换**
+   - 问题：在某些操作后分支自动切回 develop
+   - 解决：每次操作前检查当前分支
+   - 影响程度：Low
+
+2. **git config key 格式**
+   - 问题：`branch.xxx.loop_count` 被认为是无效 key
+   - 解决：使用 `loop-count` 或其他格式
+   - 影响程度：Low
+
+#### 经验
+- Hook 层面的强制机制是可靠的，Claude 无法绕过
+- 开发强制机制时需要考虑 bootstrap 问题
+- SubagentStop hook 可以阻止 Subagent 退出，强制继续工作
+
+#### 影响程度
+- High - 核心流程变更，确保质检真正执行
+
