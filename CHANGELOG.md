@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.42.0] - 2026-01-19
+
+### Added
+- **测试任务模式**：PRD 标题含 `[TEST]` 前缀时自动启用
+  - Step 1: 检测 `[TEST]` 前缀，设置 `is-test=true` 标记
+  - Step 8: 跳过 CHANGELOG 和版本号更新，commit 用 `test:` 前缀
+  - Step 10: Learning 可选（只记录流程经验）
+  - Step 11: 额外检查残留（CHANGELOG、版本号、测试代码）
+  - SKILL.md: 新增"测试任务模式"文档
+
+### Fixed
+- 防止测试任务产生真实版本记录，避免"版本号增加但功能被删除"的矛盾
+
 ## [7.41.0] - 2026-01-18
 
 ### Fixed

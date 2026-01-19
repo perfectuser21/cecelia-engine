@@ -21,6 +21,24 @@ git config branch."$BRANCH_NAME".step 10
 
 ---
 
+## 测试任务的 Learning
+
+```bash
+IS_TEST=$(git config branch."$BRANCH_NAME".is-test 2>/dev/null)
+```
+
+**测试任务的 Learning 是可选的**：
+
+| 情况 | 处理 |
+|------|------|
+| 发现了流程/工具的问题 | 记录到 Engine LEARNINGS |
+| 流程顺畅无问题 | 可以跳过 Learning |
+| 测试代码后续会删除 | 不要记录功能相关的经验 |
+
+**测试任务只记录"流程经验"，不记录"功能经验"**。
+
+---
+
 ## 记录位置
 
 ### Engine 层面

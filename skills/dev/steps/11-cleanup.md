@@ -10,6 +10,33 @@ git config branch."$BRANCH_NAME".step 11
 
 ---
 
+## 测试任务的 Cleanup
+
+```bash
+IS_TEST=$(git config branch."$BRANCH_NAME".is-test 2>/dev/null)
+```
+
+**测试任务需要额外检查**：
+
+| 检查项 | 说明 |
+|--------|------|
+| CHANGELOG.md | 确认没有测试相关的版本记录 |
+| package.json | 确认版本号没有因测试而增加 |
+| LEARNINGS.md | 确认只记录了流程经验（如有） |
+| 测试代码 | 确认临时测试代码已删除 |
+
+```bash
+if [ "$IS_TEST" = "true" ]; then
+    echo "🧪 测试任务 Cleanup 检查清单："
+    echo "  - [ ] CHANGELOG.md 无测试版本记录"
+    echo "  - [ ] package.json 版本号未变"
+    echo "  - [ ] 测试代码已删除"
+    echo "  - [ ] is-test 标记将被清理"
+fi
+```
+
+---
+
 ## 使用 cleanup 脚本（推荐）
 
 ```bash

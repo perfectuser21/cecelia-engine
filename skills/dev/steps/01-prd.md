@@ -93,11 +93,37 @@ Claude 直接使用 PRD → step 1
 
 ---
 
+## 测试任务检测
+
+**如果 PRD 标题包含 `[TEST]` 前缀，标记为测试任务**：
+
+```bash
+# 检测 PRD 标题是否包含 [TEST]
+if [[ "$PRD_TITLE" == *"[TEST]"* ]]; then
+    git config branch."$BRANCH_NAME".is-test true
+    echo "🧪 检测到测试任务，已设置 is-test=true"
+fi
+```
+
+**测试任务的特殊处理**：
+- Step 8: 跳过 CHANGELOG 和版本号更新
+- Step 10: Learning 可选（只记录流程经验）
+- Step 11: Cleanup 时提示检查是否有残留
+
+---
+
 ## 用户确认后
 
 ```bash
 BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 git config branch."$BRANCH_NAME".step 1
+
+# 检测测试任务
+if [[ "$PRD_TITLE" == *"[TEST]"* ]]; then
+    git config branch."$BRANCH_NAME".is-test true
+    echo "🧪 测试任务模式"
+fi
+
 echo "✅ Step 1 完成 (PRD 确认)"
 ```
 
