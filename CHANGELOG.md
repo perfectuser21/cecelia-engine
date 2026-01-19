@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.6] - 2026-01-19
+
+### Fixed
+- **SubagentStop Hook**: 修复 T9 跨项目漏洞，优先使用 INPUT.cwd 定位项目
+  - 方案 1: 从 INPUT JSON 读取 cwd 字段（最可靠）
+  - 方案 2: git rev-parse --show-toplevel
+  - 方案 3: .subagent-lock 扫描（降级，会 warning）
+  - 方案 4: 无法定位则放行
+
 ## [7.44.5] - 2026-01-19
 
 ### Added

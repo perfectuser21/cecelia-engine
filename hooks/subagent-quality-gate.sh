@@ -25,9 +25,39 @@ echo "========================================" >> "$DEBUG_LOG"
 INPUT=$(cat)
 echo "INPUT: $INPUT" >> "$DEBUG_LOG"
 
-# 获取项目根目录
-PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+# ===== 获取项目根目录 =====
+# 方法 1: 从 INPUT 的 cwd 字段获取（最可靠）
+INPUT_CWD=$(echo "$INPUT" | jq -r '.cwd // empty' 2>/dev/null || echo "")
+if [[ -n "$INPUT_CWD" && -d "$INPUT_CWD" ]]; then
+    PROJECT_ROOT="$INPUT_CWD"
+    echo "Found project via INPUT.cwd: $PROJECT_ROOT" >> "$DEBUG_LOG"
+fi
+
+# 方法 2: 尝试 git
+if [[ -z "$PROJECT_ROOT" ]]; then
+    PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "")
+fi
+
+# 方法 3: 如果 git 失败，扫描已知项目目录找 .subagent-lock（降级方案）
+if [[ -z "$PROJECT_ROOT" || "$PROJECT_ROOT" == "/" || "$PROJECT_ROOT" == "/dev" ]]; then
+    echo "Warning: Falling back to .subagent-lock scan (may be inaccurate)" >> "$DEBUG_LOG"
+    for dir in /home/xx/dev/*/; do
+        if [[ -f "${dir}.subagent-lock" ]]; then
+            PROJECT_ROOT="${dir%/}"
+            echo "Found project via .subagent-lock: $PROJECT_ROOT" >> "$DEBUG_LOG"
+            break
+        fi
+    done
+fi
+
+# 方法 4: 如果还是没找到，放行
+if [[ -z "$PROJECT_ROOT" || ! -d "$PROJECT_ROOT" ]]; then
+    echo "Cannot determine project root, allowing exit" >> "$DEBUG_LOG"
+    exit 0
+fi
+
 cd "$PROJECT_ROOT"
+echo "PROJECT_ROOT: $PROJECT_ROOT" >> "$DEBUG_LOG"
 
 # 获取当前分支
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
