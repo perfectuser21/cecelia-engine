@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.7] - 2026-01-19
+
+### Security
+- **T6 修复**: 使用签名证明文件替代 git config loop-count，防止手动伪造
+  - `subagent-quality-gate.sh`: 生成 `.subagent-proof.json`，包含 SHA256 签名
+  - `pr-gate.sh`: 验证 proof 文件签名，签名无效则拒绝 PR
+  - 签名算法: `sha256(branch|timestamp|quality_hash|loop_count|secret)`
+
 ## [7.44.6] - 2026-01-19
 
 ### Fixed

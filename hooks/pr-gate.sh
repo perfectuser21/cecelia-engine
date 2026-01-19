@@ -90,17 +90,48 @@ if [[ "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
     fi
 fi
 
-# 3. 检查 Subagent 执行记录（loop-count）
+# 3. 检查 Subagent 执行证明（.subagent-proof.json）
 if [[ "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
     echo -n "  Subagent 执行... " >&2
     CHECKED=$((CHECKED + 1))
-    LOOP_COUNT=$(git config --get branch."$CURRENT_BRANCH".loop-count 2>/dev/null || echo "")
-    if [[ -n "$LOOP_COUNT" ]]; then
-        echo "✅ (loop=$LOOP_COUNT)" >&2
+    PROOF_FILE="$PROJECT_ROOT/.subagent-proof.json"
+
+    if [[ -f "$PROOF_FILE" ]]; then
+        # 读取 proof 文件
+        PROOF_BRANCH=$(jq -r '.branch' "$PROOF_FILE" 2>/dev/null || echo "")
+        PROOF_TIMESTAMP=$(jq -r '.timestamp' "$PROOF_FILE" 2>/dev/null || echo "")
+        PROOF_LOOP=$(jq -r '.loop_count' "$PROOF_FILE" 2>/dev/null || echo "0")
+        PROOF_QUALITY_HASH=$(jq -r '.quality_hash' "$PROOF_FILE" 2>/dev/null || echo "")
+        PROOF_SIGNATURE=$(jq -r '.signature' "$PROOF_FILE" 2>/dev/null || echo "")
+
+        # 验证分支匹配
+        if [[ "$PROOF_BRANCH" != "$CURRENT_BRANCH" ]]; then
+            echo "❌ (proof 分支不匹配: $PROOF_BRANCH)" >&2
+            echo "    → 这是其他分支的 proof，请重新运行质检" >&2
+            FAILED=1
+        else
+            # 重新计算签名验证
+            QUALITY_REPORT="$PROJECT_ROOT/.quality-report.json"
+            CURRENT_QUALITY_HASH=$(sha256sum "$QUALITY_REPORT" 2>/dev/null | cut -d' ' -f1 || echo "unknown")
+            PROOF_SECRET="zenithjoy-engine-proof-v1"
+            EXPECTED_SIG=$(echo -n "${PROOF_BRANCH}|${PROOF_TIMESTAMP}|${PROOF_QUALITY_HASH}|${PROOF_LOOP}|${PROOF_SECRET}" | sha256sum | cut -d' ' -f1)
+
+            if [[ "$PROOF_SIGNATURE" != "$EXPECTED_SIG" ]]; then
+                echo "❌ (签名无效)" >&2
+                echo "    → proof 文件被篡改或伪造" >&2
+                FAILED=1
+            elif [[ "$PROOF_QUALITY_HASH" != "$CURRENT_QUALITY_HASH" ]]; then
+                echo "❌ (质检报告已变更)" >&2
+                echo "    → 质检报告在 proof 生成后被修改，请重新运行质检" >&2
+                FAILED=1
+            else
+                echo "✅ (loop=$PROOF_LOOP, 签名验证通过)" >&2
+            fi
+        fi
     else
-        echo "❌ (未记录)" >&2
-        echo "    → 必须通过 Subagent 执行 Step 5-7（代码、测试、质检）" >&2
-        echo "    → Subagent 会在质检通过时设置 loop-count" >&2
+        echo "❌ (未找到 proof 文件)" >&2
+        echo "    → 必须通过 Subagent 执行 Step 5-7" >&2
+        echo "    → Subagent 质检通过时会生成 .subagent-proof.json" >&2
         FAILED=1
     fi
 fi

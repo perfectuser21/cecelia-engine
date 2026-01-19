@@ -141,13 +141,31 @@ fi
 echo "  质检通过" >&2
 echo "" >&2
 
-# 记录最终 loop 次数
+# 记录最终 loop 次数并生成 proof 文件
 LOOP_COUNT=$(git config --get branch."$CURRENT_BRANCH".loop-count 2>/dev/null || echo "1")
 if [[ "$LOOP_COUNT" == "0" ]]; then
     LOOP_COUNT="1"
 fi
-git config branch."$CURRENT_BRANCH".loop-count "$LOOP_COUNT"
+
+# 生成签名 proof 文件（防止手动伪造）
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+QUALITY_HASH=$(sha256sum "$QUALITY_REPORT" 2>/dev/null | cut -d' ' -f1 || echo "unknown")
+# Secret 用于签名，不要修改
+PROOF_SECRET="zenithjoy-engine-proof-v1"
+SIGNATURE=$(echo -n "${CURRENT_BRANCH}|${TIMESTAMP}|${QUALITY_HASH}|${LOOP_COUNT}|${PROOF_SECRET}" | sha256sum | cut -d' ' -f1)
+
+cat > "$PROJECT_ROOT/.subagent-proof.json" << EOF
+{
+  "branch": "$CURRENT_BRANCH",
+  "timestamp": "$TIMESTAMP",
+  "loop_count": $LOOP_COUNT,
+  "quality_hash": "$QUALITY_HASH",
+  "signature": "$SIGNATURE"
+}
+EOF
+
 echo "  最终 Loop 次数: $LOOP_COUNT" >&2
+echo "  已生成 .subagent-proof.json" >&2
 
 # 删除 .subagent-lock 文件
 if [[ -f "$PROJECT_ROOT/.subagent-lock" ]]; then
