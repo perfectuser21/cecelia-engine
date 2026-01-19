@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.2] - 2026-01-19
+
+### Fixed
+- **Branch Protection**: 启用 GitHub develop 分支保护，禁止直接 push
+- **全局 Hooks**: 同步 branch-protect.sh 到全局，补全 .subagent-lock 强制机制
+
+### Security
+- 修复安全审计发现的 P0.1 问题（全局 Hook 缺失）
+- 启用 enforce_admins 防止管理员绕过保护
+
 ## [7.44.1] - 2026-01-19
 
 ### Fixed
