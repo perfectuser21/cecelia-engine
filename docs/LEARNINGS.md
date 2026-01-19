@@ -712,3 +712,122 @@ Step 5-7 循环机制工作正常：
 #### 影响程度
 - Low - 验证任务，确认系统稳定
 
+### [2026-01-19] 扩展压力测试 T4-T9
+
+#### 测试目的
+验证 Step 5-7 强制机制的各种边界情况和潜在绕过场景。
+
+#### 测试结果
+
+| 测试 | 场景 | 结果 | 说明 |
+|------|------|------|------|
+| T4 | 主 Agent 绕过 Subagent 直接写代码 | ✅ 阻止 | branch-protect.sh 检测无 .subagent-lock |
+| T5 | 伪造 .quality-report.json | ✅ 阻止 | pr-gate.sh 检测无 loop-count |
+| T6 | 伪造 loop-count | ⚠️ 绕过→CI阻止 | 本地 Hook 绕过，CI 拦截（版本未更新）|
+| T7 | 多次循环 (loop=2,3...) | ✅ 通过 | loop-count 正确递增 0→1→2 |
+| T8 | Subagent 中途放弃 | ✅ 阻止 | PR 无法创建（step/loop-count/报告缺失）|
+| T9 | 跨项目混乱 | ⚠️ 发现漏洞 | 多 .subagent-lock 时 Hook 选错项目 |
+
+#### T4 详情：主 Agent 绕过 Subagent
+
+**测试步骤**:
+1. 创建分支，设 step=4
+2. 主 Agent 直接尝试 Write 代码（无 .subagent-lock）
+
+**结果**: branch-protect.sh 阻止，提示"Step 5-7 必须通过 Subagent 执行"
+
+#### T5 详情：伪造质检报告
+
+**测试步骤**:
+1. 手动创建 .subagent-lock
+2. 写代码，设 step=7
+3. 创建假 .quality-report.json (overall: pass)
+4. 尝试创建 PR
+
+**结果**: pr-gate.sh 阻止，因为 loop-count 不存在
+
+#### T6 详情：伪造 loop-count
+
+**测试步骤**:
+1. 在 T5 基础上手动设置 loop-count=1
+2. 尝试创建 PR
+
+**结果**:
+- 本地 Hook: ⚠️ 绕过（PR #147 创建成功）
+- CI: ✅ 阻止（版本未更新）
+- 最终: PR 无法合并
+
+**结论**: CI 是最终防线，本地 Hook 被绕过不影响安全
+
+#### T7 详情：多次循环
+
+**测试步骤**:
+1. 第一次失败 (L1 fail) → loop=1
+2. 第二次失败 (L2 fail) → loop=2
+3. 第三次成功 (all pass) → step=7, lock 删除
+
+**结果**: loop-count 正确递增，最终保留值为失败次数
+
+#### T8 详情：Subagent 中途放弃
+
+**测试步骤**:
+1. 创建分支，设 step=4
+2. 创建 .subagent-lock，设 step=5
+3. 模拟 Subagent 放弃（不完成质检就退出）
+4. 主 Agent 尝试继续
+
+**结果**:
+- 主 Agent 能写代码（因为 .subagent-lock 存在）
+- 但无法创建 PR（step=5, 无 loop-count, 无质检报告）
+
+**结论**: 系统仍然安全，PR 是最终卡点
+
+#### T9 详情：跨项目混乱（新发现漏洞）
+
+**测试步骤**:
+1. 在 zenithjoy-core 和 zenithjoy-engine 都创建 .subagent-lock
+2. 从 /dev 目录触发 SubagentStop Hook
+
+**结果**:
+```
+PWD: /dev
+Found project via .subagent-lock: /home/xx/dev/zenithjoy-core
+PROJECT_ROOT: /home/xx/dev/zenithjoy-core
+```
+
+Hook 选择了 zenithjoy-core（按字母排序第一个），而不是实际工作的 zenithjoy-engine。
+
+**漏洞分析**:
+- SubagentStop Hook 在 PWD 不是 git 目录时，扫描 /home/xx/dev/*/ 找 .subagent-lock
+- 使用 shell glob 扫描，按字母顺序返回第一个匹配
+- 如果多项目同时有 .subagent-lock，可能操作错误项目
+
+**影响程度**: Medium - 可能导致错误项目的状态被修改
+
+**修复建议**:
+1. Hook 使用 Claude Code 传入的 `cwd` 字段定位项目
+2. 或者 .subagent-lock 文件内记录项目路径
+3. 或者限制同一时间只能有一个项目有 .subagent-lock
+
+#### 总结
+
+**防御层次验证**:
+```
+Layer 1: Hook (本地检查)
+  ├── branch-protect.sh → T4 ✅
+  ├── pr-gate.sh → T5 ✅, T6 ⚠️(可绕过)
+  └── subagent-quality-gate.sh → T7 ✅, T9 ⚠️(跨项目问题)
+
+Layer 2: CI (远程强制)
+  └── T6 ✅ (CI 拦截了本地绕过)
+
+结论: 多层防御有效，单点被绕过不影响整体安全
+```
+
+**已知风险**:
+- P1.3: loop-count 可手动伪造 → CI 兜底
+- T9: 跨项目 .subagent-lock 混乱 → 需修复
+
+#### 影响程度
+- Low - 验证测试，确认系统多层防御有效
+

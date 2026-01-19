@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.5] - 2026-01-19
+
+### Added
+- **LEARNINGS**: 记录扩展压力测试 T4-T9 结果，发现 T9 跨项目漏洞
+
+### Security
+- 发现 SubagentStop Hook 跨项目混乱问题 (T9)，多 .subagent-lock 时可能选错项目
+
 ## [7.44.4] - 2026-01-19
 
 ### Added
