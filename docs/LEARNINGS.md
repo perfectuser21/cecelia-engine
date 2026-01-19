@@ -831,3 +831,51 @@ Layer 2: CI (远程强制)
 #### 影响程度
 - Low - 验证测试，确认系统多层防御有效
 
+### [2026-01-19] T6 loop-count 伪造漏洞修复
+
+#### 问题描述
+T6 压力测试发现 `git config branch.xxx.loop-count` 可被手动设置，绕过 Subagent 强制机制。
+
+#### 根因分析
+- `loop-count` 存储在 git config 中
+- git config 可被任意命令修改
+- pr-gate.sh 无法验证 loop-count 是否由 SubagentStop Hook 真正设置
+
+#### 解决方案
+使用签名证明文件 `.subagent-proof.json` 替代 git config：
+
+**subagent-quality-gate.sh** (生成 proof):
+```json
+{
+  "branch": "cp-fix-xxx",
+  "timestamp": "2026-01-19T12:24:25Z",
+  "loop_count": 1,
+  "quality_hash": "2089a081...",
+  "signature": "b2174aaf..."
+}
+```
+
+**签名算法**:
+```bash
+sha256(branch | timestamp | quality_hash | loop_count | secret)
+```
+
+**pr-gate.sh** (验证 proof):
+1. 检查 proof 文件存在
+2. 检查分支匹配
+3. 重新计算签名并比对
+4. 签名不匹配则拒绝 PR
+
+#### 安全特性
+- **防篡改**: SHA256 签名，无法伪造
+- **防重放**: 包含 timestamp 和 quality_hash
+- **防混用**: 验证 branch 字段匹配
+
+#### 经验
+1. **状态存储安全**: git config 等可写存储不适合做安全验证
+2. **签名机制**: 添加签名可将可伪造数据变为可验证数据
+3. **多因素验证**: 包含多个字段（branch, timestamp, hash）增加伪造难度
+
+#### 影响程度
+- Medium - 修复了 T6 绕过漏洞，完善了多层防御机制
+

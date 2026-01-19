@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.8] - 2026-01-19
+
+### Added
+- **LEARNINGS**: 记录 T6 loop-count 伪造漏洞修复的经验教训
+
 ## [7.44.7] - 2026-01-19
 
 ### Security
