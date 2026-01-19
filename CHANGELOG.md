@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.43.0] - 2026-01-19
+
+### Added
+- **任务质检报告输出**: /dev 完成后自动生成结构化报告
+  - `generate-report.sh`: 生成 txt 和 json 两种格式的报告
+  - 报告保存到 `.dev-runs/` 目录，供用户查看和 Cecilia 链式任务使用
+  - `cleanup.sh`: 在清理前自动调用报告生成
+  - `11-cleanup.md`: 文档更新，说明报告格式
+
 ## [7.42.0] - 2026-01-19
 
 ### Added

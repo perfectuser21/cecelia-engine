@@ -25,11 +25,27 @@ fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "  🧹 Cleanup 检查"
+echo "  Cleanup 检查"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 echo "  CP 分支: $CP_BRANCH"
 echo "  Base 分支: $BASE_BRANCH"
+echo ""
+
+# ========================================
+# 0. 生成任务报告（在 cleanup 前）
+# ========================================
+echo "0. 生成任务报告..."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/generate-report.sh" ]]; then
+    if bash "$SCRIPT_DIR/generate-report.sh" "$CP_BRANCH" "$BASE_BRANCH" "$(pwd)" 2>/dev/null; then
+        echo -e "   ${GREEN}[OK] 报告已保存到 .dev-runs/${NC}"
+    else
+        echo -e "   ${YELLOW}[WARN] 报告生成失败，继续 cleanup${NC}"
+    fi
+else
+    echo -e "   ${YELLOW}[WARN] generate-report.sh 不存在，跳过${NC}"
+fi
 echo ""
 
 FAILED=0

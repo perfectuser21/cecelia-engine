@@ -93,6 +93,52 @@ zenithjoy-engine/
 
 ---
 
+## 项目级配置 (.claude/settings.json)
+
+**skills 和 hooks 的配置格式不同**：
+
+| 配置项 | 支持 `paths` 简写 | 项目级覆盖 |
+|--------|------------------|-----------|
+| skills | ✅ 支持 | ✅ |
+| hooks  | ❌ 不支持 | ✅（需完整写） |
+
+### skills 配置（简写）
+```json
+{
+  "skills": {
+    "paths": ["./skills"]
+  }
+}
+```
+
+### hooks 配置（必须完整写事件）
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {"matcher": "", "hooks": [{"type": "command", "command": "./hooks/session-init.sh"}]}
+    ],
+    "PreToolUse": [
+      {"matcher": "Write|Edit", "hooks": [{"type": "command", "command": "./hooks/branch-protect.sh"}]},
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "./hooks/pr-gate.sh"}]}
+    ],
+    "PostToolUse": [
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "./hooks/project-detect.sh"}]}
+    ],
+    "Stop": [
+      {"matcher": "", "hooks": [{"type": "command", "command": "./hooks/stop-gate.sh"}]}
+    ]
+  }
+}
+```
+
+**开发流程**：
+- 项目内 `./hooks/` 和 `./skills/` → develop 分支开发版
+- 全局 `~/.claude/hooks/` 和 `~/.claude/skills/` → main 分支稳定版（deploy.sh 部署）
+- 在项目内测试新功能，稳定后 merge 到 main 并 deploy 到全局
+
+---
+
 ## 分支策略（develop 缓冲）
 
 ```
