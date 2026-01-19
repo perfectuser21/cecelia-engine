@@ -224,3 +224,15 @@ pr-gate.sh 只检查 `.quality-report.json` 的 `overall: "pass"` 字段，不�
 ### 影响程度
 
 **Medium** - 修复多个潜在安全问题和文档不一致
+
+### [2026-01-19] n8n 自动化测试流程验证
+
+- **Bug**: 质检报告格式不符合 pr-gate.sh 预期
+  - 问题：初始创建的质检报告使用了错误的结构（quality_check.layer1），应该是 layers.L1_automated
+  - 解决：更新质检报告格式为正确的结构（layers.L1_automated, layers.L2_verification, layers.L3_acceptance, overall）
+  - 原因：对 pr-gate.sh 的质检报告格式要求不熟悉
+- **优化点**: n8n → Claude Code 自动化流程验证成功
+  - 完整验证了从 Notion 任务到 PR 创建的全流程
+  - 所有 11 个步骤都正常执行
+  - 自动化工作流运行正常
+- **影响程度**: Medium（质检报告格式问题会阻塞 PR 创建）
