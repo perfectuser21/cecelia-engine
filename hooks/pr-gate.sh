@@ -90,6 +90,21 @@ if [[ "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
     fi
 fi
 
+# 3. 检查 Subagent 执行记录（loop-count）
+if [[ "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
+    echo -n "  Subagent 执行... " >&2
+    CHECKED=$((CHECKED + 1))
+    LOOP_COUNT=$(git config --get branch."$CURRENT_BRANCH".loop-count 2>/dev/null || echo "")
+    if [[ -n "$LOOP_COUNT" ]]; then
+        echo "✅ (loop=$LOOP_COUNT)" >&2
+    else
+        echo "❌ (未记录)" >&2
+        echo "    → 必须通过 Subagent 执行 Step 5-7（代码、测试、质检）" >&2
+        echo "    → Subagent 会在质检通过时设置 loop-count" >&2
+        FAILED=1
+    fi
+fi
+
 # ===== Part 2: 质检报告检查 =====
 echo "" >&2
 echo "  [质检报告]" >&2

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.1] - 2026-01-19
+
+### Fixed
+- **pr-gate.sh**: 增加 loop-count 检查，防止绕过 Subagent 强制机制
+  - 原来只检查 step>=7 和 .quality-report.json 存在
+  - 现在同时检查 loop-count 必须存在（只有 SubagentStop Hook 质检通过时才设置）
+
 ## [7.44.0] - 2026-01-19
 
 ### Added

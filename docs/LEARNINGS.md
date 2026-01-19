@@ -495,3 +495,37 @@ exit 0
 #### 影响程度
 - High - 核心强制机制验证成功，确保质检真正执行
 
+### [2026-01-19] PR Gate Loop-Count 检查
+
+#### 问题描述
+PR Gate 存在绕过漏洞：主 Agent 可以手动设置 `step=7` 并创建假的 `.quality-report.json` 来绕过 Subagent 强制机制。
+
+#### 根因分析
+- pr-gate.sh 只检查 `step>=7` 和 `.quality-report.json` 存在
+- 没有验证代码是否真正通过了 Subagent 流程
+
+#### 解决方案
+在 pr-gate.sh 的流程检查部分增加 `loop-count` 检查：
+- `loop-count` 只由 SubagentStop Hook 在质检通过时设置
+- 如果 `loop-count` 不存在，说明没有走过真正的 Subagent 流程
+
+```bash
+# pr-gate.sh 第 93-106 行
+LOOP_COUNT=$(git config --get branch."$CURRENT_BRANCH".loop-count 2>/dev/null || echo "")
+if [[ -n "$LOOP_COUNT" ]]; then
+    echo "✅ (loop=$LOOP_COUNT)" >&2
+else
+    echo "❌ (未记录)" >&2
+    echo "    → 必须通过 Subagent 执行 Step 5-7" >&2
+    FAILED=1
+fi
+```
+
+#### 经验
+1. **多层验证防绕过** - 单一检查点容易被伪造，需要多个互相关联的检查
+2. **证明机制** - `loop-count` 作为"执行证明"，只能由系统设置，不能手动伪造
+3. **安全思维** - 设计强制机制时要考虑所有可能的绕过方式
+
+#### 影响程度
+- Medium - 关闭了一个安全漏洞，加强了 Subagent 强制机制
+
