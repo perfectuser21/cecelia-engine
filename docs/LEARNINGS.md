@@ -495,6 +495,36 @@ exit 0
 #### 影响程度
 - High - 核心强制机制验证成功，确保质检真正执行
 
+### [2026-01-19] 未走 /dev 流程的教训
+
+#### 问题描述
+在审计任务完成后，直接在 develop 分支修改 LEARNINGS.md 并 push，完全绕过了 /dev 流程。
+
+#### 发生的事情
+1. 完成安全审计后，直接在 develop 分支修改文件
+2. 执行 `git push origin develop`
+3. 推送成功（因为 develop 没有 branch protection）
+4. 后续清理任务也通过 API 绕过本地 Hook 创建 PR
+
+#### 根因分析
+- develop 分支没有配置 GitHub Branch Protection
+- 本地 Hook 只能拦截 `gh pr create`，无法阻止直接 push
+- 没有强制每次修改都走 /dev 流程的意识
+
+#### 修复措施
+1. 启用 develop 分支的 GitHub Branch Protection
+2. 配置 required_status_checks: ci-passed
+3. 启用 enforce_admins 防止管理员绕过
+
+#### 教训
+1. **Branch Protection 必须在项目开始时配置** - 不能事后补
+2. **任何修改都要走 /dev 流程** - 包括"简单"的文档更新
+3. **本地 Hook 不是最终防线** - GitHub + CI 才是
+4. **流程是给自己的约束** - 不遵守就失去了保护
+
+#### 影响程度
+- High - 暴露了流程中的重大漏洞
+
 ### [2026-01-19] PR Gate Loop-Count 检查
 
 #### 问题描述

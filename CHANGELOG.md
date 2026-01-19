@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [7.44.3] - 2026-01-19
+
+### Added
+- **LEARNINGS**: 记录未走 /dev 流程导致的问题和教训
+
 ## [7.44.2] - 2026-01-19
 
 ### Fixed
