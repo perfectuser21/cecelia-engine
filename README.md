@@ -127,5 +127,3 @@ GitHub 层面的保护：
 ## License
 
 ISC
-test direct push
-test2
