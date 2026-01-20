@@ -48,11 +48,11 @@
 
 | 阶段 | 本地（必须） | CI（必须） |
 |------|-------------|-----------|
-| **PR → develop** | L1 | L1 |
-| **develop → main** | L1 + L2B + L3 (产出) | L1 + L2B + L3 (裁决) |
+| **PR → develop** | L1 + L2A | L1 + L2A |
+| **develop → main** | L1 + L2A + L2B + L3 (产出) | L1 + L2A + L2B + L3 (裁决) |
 
 **核心原则**：
-- L1/L2A 是自动化测试，本地和 CI 都跑
+- L1/L2A 是自动化测试，本地和 CI 都跑（目前 L2A 包含在 L1 测试中）
 - L2B/L3 是证据产出，在本地创建 `.layer2-evidence.md` 和 `.dod.md`
 - CI 裁决：检查证据文件是否存在、格式正确、引用有效
 
@@ -246,12 +246,12 @@ npm audit           # L6
 ├─────────────────────────────────────────────────────────────────┤
 │  第二层：PR Gate（pr-gate-v2.sh）                                │
 │  → 自动检测模式（根据 --base 参数）                             │
-│  → PR 模式：L1 必须通过                                         │
-│  → Release 模式：L1 + L2B + L3 必须通过                         │
+│  → PR 模式：L1 + L2A 必须通过                                   │
+│  → Release 模式：L1 + L2A + L2B + L3 必须通过                   │
 ├─────────────────────────────────────────────────────────────────┤
 │  第三层：CI 全量测试 + 证据裁决                                  │
 │  → 独立环境，无法伪造                                           │
-│  → PR → develop：只跑 L1 测试                                   │
+│  → PR → develop：只跑 L1 + L2A 测试                             │
 │  → develop → main：L1 + L2B/L3 证据链校验                       │
 │  → 真正的强制防线                                               │
 ├─────────────────────────────────────────────────────────────────┤
@@ -268,8 +268,8 @@ npm audit           # L6
 ### v8+ 硬门禁命令
 
 ```bash
-# 日常 PR → develop（只检查 L1）
-npm run pr:check      # typecheck + test + build
+# 日常 PR → develop（检查 L1 + L2A）
+npm run pr:check      # typecheck + test + build (L2A 包含在 test 中)
 
 # 发版 develop → main（完整检查）
 npm run release:check # pr:check + L2B/L3 证据链校验

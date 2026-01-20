@@ -107,8 +107,8 @@ Step 11: Cleanup
 4. **main 始终稳定** - 只在里程碑时从 develop 合并
 5. **CI 是唯一强制裁决** - Hook 是本地门禁，CI 是最终裁决
 6. **v8+ 硬门禁规则**：
-   - PR → develop：L1 必须通过
-   - develop → main：L1 + L2B + L3 必须通过（本地产出，CI 裁决）
+   - PR → develop：L1 + L2A 必须通过（自动化测试）
+   - develop → main：L1 + L2A + L2B + L3 必须通过（本地产出，CI 裁决）
 
 ---
 
@@ -143,10 +143,10 @@ Step 11: Cleanup
   - 否则 → pr 模式（默认）
   - 可用 `PR_GATE_MODE=release` 强制 release 模式
 - **PR 模式** (→ develop)：
-  - L1 自动化测试必须通过
+  - L1 + L2A 自动化测试必须通过
   - .dod.md 存在即可
 - **Release 模式** (→ main)：
-  - L1 自动化测试必须通过
+  - L1 + L2A 自动化测试必须通过
   - L2B 证据文件 (.layer2-evidence.md) 必须存在且有效
   - L3 验收项 (.dod.md) 全部打勾，Evidence 引用有效
   - 允许从 develop 分支提交

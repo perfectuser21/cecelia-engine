@@ -11,8 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **v8+ 硬门禁规则实现**:
-  - `npm run pr:check`: 日常 PR 检查 (L1 only)
-  - `npm run release:check`: 发版检查 (L1 + L2B + L3)
+  - `npm run pr:check`: 日常 PR 检查 (L1 + L2A)
+  - `npm run release:check`: 发版检查 (L1 + L2A + L2B + L3)
   - `scripts/release-check.sh`: L2B + L3 证据链校验脚本
 - **pr-gate-v2.sh 自动模式检测**:
   - 解析 `--base` 参数自动切换模式
