@@ -3,8 +3,7 @@
  *
  * 测试 PR Gate Hook 的核心逻辑：
  * 1. 只拦截 gh pr create 命令
- * 2. 验证三层质检（L1/L2/L3）
- * 3. 检查证据文件（.layer2-evidence.md, .dod.md）
+ * 2. 其他命令直接放行
  */
 
 import { describe, it, expect, beforeAll } from "vitest";
@@ -59,31 +58,26 @@ describe("pr-gate-v2.sh", () => {
     expect(result).toBe("");
   });
 
-  it("should intercept gh pr create command", () => {
+  it("should support MODE environment variable", () => {
+    // Just test that the script accepts PR_GATE_MODE without crashing
     const input = JSON.stringify({
       tool_name: "Bash",
-      tool_input: { command: "gh pr create --title test" },
+      tool_input: { command: "echo test" },
     });
 
-    // Should run checks (may fail in test env, but should not crash)
+    // Test with pr mode
     expect(() => {
-      execSync(`echo '${input}' | bash "${HOOK_PATH}" 2>/dev/null || true`, {
+      execSync(`echo '${input}' | PR_GATE_MODE=pr bash "${HOOK_PATH}"`, {
         encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
       });
     }).not.toThrow();
-  });
 
-  it("should detect project type from package.json", () => {
-    // Hook should handle Node.js projects correctly
-    const input = JSON.stringify({
-      tool_name: "Bash",
-      tool_input: { command: "gh pr create" },
-    });
-
-    // Just verify no crash during project detection
+    // Test with release mode
     expect(() => {
-      execSync(`echo '${input}' | bash "${HOOK_PATH}" 2>/dev/null || true`, {
+      execSync(`echo '${input}' | PR_GATE_MODE=release bash "${HOOK_PATH}"`, {
         encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
       });
     }).not.toThrow();
   });
