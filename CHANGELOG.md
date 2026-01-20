@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.7] - 2026-01-20
+
+### Changed
+- **DoD 格式**: 添加 Evidence 引用支持 release 流程
+
 ## [8.0.6] - 2026-01-20
 
 ### Fixed
