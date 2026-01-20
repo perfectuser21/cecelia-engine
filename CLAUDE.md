@@ -70,12 +70,9 @@ AI 开发工作流引擎。
 
 ```
 zenithjoy-engine/
-├── hooks/           # Claude Code Hooks (5 个)
-│   ├── project-detect.sh  # 自动检测项目信息（→ .project-info.json）
-│   ├── branch-protect.sh  # 分支保护（只允许 cp-*/feature/*）
-│   ├── pr-gate.sh         # PR 前检查（流程+质检）
-│   ├── session-init.sh    # 会话初始化，恢复上下文
-│   └── stop-gate.sh       # 退出时检查任务完成度
+├── hooks/           # Claude Code Hooks (2 个)
+│   ├── branch-protect.sh  # 分支保护 + 步骤状态机
+│   └── pr-gate-v2.sh      # PR 前质检（双模式：pr/release）
 ├── skills/
 │   ├── dev/         # /dev 开发工作流
 │   └── audit/       # /audit 代码审计
@@ -115,18 +112,9 @@ zenithjoy-engine/
 ```json
 {
   "hooks": {
-    "SessionStart": [
-      {"matcher": "", "hooks": [{"type": "command", "command": "./hooks/session-init.sh"}]}
-    ],
     "PreToolUse": [
       {"matcher": "Write|Edit", "hooks": [{"type": "command", "command": "./hooks/branch-protect.sh"}]},
-      {"matcher": "Bash", "hooks": [{"type": "command", "command": "./hooks/pr-gate.sh"}]}
-    ],
-    "PostToolUse": [
-      {"matcher": "Bash", "hooks": [{"type": "command", "command": "./hooks/project-detect.sh"}]}
-    ],
-    "Stop": [
-      {"matcher": "", "hooks": [{"type": "command", "command": "./hooks/stop-gate.sh"}]}
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "./hooks/pr-gate-v2.sh"}]}
     ]
   }
 }

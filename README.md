@@ -31,10 +31,7 @@ export ZENITHJOY_ENGINE="/path/to/zenithjoy-engine"
 
 ```bash
 ln -sf $ZENITHJOY_ENGINE/hooks/branch-protect.sh ~/.claude/hooks/
-ln -sf $ZENITHJOY_ENGINE/hooks/pr-gate.sh ~/.claude/hooks/
-ln -sf $ZENITHJOY_ENGINE/hooks/project-detect.sh ~/.claude/hooks/
-ln -sf $ZENITHJOY_ENGINE/hooks/session-init.sh ~/.claude/hooks/
-ln -sf $ZENITHJOY_ENGINE/hooks/stop-gate.sh ~/.claude/hooks/
+ln -sf $ZENITHJOY_ENGINE/hooks/pr-gate-v2.sh ~/.claude/hooks/
 ```
 
 ### 2. 链接 Skills
@@ -63,25 +60,7 @@ cp $ZENITHJOY_ENGINE/.github/workflows/ci.yml your-project/.github/workflows/
       },
       {
         "matcher": "Bash",
-        "hooks": [{"type": "command", "command": "~/.claude/hooks/pr-gate.sh"}]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [{"type": "command", "command": "~/.claude/hooks/project-detect.sh"}]
-      }
-    ],
-    "SessionStart": [
-      {
-        "matcher": "",
-        "hooks": [{"type": "command", "command": "~/.claude/hooks/session-init.sh"}]
-      }
-    ],
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [{"type": "command", "command": "~/.claude/hooks/stop-gate.sh"}]
+        "hooks": [{"type": "command", "command": "~/.claude/hooks/pr-gate-v2.sh"}]
       }
     ]
   }
@@ -90,11 +69,8 @@ cp $ZENITHJOY_ENGINE/.github/workflows/ci.yml your-project/.github/workflows/
 
 | Hook | 触发时机 | 用途 |
 |------|----------|------|
-| branch-protect.sh | PreToolUse (Write/Edit) | 引导在 cp-* 或 feature/* 分支修改代码 |
-| pr-gate.sh | PreToolUse (Bash) | 拦截 gh pr create，检查流程 + 质检 |
-| project-detect.sh | PostToolUse (Bash) | 检测项目初始化状态 |
-| session-init.sh | SessionStart | 会话初始化，恢复上下文 |
-| stop-gate.sh | Stop | 退出时检查任务完成度 |
+| branch-protect.sh | PreToolUse (Write/Edit) | 分支保护 + 步骤状态机 |
+| pr-gate-v2.sh | PreToolUse (Bash) | PR 前质检（双模式：pr/release） |
 
 ## Usage
 

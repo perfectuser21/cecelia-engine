@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.3] - 2026-01-20
+
+### Fixed
+- **CLAUDE.md**: 更新 hooks 章节，移除已删除的 5 个 hooks 引用
+- **README.md**: 更新安装说明和 hooks 配置，只保留 2 个 hooks
+- **docs/QUALITY-STRATEGY.md**: 更新 pr-gate.sh 引用为 pr-gate-v2.sh
+- **templates/DOD-TEMPLATE.md**: 移除 project-detect.sh 引用
+
 ## [8.0.2] - 2026-01-20
 
 ### Removed
