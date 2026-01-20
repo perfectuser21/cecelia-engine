@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.5] - 2026-01-20
+
+### Fixed
+- **package-lock.json**: 同步版本号到 8.0.5（之前是 7.41.0）
+
 ## [8.0.4] - 2026-01-20
 
 ### Added
