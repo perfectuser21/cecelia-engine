@@ -40,14 +40,11 @@ else
     OVERALL_STATUS="unknown"
 fi
 
-# 读取项目信息
-PROJECT_INFO="$PROJECT_ROOT/.project-info.json"
-if [[ -f "$PROJECT_INFO" ]]; then
-    PROJECT_NAME=$(jq -r '.project.name // "unknown"' "$PROJECT_INFO" 2>/dev/null || echo "unknown")
-    TEST_LEVEL=$(jq -r '.test_levels.max_level // 0' "$PROJECT_INFO" 2>/dev/null || echo "0")
+# 读取项目信息（从 package.json）
+if [[ -f "$PROJECT_ROOT/package.json" ]]; then
+    PROJECT_NAME=$(jq -r '.name // "unknown"' "$PROJECT_ROOT/package.json" 2>/dev/null || echo "unknown")
 else
-    PROJECT_NAME="unknown"
-    TEST_LEVEL="0"
+    PROJECT_NAME=$(basename "$PROJECT_ROOT")
 fi
 
 # 获取 git 信息
@@ -99,7 +96,7 @@ cat > "$TXT_REPORT" << EOF
 流程步骤
 --------------------------------------------------------------------------------
  [1] PRD 确定          $([ "$STEP" -ge 1 ] 2>/dev/null && echo "完成" || echo "未完成")
- [2] 项目环境检测      $([ "$STEP" -ge 2 ] 2>/dev/null && echo "完成 (L$TEST_LEVEL 能力)" || echo "未完成")
+ [2] 项目环境确认      $([ "$STEP" -ge 2 ] 2>/dev/null && echo "完成" || echo "未完成")
  [3] 创建分支          $([ "$STEP" -ge 3 ] 2>/dev/null && echo "完成" || echo "未完成")
  [4] DoD 推演          $([ "$STEP" -ge 4 ] 2>/dev/null && echo "完成" || echo "未完成")
  [5] 写代码            $([ "$STEP" -ge 5 ] 2>/dev/null && echo "完成" || echo "未完成")

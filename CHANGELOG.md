@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.2] - 2026-01-20
+
+### Removed
+- **hooks/project-detect.sh**: 删除，检测结果（L1-L6 能力）从未被实际使用
+- **tests/hooks/project-detect.test.ts**: 删除对应测试
+
+### Changed
+- **pr-gate-v2.sh**: 移除 .project-info.json 检查（只是显示，无实际用途）
+- **settings.json**: 移除 PostToolUse 事件配置
+- **skills/dev/steps/02-detect.md**: 简化为直接读取 package.json
+
+## [8.0.1] - 2026-01-20
+
+### Removed
+- **hooks/session-init.sh**: 删除，只在会话开始显示一次，无实际用途
+- **hooks/stop-gate.sh**: 删除，功能已合并到 pr-gate-v2
+
+### Changed
+- **.claude/settings.json**: 移除 SessionStart 和 Stop 事件配置
+- **FEATURES.md**: 更新 Hook 列表，H4/H5 标记为 Deprecated
+
+## [8.0.0] - 2026-01-20
+
+### BREAKING CHANGES
+- **移除 Subagent 强制机制**: 删除 `subagent-quality-gate.sh`，不再要求 Step 5-7 通过 Subagent 执行
+- **PR Gate 双模式**: `pr-gate-v2.sh` 支持 `--mode=pr` (只 L1) 和 `--mode=release` (L1+L2+L3)
+
+### Added
+- **回归层骨架**:
+  - 新增 `FEATURES.md` 定义全量回归边界
+  - 新增 `npm run qa` 脚本 (typecheck + test + build)
+  - 新增 3 个 Hook 最小测试 (`tests/hooks/*.test.ts`)
+- **PR Gate 双模式**:
+  - `PR_GATE_MODE=pr` (默认): 只检查 L1，.dod.md 存在即可
+  - `PR_GATE_MODE=release`: 完整检查 L1+L2+L3，要求证据链
+
+### Removed
+- **hooks/pr-gate.sh**: 被 pr-gate-v2.sh 替代
+- **hooks/subagent-quality-gate.sh**: 简化流程，移除强制 Subagent 机制
+
+### Changed
+- **skills/dev/SKILL.md**: 更新流程图，移除 Subagent Loop
+- **skills/dev/steps/07-quality.md**: 简化为 PR 只 L1，Release 才 L2+L3
+- **branch-protect.sh**: 移除 .subagent-lock 检查
+
+### Migration Guide
+- 无需手动迁移，旧的 Subagent 机制自动失效
+- PR 默认使用 `--mode=pr`，发版时设置 `PR_GATE_MODE=release`
+
 ## [7.44.9] - 2026-01-19
 
 ### Fixed

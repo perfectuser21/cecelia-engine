@@ -4,31 +4,33 @@
 # ============================================================================
 #
 # 触发：拦截 gh pr create
-# 作用：提交 PR 前强制三层质检，用证据文件验证
+# 作用：提交 PR 前质检，支持双模式
 #
-# 证据链设计：
-#   - .dod.md          → DoD 清单，每项必须有 Evidence: `S1`/`C1` 引用
-#   - .layer2-evidence.md → 截图/curl 证据，每个有 ID 和文件路径
-#   - ./artifacts/screenshots/S*.png → 实际截图文件
+# 双模式设计：
+#   --mode=pr (默认)：
+#     - 只检查 L1 自动化测试
+#     - .dod.md 存在即可（允许未全勾）
+#     - 适用于日常 PR → develop
 #
-# 三层检查：
-#   Layer 1 (L1) - 自动化测试：
-#     - Hook 自己跑 typecheck/test/build（不信任 Agent）
+#   --mode=release：
+#     - 完整检查 L1 + L2 + L3
+#     - 要求证据链完整
+#     - 适用于 develop → main 发版
 #
-#   Layer 2 (L2) - 效果验证：
-#     - .layer2-evidence.md 存在
-#     - 截图 ID (S1, S2) 对应的文件存在
-#     - curl 输出包含 HTTP_STATUS
-#
-#   Layer 3 (L3) - 需求验收：
-#     - .dod.md 存在
-#     - 所有 checkbox 打勾 [x]
-#     - 每项有 Evidence: `Sx` 或 `Cx` 引用
-#     - 引用的 ID 在 .layer2-evidence.md 中存在
+# 使用方式：
+#   PR_GATE_MODE=pr gh pr create ...     # 默认，轻量检查
+#   PR_GATE_MODE=release gh pr create ... # 发版，完整检查
 #
 # ============================================================================
 
 set -euo pipefail
+
+# ===== 模式解析 =====
+MODE="${PR_GATE_MODE:-pr}"
+if [[ "$MODE" != "pr" && "$MODE" != "release" ]]; then
+    echo "⚠️ 未知模式: $MODE，使用默认模式 pr" >&2
+    MODE="pr"
+fi
 
 INPUT=$(cat)
 
@@ -55,7 +57,11 @@ cd "$PROJECT_ROOT"
 
 echo "" >&2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-echo "  PR GATE v2: 证据链质检" >&2
+if [[ "$MODE" == "release" ]]; then
+    echo "  PR GATE v2: 发版检查 (L1+L2+L3)" >&2
+else
+    echo "  PR GATE v2: 快速检查 (L1 only)" >&2
+fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 echo "" >&2
 
@@ -67,18 +73,6 @@ CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
 # Part 0: 基础检查
 # ============================================================================
 echo "  [基础检查]" >&2
-
-# 检查 .project-info.json 是否存在
-echo -n "  项目检测... " >&2
-CHECKED=$((CHECKED + 1))
-if [[ -f "$PROJECT_ROOT/.project-info.json" ]]; then
-    LEVEL=$(jq -r '.test_levels.max_level // 0' "$PROJECT_ROOT/.project-info.json" 2>/dev/null || echo "0")
-    echo "✅ (L$LEVEL)" >&2
-else
-    echo "❌ (未检测)" >&2
-    echo "    → 执行任意 Bash 命令触发自动检测" >&2
-    FAILED=1
-fi
 
 # 检查分支（必须是 cp-* 或 feature/*）
 echo -n "  分支... " >&2
@@ -212,8 +206,14 @@ fi
 # ============================================================================
 # Part 2: Layer 2 - 效果验证（检查证据文件）
 # ============================================================================
-echo "" >&2
-echo "  [Layer 2: 效果验证]" >&2
+
+# pr 模式跳过 L2
+if [[ "$MODE" == "pr" ]]; then
+    echo "" >&2
+    echo "  [Layer 2: 效果验证] ⏭️  跳过 (pr 模式)" >&2
+else
+    echo "" >&2
+    echo "  [Layer 2: 效果验证]" >&2
 
 L2_EVIDENCE_FILE="$PROJECT_ROOT/.layer2-evidence.md"
 
@@ -290,12 +290,30 @@ if [[ -f "$L2_EVIDENCE_FILE" ]]; then
         FAILED=1
     fi
 fi
+fi  # 结束 MODE == release 条件
 
 # ============================================================================
 # Part 3: Layer 3 - 需求验收（检查 DoD）
 # ============================================================================
-echo "" >&2
-echo "  [Layer 3: 需求验收]" >&2
+
+# pr 模式只检查 .dod.md 存在，不要求全勾
+if [[ "$MODE" == "pr" ]]; then
+    echo "" >&2
+    echo "  [Layer 3: 需求验收] (简化)" >&2
+
+    DOD_FILE="$PROJECT_ROOT/.dod.md"
+    echo -n "  DoD 文件... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$DOD_FILE" ]]; then
+        echo "✅ (存在即可)" >&2
+    else
+        echo "❌ (.dod.md 不存在)" >&2
+        echo "    → 请创建 .dod.md 记录 DoD 清单" >&2
+        FAILED=1
+    fi
+else
+    echo "" >&2
+    echo "  [Layer 3: 需求验收]" >&2
 
 DOD_FILE="$PROJECT_ROOT/.dod.md"
 
@@ -374,6 +392,7 @@ if [[ -f "$DOD_FILE" ]]; then
         fi
     fi
 fi
+fi  # 结束 MODE == release 的 L3 完整检查
 
 # ============================================================================
 # 结果输出

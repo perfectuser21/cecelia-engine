@@ -148,26 +148,10 @@ else
 fi
 
 # ========================================
-# 6. 删除 .project-info.json 缓存
+# 6. 清理 stale remote refs
 # ========================================
 echo ""
-echo "6️⃣  删除 .project-info.json 缓存..."
-if [[ -f ".project-info.json" ]]; then
-    if rm -f ".project-info.json" 2>/dev/null; then
-        echo -e "   ${GREEN}✅ 已删除 .project-info.json${NC}"
-    else
-        echo -e "   ${YELLOW}⚠️  删除 .project-info.json 失败${NC}"
-        WARNINGS=$((WARNINGS + 1))
-    fi
-else
-    echo -e "   ${GREEN}✅ .project-info.json 已不存在${NC}"
-fi
-
-# ========================================
-# 7. 清理 stale remote refs
-# ========================================
-echo ""
-echo "7️⃣  清理 stale remote refs..."
+echo "6️⃣  清理 stale remote refs..."
 PRUNED=$(git remote prune origin 2>&1 || true)
 if echo "$PRUNED" | grep -q "pruning"; then
     echo -e "   ${GREEN}✅ 已清理 stale refs${NC}"
@@ -176,10 +160,10 @@ else
 fi
 
 # ========================================
-# 8. 检查未提交的文件
+# 7. 检查未提交的文件
 # ========================================
 echo ""
-echo "8️⃣  检查未提交文件..."
+echo "7️⃣  检查未提交文件..."
 UNCOMMITTED=$(git status --porcelain 2>/dev/null | grep -v "node_modules" | head -5 || true)
 if [[ -n "$UNCOMMITTED" ]]; then
     echo -e "   ${YELLOW}⚠️  有未提交的文件:${NC}"
@@ -190,10 +174,10 @@ else
 fi
 
 # ========================================
-# 9. 删除 .quality-report.json（防止残留影响下次）
+# 8. 删除 .quality-report.json（防止残留影响下次）
 # ========================================
 echo ""
-echo "9️⃣  删除 .quality-report.json..."
+echo "8️⃣  删除 .quality-report.json..."
 if [[ -f ".quality-report.json" ]]; then
     if rm -f ".quality-report.json" 2>/dev/null; then
         echo -e "   ${GREEN}✅ 已删除 .quality-report.json${NC}"
@@ -206,10 +190,10 @@ else
 fi
 
 # ========================================
-# 10. 检查是否有其他 cp-* 分支遗留
+# 9. 检查是否有其他 cp-* 分支遗留
 # ========================================
 echo ""
-echo "🔟 检查其他遗留的 cp-* 分支..."
+echo "9️⃣  检查其他遗留的 cp-* 分支..."
 OTHER_CP=$(git branch --list "cp-*" 2>/dev/null | grep -v "^\*" || true)
 if [[ -n "$OTHER_CP" ]]; then
     echo -e "   ${YELLOW}⚠️  发现其他 cp-* 分支:${NC}"
@@ -220,10 +204,10 @@ else
 fi
 
 # ========================================
-# 11. 设置 step=11（标记 cleanup 完成）
+# 10. 设置 step=11（标记 cleanup 完成）
 # ========================================
 echo ""
-echo "1️⃣1️⃣ 设置 step=11..."
+echo "🔟 设置 step=11..."
 # 注意：此时 git config 可能已被清理，所以这里是为外部调用者记录状态
 # 如果分支已删除，则不再需要设置（分支和 config 都已清理）
 if git rev-parse --abbrev-ref HEAD 2>/dev/null | grep -q "^$CP_BRANCH$"; then

@@ -200,14 +200,6 @@ fi
 echo "  ✅ stale 引用已清理（假设）"
 ((COMPLETED_COUNT++))
 
-# .project-info.json 已删除？（可选警告）
-if [[ -f ".project-info.json" ]]; then
-  echo "  ⚠️ .project-info.json 未删除（可选）"
-  # 不计入 MISSING_COMMANDS，因为这是可选的
-else
-  echo "  ✅ .project-info.json 已删除"
-fi
-
 # 未提交文件检查（可选警告）
 UNCOMMITTED=$(git status --porcelain 2>/dev/null | grep -v "node_modules" | head -5 || true)
 if [[ -n "$UNCOMMITTED" ]]; then

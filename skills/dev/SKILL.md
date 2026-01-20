@@ -49,30 +49,21 @@ description: |
                                 │
                                 ▼
 ┌───────────────────────────────────────────────────┐
-│  Loop: Step 5-7 (Subagent 执行)                   │
+│  Loop: Step 5-7                                   │
 │                                                   │
-│  主 Agent 调用 Task tool 启动 Subagent            │
+│  Step 5: 写代码                                   │
+│      ↓                                            │
+│  Step 6: 写测试                                   │
+│      ↓                                            │
+│  Step 7: 质检                                     │
 │      │                                            │
-│      ▼                                            │
-│  Subagent:                                        │
+│      ├── 失败 → 返回 Step 5 继续修复              │
 │      │                                            │
-│      ├── 创建 .subagent-lock                      │
-│      │                                            │
-│      ├── Step 5: 写代码                           │
-│      │      ↓                                     │
-│      ├── Step 6: 写测试                           │
-│      │      ↓                                     │
-│      └── Step 7: 质检（三层）                     │
-│             │                                     │
-│             ├── 失败 → SubagentStop Hook 阻止退出 │
-│             │         继续修复，loop_count++      │
-│             │                                     │
-│             └── 通过 → 删除 .subagent-lock        │
-│                        SubagentStop Hook 放行     │
+│      └── 通过 ↓                                   │
 └───────────────────────────────────────────────────┘
     │
     ▼
-Step 8: 提交 PR
+Step 8: 提交 PR（pr-gate 检查 L1）
     │
     ▼
 ┌───────────────────────────────────────────────────┐
@@ -80,7 +71,7 @@ Step 8: 提交 PR
 │                                                   │
 │  Step 9: CI                                       │
 │      │                                            │
-│      ├── 失败 → 返回 Step 4（从 Step 5 重新开始）│
+│      ├── 失败 → 返回 Step 5（从 Step 5 重新开始）│
 │      │                                            │
 │      └── 通过 ↓                                   │
 └───────────────────────────────────────────────────┘
@@ -100,9 +91,9 @@ Step 11: Cleanup
 - Step 1 PRD 确定后不停顿，直到 Step 4 DoD
 - 失败返回逻辑：
   - Step 6 写测试失败 → 继续 Step 6
-  - Step 7 质检失败 → 返回 Step 4（从 Step 5 重新开始，5→6→7 循环）
-  - Step 8 PR 被 Hook 拦截 → 返回 Step 4（Hook 会检查质检报告和流程状态）
-  - Step 9 CI 红 → 返回 Step 4（从 Step 5 重新开始，5→6→7 循环）
+  - Step 7 质检失败 → 返回 Step 5 继续修复
+  - Step 8 PR 被 Hook 拦截 → 返回 Step 5（只检查 L1，失败立即修复）
+  - Step 9 CI 红 → 返回 Step 5（从 Step 5 重新开始）
 - Step 10 Learning 是必须的
 - 整个流程在一个对话中完成，失败时自动循环，不断开
 
@@ -112,49 +103,10 @@ Step 11: Cleanup
 
 1. **只在 cp-* 或 feature/* 分支写代码** - Hook 引导
 2. **步骤状态机** - Hook 检查 `git config branch.*.step`，step >= 4 才能写代码
-3. **Step 5-7 必须通过 Subagent 执行** - Hook 强制（见下方说明）
-4. **develop 是主开发线** - PR 合并回 develop
-5. **main 始终稳定** - 只在里程碑时从 develop 合并
-6. **CI 是唯一强制检查** - 其他都是引导
-
----
-
-## Step 5-7 Subagent 执行机制
-
-**强制机制**：主 Agent 在 step=4-6 期间尝试写代码会被 `branch-protect.sh` 阻止，必须通过 Task tool 启动 Subagent。
-
-### 调用方式
-
-```
-Task(
-  subagent_type="general-purpose",
-  prompt="执行 Step 5-7:
-    1. 创建 .subagent-lock 文件
-    2. 写代码 (Step 5)
-    3. 写测试 (Step 6)
-    4. 质检 (Step 7)
-    5. 生成 .quality-report.json
-    质检通过后删除 .subagent-lock"
-)
-```
-
-### Hook 机制
-
-| Hook | 触发时机 | 作用 |
-|------|----------|------|
-| branch-protect.sh | 主 Agent 写代码 | step=4-6 且无 .subagent-lock → 阻止 |
-| subagent-quality-gate.sh | Subagent 退出 | 检查 .quality-report.json，未通过 → 阻止退出 |
-
-### 状态追踪
-
-```bash
-# Subagent 启动时
-touch .subagent-lock
-
-# 质检通过后
-rm .subagent-lock
-git config branch.$BRANCH.loop_count <N>  # 记录循环次数
-```
+3. **develop 是主开发线** - PR 合并回 develop
+4. **main 始终稳定** - 只在里程碑时从 develop 合并
+5. **CI 是唯一强制检查** - 其他都是引导
+6. **PR 只检查 L1** - 证据链检查移到 Release 阶段
 
 ---
 
@@ -165,12 +117,12 @@ git config branch.$BRANCH.loop_count <N>  # 记录循环次数
 | step | 状态 | 说明 |
 |------|------|------|
 | 1 | PRD 确定 | 需求明确 |
-| 2 | 项目环境检测完成 | .project-info.json 生成 |
+| 2 | 项目环境确认 | 确认项目类型 |
 | 3 | 分支已创建 | cp-* 或 feature/* 分支 |
 | 4 | DoD 完成 | DoD 推演完成，**可以写代码** |
 | 5 | 代码完成 | 功能代码写完 |
 | 6 | 测试完成 | 测试代码写完 |
-| 7 | 质检通过 | 三层质检通过，**可以提交** |
+| 7 | 质检通过 | L1 质检通过，**可以提交** |
 | 8 | PR 已创建 | 等待 CI |
 | 9 | CI 通过 | CI 检查完成 |
 | 10 | Learning 完成 | 经验已记录 |
@@ -181,28 +133,13 @@ git config branch.$BRANCH.loop_count <N>  # 记录循环次数
 **branch-protect.sh** (PreToolUse - Write/Edit):
 - 引导 step >= 4 才能写代码
 - 引导只在 cp-* 或 feature/* 分支写代码
-- **强制** step=4-6 必须有 .subagent-lock 才能写代码
 
-**subagent-quality-gate.sh** (SubagentStop):
-- Subagent 退出时检查 .quality-report.json
-- 质检未通过 → exit 2 阻止退出，loop_count++
-- 质检通过 → 删除 .subagent-lock，设置 step=7
-
-**pr-gate.sh** (PreToolUse - Bash):
-- 拦截 `gh pr create`，运行质检
+**pr-gate-v2.sh** (PreToolUse - Bash):
+- 拦截 `gh pr create`，运行 L1 质检
+- 支持双模式：
+  - `PR_GATE_MODE=pr`（默认）：只检查 L1，.dod.md 存在即可
+  - `PR_GATE_MODE=release`：完整检查 L1+L2+L3，要求证据链
 - 失败时回退到 step 4，引导修复后重试
-
-**stop-gate.sh** (Stop):
-- 退出时检查任务完成度
-- 显示进度建议
-
-**project-detect.sh** (PostToolUse - Bash):
-- 检测项目初始化状态
-- 生成 .project-info.json
-
-**session-init.sh** (SessionStart):
-- 会话初始化，恢复上下文
-- 读取已保存的步骤状态
 
 **注意**：所有 Hook 都是引导性的，CI 是唯一强制检查。
 

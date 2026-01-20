@@ -105,11 +105,10 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$BASE_BRANCH"
 3. 删除本地 cp-* 分支
 4. 删除远程 cp-* 分支
 5. 清理 git config
-6. 删除 .project-info.json 缓存
-7. 清理 stale remote refs
-8. 检查未提交文件
-9. 检查其他遗留 cp-* 分支
-10. 设置 step=11（标记完成）
+6. 清理 stale remote refs
+7. 检查未提交文件
+8. 检查其他遗留 cp-* 分支
+9. 设置 step=11（标记完成）
 
 ---
 
@@ -120,9 +119,6 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$BASE_BRANCH"
 git config --unset branch.$BRANCH_NAME.base-branch 2>/dev/null || true
 git config --unset branch.$BRANCH_NAME.prd-confirmed 2>/dev/null || true
 git config --unset branch.$BRANCH_NAME.step 2>/dev/null || true
-
-# 删除 .project-info.json 缓存
-rm -f .project-info.json
 
 # 切回 base 分支
 git checkout "$BASE_BRANCH"
@@ -140,14 +136,6 @@ git remote prune origin 2>/dev/null || true
 # 设置 step 11
 git config branch."$BRANCH_NAME".step 11
 ```
-
----
-
-## 项目信息更新
-
-cleanup 脚本会自动删除 `.project-info.json` 缓存。
-
-**如果本次任务升级了项目能力**（比如加了 E2E 测试），下次执行 Bash 命令时 `project-detect.sh` 会自动重新扫描并记录新的能力等级。
 
 ---
 
