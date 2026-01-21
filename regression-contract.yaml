@@ -15,7 +15,7 @@
 #
 # ============================================================================
 
-version: "1.3.0"
+version: "1.4.0"
 updated: "2026-01-21"
 
 # ============================================================================
@@ -202,7 +202,7 @@ workflow:
     name: "/dev 流程可启动"
     scope: workflow
     priority: P0
-    trigger: [Release]
+    trigger: [PR, Release]
     method: manual
     tags: [dev, entry]
     owner: workflow
@@ -219,7 +219,7 @@ workflow:
     name: "分支自动创建"
     scope: workflow
     priority: P0
-    trigger: [Release]
+    trigger: [PR, Release]
     method: manual
     tags: [dev, branch]
     owner: workflow
@@ -237,7 +237,7 @@ workflow:
     name: "DoD 自动生成"
     scope: workflow
     priority: P0
-    trigger: [Release]
+    trigger: [PR, Release]
     method: manual
     tags: [dev, dod]
     owner: workflow
@@ -280,6 +280,43 @@ workflow:
       given: "Step 9 CI 红"
       when: "wait-for-merge.sh 检测到失败"
       then: "返回 Step 5 重新循环"
+    evidence:
+      type: log
+      contains: "CI 失败"
+
+  # --------------------------------------------------------------------------
+  # W3: 循环回退
+  # --------------------------------------------------------------------------
+  - id: W3-001
+    feature: W3
+    name: "质检失败触发回退"
+    scope: workflow
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, loop, quality]
+    owner: workflow
+    steps:
+      given: "Step 7 质检（npm run qa）失败"
+      when: "Claude 检测到失败"
+      then: "自动返回 Step 5 继续修复，而非中止流程"
+    evidence:
+      type: log
+      description: "对话记录显示循环回退"
+
+  - id: W3-002
+    feature: W3
+    name: "CI 失败触发回退"
+    scope: workflow
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, loop, ci]
+    owner: workflow
+    steps:
+      given: "Step 9 CI 红"
+      when: "wait-for-merge.sh 检测到 CI 失败"
+      then: "自动返回 Step 5 重新循环，而非中止"
     evidence:
       type: log
       contains: "CI 失败"

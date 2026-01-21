@@ -169,3 +169,93 @@ Next Actions:
 Artifacts:
   - regression-contract.yaml
 ```
+
+---
+
+## Part 3: QA Report 检查定义（qa-report.sh 的基准）
+
+> **qa-report.sh 只做"测量"，不做"内容补全"**
+
+### Meta "全" 的定义
+
+| 检查项 | 通过条件 |
+|--------|----------|
+| Feature → RCI 覆盖 | 每个 Committed Feature 至少有 1 条 RCI |
+| P0 触发规则 | 所有 P0 RCI 的 trigger 必须包含 PR |
+
+**输出**：
+- 覆盖率百分比
+- 缺口列表（哪些 Feature 没有 RCI）
+- P0 违规列表（哪些 P0 不在 PR 触发集合）
+
+### Unit "全" 的定义
+
+| 检查项 | 通过条件 |
+|--------|----------|
+| 真相命令 | `npm run qa`（typecheck + test + build）|
+| 通过标准 | exit code = 0 |
+
+**输出**：
+- 通过/失败状态
+- 测试数量
+- 用时
+- 失败时：前 N 行错误摘要
+
+### E2E "全" 的定义
+
+| 检查项 | 通过条件 |
+|--------|----------|
+| GP 存在 | golden_paths 部分存在且非空 |
+| GP 结构完整 | 每个 GP 有 id, name, rcis 列表 |
+| RCI 可解析 | GP.rcis 中的每个 ID 在 RC 中存在 |
+| GP 允许 manual | GP-001 等流程类 GP 可以 method: manual |
+
+**输出**：
+- GP 数量
+- 每个 GP 覆盖的 Feature 列表
+- 哪些 Feature 不在任何 GP 中
+
+### RCI 最小字段
+
+一条 RCI 至少需要以下 6 个字段才算"合格"：
+
+```yaml
+- id: H1-001          # 必须
+  feature: H1         # 必须
+  name: "描述"        # 必须
+  priority: P0        # 必须
+  trigger: [PR]       # 必须
+  evidence:           # 必须
+    type: log
+    contains: "xxx"
+```
+
+可选字段：`scope`, `method`, `tags`, `owner`, `steps`, `test`
+
+### 报告输出格式
+
+```json
+{
+  "meta": {
+    "score": 91,
+    "total_features": 11,
+    "covered_features": 10,
+    "gaps": ["W3"],
+    "p0_violations": []
+  },
+  "unit": {
+    "score": 100,
+    "passed": true,
+    "test_count": 99,
+    "duration": "1.94s",
+    "error_summary": null
+  },
+  "e2e": {
+    "score": 100,
+    "gp_count": 4,
+    "gp_coverage": ["H1", "H2", "W1", "C1", "C2", "C3"],
+    "uncovered_features": ["W3", "W4", "B1", "C4", "E1"]
+  },
+  "overall": 97
+}
+```

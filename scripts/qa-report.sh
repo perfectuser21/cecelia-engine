@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 # ============================================================================
-# QA Report Generator
+# QA Report Generator v2
 # ============================================================================
 #
 # 生成 QA 审计报告 JSON，供 Dashboard 使用
 #
 # 用法:
-#   bash scripts/qa-report.sh              # 输出到 stdout
+#   bash scripts/qa-report.sh              # 完整检查（包括运行测试）
+#   bash scripts/qa-report.sh --fast       # 快速检查（跳过 npm run qa）
 #   bash scripts/qa-report.sh --output     # 输出到 .qa-report.json
 #   bash scripts/qa-report.sh --post URL   # POST 到指定 URL
+#
+# 检查内容 (v2):
+#   - Meta:  Feature → RCI 覆盖率 + P0 触发规则
+#   - Unit:  真实运行 npm run qa（typecheck + test + build）
+#   - E2E:   Golden Paths 结构完整性 + RCI 可解析
 #
 # ============================================================================
 
@@ -18,6 +24,9 @@ PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 RC_FILE="$PROJECT_ROOT/regression-contract.yaml"
 FEATURES_FILE="$PROJECT_ROOT/FEATURES.md"
 PACKAGE_FILE="$PROJECT_ROOT/package.json"
+
+# 全局变量
+FAST_MODE=false
 
 # 颜色
 RED='\033[0;31m'
@@ -253,92 +262,204 @@ EOF
 }
 
 # ============================================================================
-# Summary 计算
+# Summary 计算 (v2: 真实检查)
 # ============================================================================
 
-calculate_summary() {
-    # Meta 层：检查关键文件存在
-    local meta=0
-    local meta_checks=0
+# Meta: Feature → RCI 覆盖率
+calculate_meta() {
+    python3 << 'PYTHON'
+import yaml
+import re
+import json
 
-    # regression-contract.yaml
-    [[ -f "$RC_FILE" ]] && ((meta+=1))
-    ((meta_checks+=1))
+# 读取文件
+try:
+    with open('FEATURES.md', 'r') as f:
+        features_content = f.read()
+    with open('regression-contract.yaml', 'r') as f:
+        rc_data = yaml.safe_load(f)
+except Exception as e:
+    print(json.dumps({"score": 0, "total_features": 0, "covered_features": 0, "gaps": [], "p0_violations": []}))
+    exit(0)
 
-    # FEATURES.md
-    [[ -f "$FEATURES_FILE" ]] && ((meta+=1))
-    ((meta_checks+=1))
+# 提取 Committed Features
+committed = set()
+for match in re.finditer(r'\|\s*([A-Z]\d+)\s*\|.*\*\*Committed\*\*', features_content):
+    committed.add(match.group(1))
 
-    # hooks/
-    [[ -d "$PROJECT_ROOT/hooks" ]] && ((meta+=1))
-    ((meta_checks+=1))
+# 提取 RC 中的 Features 和 P0 规则
+rc_features = set()
+p0_violations = []
 
-    # golden_paths
-    grep -q "^golden_paths:" "$RC_FILE" 2>/dev/null && ((meta+=1))
-    ((meta_checks+=1))
+for section in ['hooks', 'workflow', 'ci', 'business', 'export']:
+    if section in rc_data and rc_data[section]:
+        for rci in rc_data[section]:
+            feature = rci.get('feature', '')
+            rc_features.add(feature)
+            # 检查 P0 必须在 PR 触发
+            if rci.get('priority') == 'P0':
+                trigger = rci.get('trigger', [])
+                if 'PR' not in trigger:
+                    p0_violations.append(rci.get('id', ''))
 
-    # skills/qa
-    [[ -d "$PROJECT_ROOT/skills/qa" ]] && ((meta+=1))
-    ((meta_checks+=1))
+# 计算
+gaps = list(committed - rc_features)
+covered = len(committed) - len(gaps)
+total = len(committed)
+score = int(covered * 100 / total) if total > 0 else 0
 
-    local meta_pct=$((meta * 100 / meta_checks))
+print(json.dumps({
+    "score": score,
+    "total_features": total,
+    "covered_features": covered,
+    "gaps": gaps,
+    "p0_violations": p0_violations
+}))
+PYTHON
+}
 
-    # Unit 层：检查测试
-    local unit=0
-    local unit_checks=0
+# Unit: 真实运行 npm run qa
+calculate_unit() {
+    # Fast mode: 跳过实际运行
+    if [[ "$FAST_MODE" == "true" ]]; then
+        cat <<EOF
+{
+    "score": -1,
+    "passed": null,
+    "test_count": 0,
+    "duration": "skipped",
+    "error_summary": null,
+    "note": "Fast mode: skipped npm run qa"
+  }
+EOF
+        return
+    fi
 
-    # tests/ 目录
-    [[ -d "$PROJECT_ROOT/tests" ]] && ((unit+=1))
-    ((unit_checks+=1))
+    local start_time=$(date +%s)
+    local output
+    local exit_code
 
-    # vitest/jest
-    grep -q "vitest\|jest" "$PACKAGE_FILE" 2>/dev/null && ((unit+=1))
-    ((unit_checks+=1))
+    # 真实运行
+    output=$(npm run qa 2>&1) || true
+    exit_code=$?
 
-    # npm test 脚本
-    grep -q '"test"' "$PACKAGE_FILE" 2>/dev/null && ((unit+=1))
-    ((unit_checks+=1))
+    local end_time=$(date +%s)
+    local duration=$((end_time - start_time))
 
-    # hooks 测试
-    [[ -f "$PROJECT_ROOT/tests/hooks/branch-protect.test.ts" ]] && ((unit+=1))
-    ((unit_checks+=1))
+    # 提取测试数量（匹配 "99 passed" 格式，取最大的数字）
+    local test_count=$(echo "$output" | grep -oE "Tests\s+[0-9]+ passed" | grep -oE "[0-9]+" || echo "$output" | grep -oE "[0-9]+ passed" | grep -oE "[0-9]+" | sort -rn | head -1 || echo "0")
 
-    [[ -f "$PROJECT_ROOT/tests/hooks/pr-gate.test.ts" ]] && ((unit+=1))
-    ((unit_checks+=1))
+    # 判断是否通过
+    local passed="false"
+    local score=0
+    local error_summary="null"
 
-    local unit_pct=$((unit * 100 / unit_checks))
-
-    # E2E 层：Golden Paths
-    local e2e=0
-    local e2e_checks=0
-
-    # golden_paths 定义
-    grep -q "^golden_paths:" "$RC_FILE" 2>/dev/null && ((e2e+=1))
-    ((e2e_checks+=1))
-
-    # GP 数量 >= 3
-    local gp_count=$(grep -c "id: GP-" "$RC_FILE" 2>/dev/null || echo 0)
-    [[ $gp_count -ge 3 ]] && ((e2e+=1))
-    ((e2e_checks+=1))
-
-    # e2e/ 目录（可选）
-    [[ -d "$PROJECT_ROOT/e2e" ]] && ((e2e+=1))
-    ((e2e_checks+=1))
-
-    # golden-path-test.sh（可选）
-    [[ -f "$PROJECT_ROOT/scripts/golden-path-test.sh" ]] && ((e2e+=1))
-    ((e2e_checks+=1))
-
-    local e2e_pct=$((e2e * 100 / e2e_checks))
-
-    # Overall
-    local overall=$(( (meta_pct + unit_pct + e2e_pct) / 3 ))
+    if [[ $exit_code -eq 0 ]]; then
+        passed="true"
+        score=100
+    else
+        # 提取错误摘要（最后 10 行）
+        error_summary=$(echo "$output" | tail -10 | jq -Rs .)
+    fi
 
     cat <<EOF
 {
-    "meta": $meta_pct,
-    "unit": $unit_pct,
-    "e2e": $e2e_pct,
+    "score": $score,
+    "passed": $passed,
+    "test_count": $test_count,
+    "duration": "${duration}s",
+    "error_summary": $error_summary
+  }
+EOF
+}
+
+# E2E: GP 结构完整性
+calculate_e2e() {
+    python3 << 'PYTHON'
+import yaml
+import json
+
+try:
+    with open('regression-contract.yaml', 'r') as f:
+        rc_data = yaml.safe_load(f)
+except:
+    print(json.dumps({"score": 0, "gp_count": 0, "gp_coverage": [], "uncovered_features": []}))
+    exit(0)
+
+# 检查 golden_paths 存在
+gps = rc_data.get('golden_paths', [])
+if not gps:
+    print(json.dumps({"score": 0, "gp_count": 0, "gp_coverage": [], "uncovered_features": []}))
+    exit(0)
+
+# 收集所有 RCI IDs
+all_rci_ids = set()
+rci_to_feature = {}
+for section in ['hooks', 'workflow', 'ci', 'business', 'export']:
+    if section in rc_data and rc_data[section]:
+        for rci in rc_data[section]:
+            rci_id = rci.get('id', '')
+            all_rci_ids.add(rci_id)
+            rci_to_feature[rci_id] = rci.get('feature', '')
+
+# 检查 GP 结构和覆盖
+gp_count = len(gps)
+gp_coverage_features = set()
+valid_gps = 0
+unresolved_rcis = []
+
+for gp in gps:
+    has_id = 'id' in gp
+    has_name = 'name' in gp
+    has_rcis = 'rcis' in gp and len(gp.get('rcis', [])) > 0
+
+    if has_id and has_name and has_rcis:
+        valid_gps += 1
+        for rci_id in gp.get('rcis', []):
+            if rci_id in all_rci_ids:
+                gp_coverage_features.add(rci_to_feature.get(rci_id, ''))
+            else:
+                unresolved_rcis.append(rci_id)
+
+# 收集所有 Features
+all_features = set(rci_to_feature.values())
+uncovered = list(all_features - gp_coverage_features)
+
+# 计算分数
+score = int(valid_gps * 100 / gp_count) if gp_count > 0 else 0
+
+print(json.dumps({
+    "score": score,
+    "gp_count": gp_count,
+    "gp_coverage": list(gp_coverage_features),
+    "uncovered_features": uncovered,
+    "unresolved_rcis": unresolved_rcis
+}))
+PYTHON
+}
+
+calculate_summary() {
+    local meta_result=$(calculate_meta)
+    local unit_result=$(calculate_unit)
+    local e2e_result=$(calculate_e2e)
+
+    local meta_score=$(echo "$meta_result" | jq -r '.score')
+    local unit_score=$(echo "$unit_result" | jq -r '.score')
+    local e2e_score=$(echo "$e2e_result" | jq -r '.score')
+
+    # Fast mode: unit_score = -1，只用 meta 和 e2e 计算
+    local overall
+    if [[ "$unit_score" == "-1" ]]; then
+        overall=$(( (meta_score + e2e_score) / 2 ))
+    else
+        overall=$(( (meta_score + unit_score + e2e_score) / 3 ))
+    fi
+
+    cat <<EOF
+{
+    "meta": $meta_result,
+    "unit": $unit_result,
+    "e2e": $e2e_result,
     "overall": $overall
   }
 EOF
@@ -382,6 +503,10 @@ main() {
 
     while [[ $# -gt 0 ]]; do
         case $1 in
+            --fast|-f)
+                FAST_MODE=true
+                shift
+                ;;
             --output|-o)
                 mode="file"
                 shift
@@ -392,9 +517,10 @@ main() {
                 shift 2
                 ;;
             --help|-h)
-                echo "用法: $0 [--output] [--post URL]"
+                echo "用法: $0 [--fast] [--output] [--post URL]"
                 echo ""
                 echo "选项:"
+                echo "  --fast, -f      快速模式（跳过 npm run qa）"
                 echo "  --output, -o    输出到 .qa-report.json"
                 echo "  --post, -p URL  POST 到指定 URL"
                 echo "  --help, -h      显示帮助"

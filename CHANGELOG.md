@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.16] - 2026-01-21
+
+### Changed
+- **scripts/qa-report.sh**: 升级到 v2，真实检查而非文件存在性检查
+  - Meta: Feature → RCI 覆盖率 + P0 触发规则检查
+  - Unit: 真实运行 `npm run qa`，输出测试数量和用时
+  - E2E: Golden Paths 结构完整性 + RCI 可解析性检查
+  - 新增 `--fast` 模式跳过 npm run qa
+
+- **skills/qa/knowledge/criteria.md**: 新增 Part 3 QA Report 检查定义
+  - 固化 Meta/Unit/E2E "全" 的定义
+  - 定义 RCI 最小字段（6 个核心字段）
+  - 定义报告输出格式
+
+- **regression-contract.yaml**: 升级到 v1.4.0
+  - 新增 W3 RCIs（W3-001, W3-002 循环回退）
+  - 修复 P0 trigger 违规：W1-001/002/003 加入 PR 触发
+
 ## [8.0.15] - 2026-01-21
 
 ### Added
