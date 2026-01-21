@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.31] - 2026-01-22
+
+### Changed
+- **scripts/run-regression.sh**: 重写 L3 回归测试逻辑
+  - 新增 `parse_rcis()` 函数：使用 yq 解析 regression-contract.yaml 中所有 RCI
+  - 新增 `filter_by_trigger()` 函数：根据 pr/release/nightly 模式过滤 RCI
+  - 新增 `run_evidence()` 函数：执行 evidence.type=command 的自动化测试
+  - 支持 `--dry-run` 参数：只显示要执行的 RCI 列表，不实际执行
+  - 智能跳过：命令不存在时标记为 skipped 而非 failed
+  - 使用 ASCII Unit Separator 作为字段分隔符，避免与命令中的 `|` 冲突
+
+### Fixed
+- L3 测试现在能正确解析和执行 regression-contract.yaml 中定义的所有自动化测试
+- 修复 `set -e` 与算术表达式 `((i++))` 的兼容性问题
+
 ## [8.0.30] - 2026-01-22
 
 ### Added
