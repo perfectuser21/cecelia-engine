@@ -1,9 +1,10 @@
 ---
 id: features-registry
-version: 1.10.0
+version: 1.11.0
 created: 2026-01-20
 updated: 2026-01-21
 changelog:
+  - 1.11.0: 新增 N1 Cecilia (无头模式 + N8N 集成)
   - 1.10.0: 同步 regression-contract.yaml 版本，GP-005 补 E2-003
   - 1.9.0: QA 清理 - 修复 bugs、移除 W4 残留、更新文档
   - 1.8.0: 新增 C5 release-check，GP-005 Export 链路
@@ -107,6 +108,25 @@ Full Regression（全量测试）
 
 ---
 
+## N8N Integration (自动化集成)
+
+| ID | Feature | 状态 | 最小验收 | 说明 |
+|----|---------|------|----------|------|
+| N1 | Cecilia (无头模式) | **Committed** | `cecilia --health` | 无头 Claude Code，供 N8N 调度执行开发任务 |
+
+**架构**：
+```
+N8N Workflow → SSH → cecilia CLI → claude -p → /dev skill → 结果 JSON
+```
+
+**组件**：
+- `cecilia` CLI: `/home/xx/bin/cecilia`
+- N8N Workflow: `n8n/workflows/prd-executor-simple.json`
+- PRD Schema: `templates/prd-schema.json`
+- 接口规范: `docs/INTERFACE-SPEC.md`
+
+---
+
 ## 全量回归定义
 
 > **全量的唯一合法定义来源是 `regression-contract.yaml`**
@@ -135,7 +155,7 @@ Trigger 规则:
 
 > 使用 `bash scripts/rc-filter.sh stats` 获取实时统计
 
-- **Committed Features**: 11（H1-H2, W1/W3/W5, C1-C3/C5, E1-E2）
+- **Committed Features**: 12（H1-H2, W1/W3/W5, C1-C3/C5, E1-E2, N1）
 
 ---
 

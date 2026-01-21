@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.27] - 2026-01-21
+
+### Added
+- **N1 (Cecilia)**: 注册为 Committed Feature
+  - 无头 Claude Code，供 N8N 调度执行开发任务
+  - 新增 3 个 RCI (N1-001, N1-002, N1-003)
+- **GP-006 (N8N/Cecilia 无头链路)**: 端到端验证无头模式执行流程
+
+### Changed
+- **FEATURES.md**: 升级到 v1.11.0，新增 N8N Integration 分类
+- **regression-contract.yaml**: 升级到 v1.11.0，新增 n8n 分类
+
 ## [8.0.26] - 2026-01-21
 
 ### Fixed
