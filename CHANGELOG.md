@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.24] - 2026-01-21
+
+### Added
+- **C5 (release-check)**: 注册为 Committed Feature
+  - Release 前 DoD 完成度检查
+  - 新增 1 个 RCI (C5-001)
+- **GP-005 (Export 链路)**: 覆盖 E1 + E2 的端到端验证
+
+### Changed
+- **GP-001**: 新增 W5-001, W5-002（模式检测）
+- **regression-contract.yaml**: 升级到 v1.9.0
+- **FEATURES.md**: 更新为 11 个 Committed Features
+
+## [8.0.23] - 2026-01-21
+
+### Added
+- **E2 (Dev Session Reporting)**: 注册为 Committed Feature
+  - 开发任务报告输出（JSON+TXT）
+  - 新增 mode 字段区分有头(interactive)/无头(headless)模式
+  - 新增 3 个 RCIs (E2-001 ~ E2-003)
+
+### Changed
+- **regression-contract.yaml**: 升级到 v1.8.0
+- **FEATURES.md**: 更新为 10 个 Committed Features
+
+## [8.0.22] - 2026-01-21
+
+### Added
+- **W5 (模式自动检测)**: 注册为 Committed Feature
+  - /dev 入口自动识别四种模式：new/continue/fix/merge
+  - 新增 4 个 RCIs (W5-001 ~ W5-004)
+
+### Changed
+- **regression-contract.yaml**: 升级到 v1.7.0
+- **FEATURES.md**: 更新为 9 个 Committed Features
+
 ## [8.0.21] - 2026-01-21
 
 ### Removed

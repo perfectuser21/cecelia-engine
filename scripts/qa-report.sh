@@ -71,10 +71,13 @@ FEATURE_DESCRIPTIONS = {
     "H2": "创建 PR 前强制跑测试，不过不让提",
     "W1": "统一开发入口：需求→分支→写码→测试→PR→合并",
     "W3": "测试失败不中止，自动回去继续修",
+    "W5": "/dev 入口自动识别四种模式（new/continue/fix/merge）",
     "C1": "PR 必须更新版本号，否则 CI 红",
     "C2": "CI 跑 typecheck + test + build",
     "C3": "CI 检查所有 .sh 脚本语法",
-    "E1": "生成 QA 审计 JSON 给 Dashboard 用"
+    "C5": "Release 前检查 DoD 完成度",
+    "E1": "生成 QA 审计 JSON 给 Dashboard 用",
+    "E2": "开发任务报告（有头/无头模式标识）"
 }
 
 # 读取文件

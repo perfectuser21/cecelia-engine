@@ -1,9 +1,12 @@
 ---
 id: features-registry
-version: 1.5.0
+version: 1.8.0
 created: 2026-01-20
 updated: 2026-01-21
 changelog:
+  - 1.8.0: 新增 C5 release-check，GP-005 Export 链路
+  - 1.7.0: 新增 E2 Dev Session Reporting
+  - 1.6.0: 新增 W5 模式自动检测
   - 1.5.0: 新增 Export 分类，E1 QA Reporting
   - 1.4.0: 更新 Trigger 规则说明，统计改用 rc-filter.sh 脚本
   - 1.3.0: 引入 Regression Contract 体系，清理步骤状态机描述
@@ -68,6 +71,7 @@ Full Regression（全量测试）
 | W1 | /dev 11 步流程 | **Committed** | 手动验证 | 统一开发入口 |
 | ~~W2~~ | ~~步骤状态机~~ | **Deprecated** | - | v8.0.11 简化，不再强制追踪 step |
 | W3 | 循环回退 | **Committed** | 手动验证 | 质检/CI 失败 → 继续修复 |
+| W5 | 模式自动检测 | **Committed** | 手动验证 | /dev 入口四种模式（new/continue/fix/merge） |
 | ~~W4~~ | ~~测试任务模式~~ | **Deprecated** | - | v8.0.21 删除，功能不需要 |
 
 ---
@@ -88,6 +92,7 @@ Full Regression（全量测试）
 | C2 | test job | **Committed** | CI 运行 | L1 全量测试 |
 | C3 | shell syntax check | **Committed** | CI 运行 | Shell 脚本语法 |
 | ~~C4~~ | ~~notify-failure~~ | **Deprecated** | - | v8.0.21 删除，改用 n8n/飞书通知 |
+| C5 | release-check | **Committed** | `scripts/release-check.sh` | Release 前 DoD 完成度检查 |
 
 ---
 
@@ -96,6 +101,7 @@ Full Regression（全量测试）
 | ID | Feature | 状态 | 最小验收 | 说明 |
 |----|---------|------|----------|------|
 | E1 | QA Reporting | **Committed** | `scripts/qa-report.sh` | 生成 QA 审计 JSON，供 Dashboard 使用 |
+| E2 | Dev Session Reporting | **Committed** | `skills/dev/scripts/generate-report.sh` | 开发任务报告（JSON+TXT），供 Dashboard/Cecilia 使用 |
 
 ---
 
@@ -127,7 +133,7 @@ Trigger 规则:
 
 > 使用 `bash scripts/rc-filter.sh stats` 获取实时统计
 
-- **Committed Features**: 8（H1-H2, W1/W3, C1-C3, E1）
+- **Committed Features**: 11（H1-H2, W1/W3/W5, C1-C3/C5, E1-E2）
 
 ---
 
