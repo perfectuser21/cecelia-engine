@@ -2,12 +2,6 @@
 
 > 记录开发经验（必须步骤）
 
-**前置条件**：step >= 9（CI 通过/已合并）
-**完成后设置状态**：
-```bash
-git config branch."$BRANCH_NAME".step 10
-```
-
 ---
 
 ## 为什么必须记录？
@@ -84,30 +78,12 @@ IS_TEST=$(git config branch."$BRANCH_NAME".is-test 2>/dev/null)
    - 这些问题/优化会影响到未来吗？
 
 2. **追加到对应的 LEARNINGS.md**
-   ```bash
-   # Engine 层面
-   echo "" >> zenithjoy-engine/docs/LEARNINGS.md
-   echo "### [$(date +%Y-%m-%d)] <任务简述>" >> zenithjoy-engine/docs/LEARNINGS.md
-   echo "- **Bug**: <描述>" >> zenithjoy-engine/docs/LEARNINGS.md
-   echo "- **优化点**: <描述>" >> zenithjoy-engine/docs/LEARNINGS.md
-   echo "- **影响程度**: Low/Medium/High" >> zenithjoy-engine/docs/LEARNINGS.md
-
-   # 项目层面（如果需要）
-   echo "" >> <项目路径>/docs/LEARNINGS.md
-   echo "### [$(date +%Y-%m-%d)] <任务简述>" >> <项目路径>/docs/LEARNINGS.md
-   # ...
-   ```
 
 3. **提交 Learning**
    ```bash
    git add docs/LEARNINGS.md
    git commit -m "docs: 记录 <任务> 的开发经验"
    git push
-   ```
-
-4. **设置 step 10**
-   ```bash
-   git config branch."$BRANCH_NAME".step 10
    ```
 
 ---
@@ -130,6 +106,5 @@ IS_TEST=$(git config branch."$BRANCH_NAME".is-test 2>/dev/null)
 
 - [ ] 至少有一条 Learning 记录（Engine 或项目层面）
 - [ ] Learning 已提交并推送
-- [ ] 设置了 step 10
 
 **完成后进入 Step 11: Cleanup**

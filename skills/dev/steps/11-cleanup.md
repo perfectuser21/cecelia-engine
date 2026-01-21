@@ -2,12 +2,6 @@
 
 > 生成任务报告 + 清理分支和配置
 
-**前置条件**：step >= 10（Learning 完成）
-**完成后设置状态**：
-```bash
-git config branch."$BRANCH_NAME".step 11
-```
-
 ---
 
 ## 任务报告生成
@@ -108,7 +102,6 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$BASE_BRANCH"
 6. 清理 stale remote refs
 7. 检查未提交文件
 8. 检查其他遗留 cp-* 分支
-9. 设置 step=11（标记完成）
 
 ---
 
@@ -118,7 +111,7 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$BASE_BRANCH"
 # 清理 git config
 git config --unset branch.$BRANCH_NAME.base-branch 2>/dev/null || true
 git config --unset branch.$BRANCH_NAME.prd-confirmed 2>/dev/null || true
-git config --unset branch.$BRANCH_NAME.step 2>/dev/null || true
+git config --unset branch.$BRANCH_NAME.is-test 2>/dev/null || true
 
 # 切回 base 分支
 git checkout "$BASE_BRANCH"
@@ -132,14 +125,11 @@ git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
 
 # 清理 stale refs
 git remote prune origin 2>/dev/null || true
-
-# 设置 step 11
-git config branch."$BRANCH_NAME".step 11
 ```
 
 ---
 
-## 完成 🎉
+## 完成
 
 ```bash
 echo "🎉 本轮开发完成！"

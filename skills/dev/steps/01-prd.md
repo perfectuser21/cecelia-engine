@@ -2,11 +2,6 @@
 
 > 生成产品需求文档，等用户确认
 
-**完成后设置状态**：
-```bash
-git config branch."$BRANCH_NAME".step 1
-```
-
 ---
 
 ## 入口模式
@@ -22,7 +17,7 @@ Claude: 生成 PRD 草稿
     ↓
 用户: 确认或修改
     ↓
-Claude: PRD 确定 → step 1
+Claude: PRD 确定 → 继续
 ```
 
 ### 无头入口（N8N）
@@ -40,7 +35,7 @@ N8N 直接发送完整 PRD，跳过对话：
 }
 ```
 
-Claude 直接使用 PRD → step 1
+Claude 直接使用 PRD → 继续
 
 ---
 
@@ -112,42 +107,8 @@ fi
 
 ---
 
-## 用户确认后
+## 完成后
 
 ```bash
-BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-git config branch."$BRANCH_NAME".step 1
-
-# 检测测试任务
-if [[ "$PRD_TITLE" == *"[TEST]"* ]]; then
-    git config branch."$BRANCH_NAME".is-test true
-    echo "🧪 测试任务模式"
-fi
-
 echo "✅ Step 1 完成 (PRD 确认)"
 ```
-
----
-
-## 与 N8N 集成
-
-N8N 可以通过 API 直接发送 PRD：
-
-```bash
-# N8N 发送的 payload
-{
-  "mode": "headless",
-  "prd": {
-    "需求来源": "自动化任务 #123",
-    "功能描述": "添加数据导出功能",
-    "涉及文件": "src/api/export.ts, src/components/ExportButton.tsx",
-    "成功标准": "用户可以点击按钮导出 CSV 文件"
-  }
-}
-```
-
-Claude 检测到 `mode: headless` 时：
-1. 跳过对话确认
-2. 直接使用 PRD
-3. 设置 step 1
-4. 继续 Step 2

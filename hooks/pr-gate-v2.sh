@@ -320,20 +320,7 @@ if [[ $FAILED -eq 1 ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     echo "  ❌ PR Gate 检查失败" >&2
     echo "" >&2
-
-    # 回退到 step 4
-    if [[ -n "${CURRENT_BRANCH:-}" && "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
-        CURRENT_STEP=$(git config --get branch."$CURRENT_BRANCH".step 2>/dev/null || echo "0")
-        if [[ "$CURRENT_STEP" -ge 4 ]]; then
-            git config branch."$CURRENT_BRANCH".step 4
-            echo "  ⟲ step 回退到 4，请修复后重试" >&2
-        else
-            echo "  请先运行 /dev 完成前置步骤" >&2
-            echo "" >&2
-            echo "  [SKILL_REQUIRED: dev]" >&2
-        fi
-    fi
-
+    echo "  请修复上述问题后重试" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
 fi

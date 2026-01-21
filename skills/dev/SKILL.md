@@ -1,7 +1,7 @@
 ---
 name: dev
 description: |
-  统一开发工作流入口。一个对话完成整个开发流程。
+  统一开发工作流入口。集成 Ralph Loop 插件。
 
   触发条件：
   - 用户说任何开发相关的需求
@@ -11,186 +11,195 @@ description: |
 
 # /dev - 统一开发工作流
 
-## 11 步流程
+## 入口：四种模式自动检测
 
-| Step | 内容 | 详情 |
+**进入 /dev 后，首先运行模式检测**：
+
+```bash
+# 获取当前状态
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --state open --json number -q '.[0].number' 2>/dev/null)
+CI_STATUS=""
+if [[ -n "$PR_NUMBER" ]]; then
+    CI_STATUS=$(gh pr checks "$PR_NUMBER" --json state -q '.[].state' 2>/dev/null | grep -q "FAILURE" && echo "red" || echo "green")
+fi
+
+# 判断模式
+if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" ]]; then
+    MODE="new"  # 新任务模式
+elif [[ -z "$PR_NUMBER" ]]; then
+    MODE="continue"  # 继续开发模式
+elif [[ "$CI_STATUS" == "red" ]]; then
+    MODE="fix"  # 修复模式
+else
+    MODE="merge"  # 合并模式
+fi
+
+echo "检测到模式: $MODE"
+```
+
+### 模式处理
+
+| 模式 | 条件 | 动作 |
 |------|------|------|
-| 1 | PRD 确定 | → [01-prd.md](steps/01-prd.md) |
-| 2 | 检测项目环境 | → [02-detect.md](steps/02-detect.md) |
-| 3 | 创建分支 | → [03-branch.md](steps/03-branch.md) |
-| 4 | 推演 DoD | → [04-dod.md](steps/04-dod.md) |
-| 5 | 写代码 | → [05-code.md](steps/05-code.md) |
-| 6 | 写测试 | → [06-test.md](steps/06-test.md) |
-| 7 | 质检（三层）| → [07-quality.md](steps/07-quality.md) |
-| 8 | 提交 PR | → [08-pr.md](steps/08-pr.md) |
-| 9 | CI | → [09-ci.md](steps/09-ci.md) |
-| 10 | Learning | → [10-learning.md](steps/10-learning.md) |
-| 11 | Cleanup | → [11-cleanup.md](steps/11-cleanup.md) |
+| `new` | 在 develop/main | PRD → 创建分支 → DoD → **Loop 1** → PR → **Loop 2** → Merge |
+| `continue` | 在 cp-*/feature/* + 无 PR | 直接进入 **Loop 1** |
+| `fix` | 有 PR + CI 红 | 直接进入 **Loop 2** |
+| `merge` | 有 PR + CI 绿 | Learning → Cleanup → Merge |
 
 ---
 
-## 流程图（一个对话完成）
+## Loop 1: 本地 QA（使用 Ralph Loop）
 
+**目标**：`npm run qa` 通过
+
+**调用方式**：
 ```
-/dev 开始
-    │
-    ├── 有头：用户说需求 → Step 1 PRD 确定
-    │                           │
-    └── 无头：Hook 触发 ──────────┘
-                                │
-                                ▼
-                        Step 2: 检测项目环境
-                                │
-                                ▼
-                        Step 3: 创建分支
-                                │
-                                ▼
-                        Step 4: 推演 DoD（不停顿，继续）
-                                │
-                                ▼
-┌───────────────────────────────────────────────────┐
-│  Loop: Step 5-7                                   │
-│                                                   │
-│  Step 5: 写代码                                   │
-│      ↓                                            │
-│  Step 6: 写测试                                   │
-│      ↓                                            │
-│  Step 7: 质检                                     │
-│      │                                            │
-│      ├── 失败 → 返回 Step 5 继续修复              │
-│      │                                            │
-│      └── 通过 ↓                                   │
-└───────────────────────────────────────────────────┘
-    │
-    ▼
-Step 8: 提交 PR（pr-gate 检查 L1）
-    │
-    ▼
-┌───────────────────────────────────────────────────┐
-│  Loop: Step 9                                     │
-│                                                   │
-│  Step 9: CI                                       │
-│      │                                            │
-│      ├── 失败 → 返回 Step 5（从 Step 5 重新开始）│
-│      │                                            │
-│      └── 通过 ↓                                   │
-└───────────────────────────────────────────────────┘
-    │
-    ▼
-Step 10: Learning（必须）
-    │
-    ▼
-Step 11: Cleanup
-    │
-    ▼
-完成 🎉
+/ralph-loop "
+## 任务
+完成 DoD 中的验收标准，确保本地 QA 通过。
+
+## DoD 内容
+$(cat .dod.md)
+
+## 执行步骤
+1. 写代码实现 DoD 中的功能
+2. 运行 npm run qa
+3. 如果失败，读取错误信息并修复
+4. 重复 2-3 直到通过
+5. 通过后输出：LOCAL_QA_PASSED
+
+## 告警
+如果已经修复了 20 次还没通过，停下来输出：NEED_HUMAN_HELP
+" --max-iterations 25 --completion-keyword "LOCAL_QA_PASSED"
 ```
 
-**关键**：
-- 有头/无头两个入口一条线
-- Step 1 PRD 确定后不停顿，直到 Step 4 DoD
-- 失败返回逻辑：
-  - Step 6 写测试失败 → 继续 Step 6
-  - Step 7 质检失败 → 返回 Step 5 继续修复
-  - Step 8 PR 被 Hook 拦截 → 返回 Step 5（只检查 L1，失败立即修复）
-  - Step 9 CI 红 → 返回 Step 5（从 Step 5 重新开始）
-- Step 10 Learning 是必须的
-- 整个流程在一个对话中完成，失败时自动循环，不断开
+**Loop 1 完成后**：
+- 输出 `LOCAL_QA_PASSED` → 继续创建 PR
+- 输出 `NEED_HUMAN_HELP` → 停止，等待用户介入
+
+---
+
+## Loop 2: CI 修复（使用 Ralph Loop）
+
+**目标**：CI 全绿
+
+**调用方式**：
+```
+/ralph-loop "
+## 任务
+PR #$PR_NUMBER 的 CI 失败，需要修复。
+
+## 执行步骤
+1. 运行 gh pr checks $PR_NUMBER 获取失败的检查
+2. 运行 gh run view --log-failed 读取错误日志
+3. 分析错误原因，修复代码
+4. git add -A && git commit -m 'fix: CI 修复' && git push
+5. 运行 gh pr checks $PR_NUMBER --watch 等待 CI
+6. 如果还是红，重复 1-5
+7. CI 全绿后输出：CI_ALL_GREEN
+
+## 告警
+如果已经修复了 20 次还没通过，停下来输出：NEED_HUMAN_HELP
+" --max-iterations 25 --completion-keyword "CI_ALL_GREEN"
+```
+
+**Loop 2 完成后**：
+- 输出 `CI_ALL_GREEN` → 继续 Learning + Cleanup + Merge
+- 输出 `NEED_HUMAN_HELP` → 停止，等待用户介入
+
+---
+
+## 完整流程图
+
+```
+/dev 入口
+    │
+    ▼
+┌─────────────────────────────────────┐
+│  模式检测（bash 脚本）              │
+│  → new / continue / fix / merge     │
+└─────────────────────────────────────┘
+    │
+    ├── new ────────────────────────────┐
+    │                                   ▼
+    │                           ┌──────────────┐
+    │                           │  PRD + DoD   │
+    │                           │  (新任务)    │
+    │                           └──────┬───────┘
+    │                                  │
+    │                                  ▼
+    │                           ┌──────────────┐
+    │                           │  创建 cp-*   │
+    │                           │  分支        │
+    │                           └──────┬───────┘
+    │                                  │
+    ├── continue ──────────────────────┤
+    │   (已在 cp-* 分支，直接进入)     │
+    │   ┌──────────────────────────────┘
+    │   │
+    │   ▼
+    │  ┌─────────────────────────────────────┐
+    │  │  /ralph-loop (Loop 1: 本地 QA)      │
+    │  │  → npm run qa 直到通过              │
+    │  │  → 20 轮告警                        │
+    │  └─────────────────────────────────────┘
+    │       │
+    │       ├── NEED_HUMAN_HELP → 停止
+    │       │
+    │       ▼ LOCAL_QA_PASSED
+    │  ┌─────────────────────────────────────┐
+    │  │  gh pr create                       │
+    │  └─────────────────────────────────────┘
+    │       │
+    │       ▼
+    ├── fix ────────────────────────────┐
+    │                                   │
+    │   ┌───────────────────────────────┘
+    │   │
+    │   ▼
+    │  ┌─────────────────────────────────────┐
+    │  │  /ralph-loop (Loop 2: CI 修复)      │
+    │  │  → 修复 + push 直到 CI 绿           │
+    │  │  → 20 轮告警                        │
+    │  └─────────────────────────────────────┘
+    │       │
+    │       ├── NEED_HUMAN_HELP → 停止
+    │       │
+    │       ▼ CI_ALL_GREEN
+    └── merge ──────────────────────────┐
+                                        │
+        ┌───────────────────────────────┘
+        │
+        ▼
+   ┌─────────────────────────────────────┐
+   │  Learning + Cleanup + Merge         │
+   └─────────────────────────────────────┘
+        │
+        ▼
+      完成
+```
+
+---
+
+## 有头 vs 无头
+
+| | 有头 | 无头 (Cecilia) |
+|---|---|---|
+| PRD 来源 | 用户说 | prompt 传入 |
+| 告警处理 | Claude 问用户 | 输出 NEED_HUMAN_HELP，N8N 发通知 |
+| 超时 | 无 | N8N 设 1 小时告警 |
+| 流程 | **完全一样** | **完全一样** |
 
 ---
 
 ## 核心规则
 
 1. **只在 cp-* 或 feature/* 分支写代码** - Hook 引导
-2. **步骤状态机** - Hook 检查 `git config branch.*.step`，step >= 4 才能写代码
-3. **develop 是主开发线** - PR 合并回 develop
-4. **main 始终稳定** - 只在里程碑时从 develop 合并
-5. **CI 是唯一强制裁决** - Hook 是本地门禁，CI 是最终裁决
-6. **v8+ 硬门禁规则**：
-   - PR → develop：L1 + L2A 必须通过（自动化测试）
-   - develop → main：L1 + L2A + L2B + L3 必须通过（本地产出，CI 裁决）
-
----
-
-## 步骤状态机
-
-用 `git config branch.cp-xxx.step` 追踪当前步骤：
-
-| step | 状态 | 说明 |
-|------|------|------|
-| 1 | PRD 确定 | 需求明确 |
-| 2 | 项目环境确认 | 确认项目类型 |
-| 3 | 分支已创建 | cp-* 或 feature/* 分支 |
-| 4 | DoD 完成 | DoD 推演完成，**可以写代码** |
-| 5 | 代码完成 | 功能代码写完 |
-| 6 | 测试完成 | 测试代码写完 |
-| 7 | 质检通过 | L1 质检通过，**可以提交** |
-| 8 | PR 已创建 | 等待 CI |
-| 9 | CI 通过 | CI 检查完成 |
-| 10 | Learning 完成 | 经验已记录 |
-| 11 | 已清理 | 分支删除 |
-
-### Hook 引导
-
-**branch-protect.sh** (PreToolUse - Write/Edit):
-- 引导 step >= 4 才能写代码
-- 引导只在 cp-* 或 feature/* 分支写代码
-
-**pr-gate-v2.sh** (PreToolUse - Bash):
-- 拦截 `gh pr create`，根据目标分支自动检测模式
-- **自动模式检测**：
-  - 解析 `--base` 参数，`--base main` → release 模式
-  - 否则 → pr 模式（默认）
-  - 可用 `PR_GATE_MODE=release` 强制 release 模式
-- **PR 模式** (→ develop)：
-  - L1 + L2A 自动化测试必须通过
-  - .dod.md 存在即可
-- **Release 模式** (→ main)：
-  - L1 + L2A 自动化测试必须通过
-  - L2B 证据文件 (.layer2-evidence.md) 必须存在且有效
-  - L3 验收项 (.dod.md) 全部打勾，Evidence 引用有效
-  - 允许从 develop 分支提交
-- 失败时回退到 step 4，引导修复后重试
-
-**注意**：所有 Hook 都是引导性的，CI 是唯一强制检查。
-
----
-
-## 快速修复模式
-
-**适用条件**（全部满足）：
-- `fix:` 类型修复
-- 单文件或少量改动
-- 需求明确
-
-**可简化**：Step 1 PRD 确定可以快速完成
-
----
-
-## 测试任务模式
-
-**触发条件**：PRD 标题包含 `[TEST]` 前缀
-
-```
-用户: "我想测试一下 [TEST] 新的登录流程"
-    ↓
-Claude: 检测到 [TEST] 前缀
-    ↓
-设置: git config branch.$BRANCH_NAME.is-test true
-```
-
-**测试任务的特殊处理**：
-
-| Step | 正常任务 | 测试任务 |
-|------|----------|----------|
-| 8 PR | 更新 CHANGELOG + 版本号 | 跳过，commit 用 `test:` 前缀 |
-| 10 Learning | 必须记录 | 可选（只记录流程经验） |
-| 11 Cleanup | 标准清理 | 额外检查残留 |
-
-**为什么需要测试模式**：
-- 测试任务的代码最终会删除
-- 不应该产生真实的版本号和 CHANGELOG 记录
-- 防止"版本号增加但功能被删除"的矛盾
+2. **develop 是主开发线** - PR 合并回 develop
+3. **main 始终稳定** - 只在里程碑时从 develop 合并
+4. **CI 是唯一强制检查** - 其他都是引导
+5. **Loop 自动处理失败** - Ralph Loop 自动重试
 
 ---
 
@@ -209,7 +218,8 @@ Claude: 检测到 [TEST] 前缀
 ```
 skills/dev/
 ├── SKILL.md        ← 你在这里（入口）
-├── steps/          ← 每步一个文件
+├── VALIDATION.md   ← 质检规则
+├── steps/          ← 每步详情（按需加载）
 │   ├── 01-prd.md
 │   ├── 02-detect.md
 │   ├── 03-branch.md
@@ -224,12 +234,19 @@ skills/dev/
 └── scripts/        ← 辅助脚本
     ├── cleanup.sh
     ├── check.sh
-    ├── wait-for-merge.sh
-    ├── scan-change-level.sh
-    └── multi-feature.sh
+    └── ...
 ```
 
-**执行时按需加载对应步骤文件，减少上下文开销。**
+---
+
+## 快速修复模式
+
+**适用条件**（全部满足）：
+- `fix:` 类型修复
+- 单文件或少量改动
+- 需求明确
+
+**简化流程**：PRD 快速确认 → Loop 1 → PR → Loop 2 → Merge
 
 ---
 

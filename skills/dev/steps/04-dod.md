@@ -2,11 +2,6 @@
 
 > 定义验收标准（Definition of Done）
 
-**完成后设置状态**（这步完成后才能写代码）：
-```bash
-git config branch."$BRANCH_NAME".step 4
-```
-
 ---
 
 ## DoD 是什么
@@ -60,12 +55,8 @@ DoD: - [ ] 用户输入正确密码能登录成功
 
 ## 完成后
 
-**用户确认后，设置步骤状态**：
-
 ```bash
-BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-git config branch."$BRANCH_NAME".step 4
 echo "✅ Step 4 完成 (DoD 确认)，可以开始写代码"
 ```
 
-**Hook 检查**：step >= 4 才能写代码。
+**DoD 完成后，进入 Loop 1：本地 QA**

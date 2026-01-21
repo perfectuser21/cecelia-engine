@@ -2,11 +2,6 @@
 
 > 快速确认项目类型，准备进入开发
 
-**完成后设置状态**：
-```bash
-git config branch."$BRANCH_NAME".step 2
-```
-
 ---
 
 ## 检测方式
@@ -61,8 +56,6 @@ fi
 ## 完成后
 
 ```bash
-BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
-git config branch."$BRANCH_NAME".step 2
 echo "✅ Step 2 完成 (项目环境确认)"
 ```
 

@@ -2,12 +2,6 @@
 
 > 跑测试，确保代码质量
 
-**前置条件**：step >= 6
-**完成后设置状态**：
-```bash
-git config branch."$BRANCH_NAME".step 7
-```
-
 ---
 
 ## 双模式质检
@@ -38,7 +32,7 @@ npm run qa  # = typecheck + test + build
 
 **结果判定**：
 - ✅ L1 全绿 → 继续 Step 8 (PR)
-- ❌ L1 有红 → 返回 Step 5 修复
+- ❌ L1 有红 → 继续 Loop 1 修复
 
 ---
 
@@ -85,41 +79,9 @@ find . -name "*.sh" -exec bash -n {} \;
 | 模式 | 结果 | 动作 |
 |------|------|------|
 | pr | ✅ L1 通过 | 继续 Step 8 (PR) |
-| pr | ❌ L1 失败 | 返回 Step 5 修复 |
+| pr | ❌ L1 失败 | 继续 Loop 1 修复 |
 | release | ✅ 三层通过 | 继续 Step 8 (PR) |
-| release | ❌ 任何失败 | 返回 Step 5 修复 |
-
----
-
-## Hook 自动验证
-
-提交 PR 时，`pr-gate-v2.sh` 会自动检查：
-
-**PR 模式输出**：
-```
-PR GATE v2: 快速检查 (L1 only)
-
-  [基础检查]
-  项目检测... ✅ (L2)
-  分支... ✅ (cp-xxx)
-
-  [Layer 1: 自动化测试]
-  typecheck... ✅
-  test... ✅
-  build... ✅
-
-  [Layer 2: 效果验证] ⏭️  跳过 (pr 模式)
-
-  [Layer 3: 需求验收] (简化)
-  DoD 文件... ✅ (存在即可)
-
-✅ 快速检查通过，允许提交 PR
-```
-
-**如果检查失败**：
-- step 回退到 4
-- 显示需要修复的内容
-- 必须修复后再次提交 PR
+| release | ❌ 任何失败 | 继续 Loop 1 修复 |
 
 ---
 

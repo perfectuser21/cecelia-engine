@@ -7,6 +7,118 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.17] - 2026-01-21
+
+### Changed
+- **.dod.md**: 添加 Evidence 引用，准备 release PR
+
+## [8.0.16] - 2026-01-21
+
+### Changed
+- **scripts/qa-report.sh**: 升级到 v2，真实检查而非文件存在性检查
+  - Meta: Feature → RCI 覆盖率 + P0 触发规则检查
+  - Unit: 真实运行 `npm run qa`，输出测试数量和用时
+  - E2E: Golden Paths 结构完整性 + RCI 可解析性检查
+  - 新增 `--fast` 模式跳过 npm run qa
+
+- **skills/qa/knowledge/criteria.md**: 新增 Part 3 QA Report 检查定义
+  - 固化 Meta/Unit/E2E "全" 的定义
+  - 定义 RCI 最小字段（6 个核心字段）
+  - 定义报告输出格式
+
+- **regression-contract.yaml**: 升级到 v1.4.0
+  - 新增 W3 RCIs（W3-001, W3-002 循环回退）
+  - 修复 P0 trigger 违规：W1-001/002/003 加入 PR 触发
+
+## [8.0.15] - 2026-01-21
+
+### Added
+- **scripts/qa-report.sh**: QA 审计报告生成器
+  - 输出 JSON 格式报告，供 Dashboard 使用
+  - 包含 features、rcis、golden_paths、gates 信息
+  - 支持 `--output` 和 `--post URL` 模式
+
+- **FEATURES.md**: 新增 Export 分类和 E1 QA Reporting 功能
+
+- **regression-contract.yaml**: 升级到 v1.3.0
+  - 新增 `export` 部分包含 E1 RCIs
+  - E1-001: QA 审计脚本输出合法 JSON
+  - E1-002: JSON 包含完整结构
+  - E1-003: summary 计算正确
+
+## [8.0.14] - 2026-01-21
+
+### Added
+- **skills/qa/**: 新增 /qa Skill（QA 总控）
+  - 动态决策：测试计划 / Golden Path 判定 / RCI 判定 / Feature 归类 / QA 审计
+  - `knowledge/testing-matrix.md` - 测试矩阵（什么场景跑什么）
+  - `knowledge/criteria.md` - RCI + Golden Path 判定标准
+
+- **regression-contract.yaml**: 新增 Golden Paths 部分（v1.2.0）
+  - GP-001: 完整开发流程（/dev → PR → CI）
+  - GP-002: 分支保护链路
+  - GP-003: PR Gate 链路
+  - GP-004: CI 链路
+
+## [8.0.13] - 2026-01-20
+
+### Changed
+- **regression-contract.yaml**: 升级到 v1.1.0，修正 4 个问题 + 增强 3 个字段
+  - Nightly 规则：跑全部条目，忽略 trigger 过滤
+  - 删除手写统计（改用脚本自动算）
+  - 新增 `method: auto|manual` 字段
+  - `evidence` 改为结构化格式（type/contains/equals）
+  - 新增 `scope`、`tags`、`owner` 字段
+
+### Added
+- **scripts/rc-filter.sh**: RCI 过滤器脚本
+  - `rc-filter.sh pr` - 输出 PR Gate 要跑的 RCI
+  - `rc-filter.sh release` - 输出 Release Gate 要跑的 RCI
+  - `rc-filter.sh nightly` - 输出全部 RCI
+  - `rc-filter.sh stats` - 输出统计信息
+
+## [8.0.12] - 2026-01-20
+
+### Added
+- **regression-contract.yaml**: 新增回归契约文件，定义"全量测试"的唯一合法来源
+  - 21 条 RCI（Regression Contract Item）
+  - 按 Priority 分级：P0 (12) / P1 (6) / P2 (3)
+  - 按 Trigger 分组：PR / Release / Nightly
+  - Given/When/Then 格式的可验证断言
+
+### Changed
+- **FEATURES.md**: 升级为 Feature Registry，明确与 Regression Contract 的关系
+  - Feature Registry 回答"系统有什么能力"（What）
+  - Regression Contract 回答"哪些必须永远不坏"（How）
+  - W2（步骤状态机）标记为 Deprecated
+
+## [8.0.11] - 2026-01-20
+
+### Fixed
+- **wait-for-merge.sh**: 删除步骤回退逻辑（与删除步骤状态机保持一致）
+- **generate-report.sh**: 删除步骤状态机依赖（step 字段和流程步骤显示）
+
+## [8.0.10] - 2026-01-20
+
+### Fixed
+- **SKILL.md 流程图**: `continue` 模式现在正确显示直接进入 Loop 1
+- **cleanup.sh**: 删除 step=11 设置逻辑（与删除步骤状态机保持一致）
+- **cleanup.sh/check.sh**: 添加 `is-test` 配置的清理和检查
+
+## [8.0.9] - 2026-01-20
+
+### Changed
+- **/dev 流程**: 集成 Ralph Loop 插件，实现自动化循环
+  - 四种模式自动检测代码（新任务/继续开发/修复/合并）
+  - Loop 1: 使用 `/ralph-loop` 本地 QA 循环
+  - Loop 2: 使用 `/ralph-loop` CI 修复循环
+  - 20 轮告警机制（NEED_HUMAN_HELP）
+
+### Simplified
+- **branch-protect.sh**: 简化为只检查分支（删除步骤状态机）
+- **pr-gate-v2.sh**: 删除步骤回退逻辑
+- **skills/dev/steps/*.md**: 删除步骤状态机相关内容
+
 ## [8.0.8] - 2026-01-20
 
 ### Fixed

@@ -1,22 +1,9 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - 分支保护 Hook（版本见 package.json）
-# 检查：必须在 cp-* 分支 + 步骤状态机
+# v9: 简化版 - 只检查分支，删除步骤状态机
 # 保护：代码文件 + 重要目录（skills/, hooks/, .github/）
 
 set -euo pipefail
-
-# ===== 步骤定义（11 步流程） =====
-# step=1 → PRD 确定
-# step=2 → 项目环境检测完成
-# step=3 → 分支已创建
-# step=4 → DoD 完成（可以写代码）
-# step=5 → 代码完成
-# step=6 → 测试完成
-# step=7 → 质检通过（可以提交）
-# step=8 → PR 已创建
-# step=9 → CI 通过
-# step=10 → Learning 完成
-# step=11 → 已清理
 
 # 检查 jq 是否存在
 if ! command -v jq &>/dev/null; then
@@ -70,7 +57,6 @@ fi
 # 从文件路径找到所属的 git 仓库
 FILE_DIR=$(dirname "$FILE_PATH")
 if [[ ! -d "$FILE_DIR" ]]; then
-    # 文件目录不存在，可能是新文件，向上查找
     FILE_DIR=$(dirname "$FILE_DIR")
 fi
 
@@ -89,52 +75,10 @@ if [[ -z "$CURRENT_BRANCH" ]]; then
     exit 0
 fi
 
-# ===== 分支检查 =====
+# ===== 分支检查（v9: 简化版，只检查分支名） =====
 
-# feature/* 分支直接放行
-if [[ "$CURRENT_BRANCH" =~ ^feature/ ]]; then
-    exit 0
-fi
-
-# cp-* 分支检查步骤状态
-if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
-    CURRENT_STEP=$(git config --get branch."$CURRENT_BRANCH".step 2>/dev/null || echo "0")
-
-    # 新分支首次写代码时，清理旧的质检报告
-    if [[ -f "$PROJECT_ROOT/.quality-report.json" ]]; then
-        REPORT_BRANCH=$(jq -r '.branch // ""' "$PROJECT_ROOT/.quality-report.json" 2>/dev/null || echo "")
-        if [[ "$REPORT_BRANCH" != "$CURRENT_BRANCH" && -n "$REPORT_BRANCH" ]]; then
-            rm -f "$PROJECT_ROOT/.quality-report.json" 2>/dev/null || true
-            echo "🧹 已清理旧分支 ($REPORT_BRANCH) 的质检报告" >&2
-        fi
-    fi
-
-    # 写代码需要 step >= 4 (DoD 完成)
-    if [[ "$CURRENT_STEP" -lt 4 ]]; then
-        echo "" >&2
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  ❌ 步骤未完成，不能写代码" >&2
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "" >&2
-        echo "当前分支: $CURRENT_BRANCH" >&2
-        echo "当前步骤: $CURRENT_STEP" >&2
-        echo "需要步骤: >= 4 (DoD 完成)" >&2
-        echo "" >&2
-        echo "步骤说明:" >&2
-        echo "  1 = PRD 确定" >&2
-        echo "  2 = 项目环境检测" >&2
-        echo "  3 = 分支已创建" >&2
-        echo "  4 = DoD 完成 ← 需要到这里才能写代码" >&2
-        echo "" >&2
-        echo "请先运行 /dev 完成前置步骤" >&2
-        echo "" >&2
-        echo "[SKILL_REQUIRED: dev]" >&2
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        exit 2
-    fi
-
-    # 步骤检查通过，放行
-    # 注：质检通过 pr-gate-v2.sh 在 PR 时强制验证证据链
+# feature/* 或 cp-* 分支直接放行
+if [[ "$CURRENT_BRANCH" =~ ^feature/ ]] || [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
     exit 0
 fi
 
