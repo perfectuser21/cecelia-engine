@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.0.29] - 2026-01-22
+
+### Changed
+- 清理 `.test-level.json` 移除未使用的 L3-L6 条目
+
 ## [8.0.28] - 2026-01-21
 
 ### Security
