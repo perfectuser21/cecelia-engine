@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.8.0] - 2026-01-22
+
+### Added (Phase 3: Hook Core 多仓库治理)
+- **hook-core/**: 可复用 hooks 模块目录
+  - `VERSION`: 版本文件 (1.0.0)
+  - `hooks/`: 核心 hooks 符号链接 (branch-protect.sh, pr-gate-v2.sh)
+  - `scripts/devgate/`: DevGate 脚本符号链接
+- **scripts/install-hooks.sh**: hook-core 安装脚本
+  - 支持 `--dry-run` 预览安装
+  - 支持 `--force` 覆盖已有文件
+  - 自动创建 `.claude/settings.json`
+  - 显示版本信息
+- **tests/hooks/install-hooks.test.ts**: hook-core 安装测试 (23 个用例)
+
+### Changed
+- **regression-contract.yaml v1.14.0**: 新增 H3-001 (hook-core 安装)
+
 ## [8.7.0] - 2026-01-22
 
 ### Added (Phase 2: PRD/DoD 快照)

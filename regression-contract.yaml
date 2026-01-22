@@ -15,7 +15,7 @@
 #
 # ============================================================================
 
-version: "1.13.0"
+version: "1.14.0"
 updated: "2026-01-22"
 
 # ============================================================================
@@ -250,6 +250,28 @@ hooks:
       path: ".history/PR-*.prd.md"
       exists: true
     test: "tests/hooks/pr-gate-phase2.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H3: Phase 3 - Hook Core 多仓库治理
+  # --------------------------------------------------------------------------
+  - id: H3-001
+    feature: H3
+    name: "hook-core 安装功能"
+    scope: hook
+    priority: P1
+    trigger: [Release]
+    method: auto
+    tags: [hook-core, install, phase3]
+    owner: infra
+    steps:
+      given: "目标项目是 git 仓库"
+      when: "运行 bash scripts/install-hooks.sh <target_dir>"
+      then: "hook-core 安装到目标项目，包含 hooks/, scripts/devgate/, .claude/settings.json"
+    evidence:
+      type: command
+      run: "bash scripts/install-hooks.sh --version"
+      contains: "hook-core version: 1.0.0"
+    test: "tests/hooks/install-hooks.test.ts"
 
 # ============================================================================
 # Workflow 回归契约
