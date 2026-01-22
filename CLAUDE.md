@@ -146,3 +146,49 @@ main (稳定发布，里程碑时更新)
 - cp-* 完成后回 develop，积累够了 develop 回 main
 
 详细文档见 `docs/`。
+
+---
+
+## GitHub 分支保护
+
+### 标准配置
+
+所有核心仓库的 main/develop 分支必须启用以下保护：
+
+```yaml
+required_status_checks:
+  strict: true
+  checks:
+    - context: test
+enforce_admins: true          # 关键：Admin 也必须遵守 CI
+allow_force_pushes: false
+allow_deletions: false
+```
+
+### 保护的仓库
+
+| 仓库 | main | develop |
+|------|------|---------|
+| zenithjoy-engine | ✅ | ✅ |
+| zenithjoy-autopilot | ✅ | ✅ |
+| zenithjoy-core | ✅ | ✅ |
+
+### 检查/修复命令
+
+```bash
+# 检查所有仓库
+bash scripts/setup-branch-protection.sh --check
+
+# 修复所有仓库
+bash scripts/setup-branch-protection.sh --fix
+
+# 检查/修复指定仓库
+bash scripts/setup-branch-protection.sh --check owner/repo
+bash scripts/setup-branch-protection.sh --fix owner/repo
+```
+
+### 为什么 enforce_admins 必须是 true
+
+- **问题**：如果 `enforce_admins: false`，Admin 可以绕过 CI 强行合并 PR
+- **后果**：CI 失去最后防线的意义，bug 代码可能直接进入 main/develop
+- **解决**：`enforce_admins: true` 确保即使是 Admin 也必须等 CI 绿才能合并
