@@ -255,6 +255,17 @@ describe('metrics.sh 基础功能', () => {
     const json = JSON.parse(output)
     expect(Array.isArray(json.rci_coverage.offenders)).toBe(true)
   })
+
+  it('JSON 包含 generated_at 时间戳', () => {
+    const output = execSync(`bash ${METRICS_SCRIPT} --format json`, {
+      encoding: 'utf-8',
+      cwd: ROOT,
+    })
+    const json = JSON.parse(output)
+    expect(json.generated_at).toBeDefined()
+    // 验证是 ISO 时间格式
+    expect(new Date(json.generated_at).toISOString()).toBe(json.generated_at)
+  })
 })
 
 describe('metrics.sh 指标计算', () => {

@@ -346,6 +346,7 @@ function main() {
       manual_tests: totalManualTests,
       p0_manual_tests: p0ManualTests,
     },
+    generated_at: new Date().toISOString(),
   };
 
   // 输出

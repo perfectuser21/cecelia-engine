@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.13.0] - 2026-01-22
+
+### Added (全链路流程验证)
+- **scripts/devgate/metrics.cjs**: JSON 输出增加 `generated_at` 时间戳
+- **tests/hooks/metrics.test.ts**: 验证 generated_at 字段和 ISO 格式
+
 ## [8.12.0] - 2026-01-22
 
 ### Added (Phase 6: Skill 编排闭环)
