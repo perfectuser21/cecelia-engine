@@ -7,6 +7,178 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.13.0] - 2026-01-22
+
+### Added (全链路流程验证)
+- **scripts/devgate/metrics.cjs**: JSON 输出增加 `generated_at` 时间戳
+- **tests/hooks/metrics.test.ts**: 验证 generated_at 字段和 ISO 格式
+
+## [8.12.0] - 2026-01-22
+
+### Added (Phase 6: Skill 编排闭环)
+- **templates/QA-DECISION.md**: QA 决策产物模板
+  - 测试策略决策（auto/manual）
+  - RCI 新增/更新决策
+  - DoD 条目测试方式
+- **templates/AUDIT-REPORT.md**: 审计报告产物模板
+  - L1-L4 分层审计结果
+  - Blockers 表格
+  - Decision: PASS/FAIL 结论
+
+### Changed
+- **skills/dev/steps/04-dod.md**: 加入调用 /qa 步骤
+  - DoD 草稿 → /qa → QA 决策 → DoD 定稿
+  - DoD 必须引用 `QA: docs/QA-DECISION.md`
+- **skills/dev/steps/07-quality.md**: 加入调用 /audit 步骤
+  - 先 /audit 再 npm run qa
+  - blocker > 0 则停止
+- **hooks/pr-gate-v2.sh v2.9**: Phase 6 Skill 产物检查
+  - 检查 docs/QA-DECISION.md 存在
+  - 检查 docs/AUDIT-REPORT.md 存在且 Decision: PASS
+  - 检查 .dod.md 包含 QA: 引用
+- **regression-contract.yaml v1.19.0**: 新增 H2-007 (Skill 产物检查)
+
+### Documentation
+- Skills 现在真正接入 /dev 主流程
+- /dev = 编排者，/qa = 测试决策，/audit = 代码审计
+- 产物留痕：QA-DECISION.md + AUDIT-REPORT.md
+
+## [8.11.0] - 2026-01-22
+
+### Added (Phase 5: LEARNINGS 自动写回)
+- **scripts/devgate/append-learnings.cjs**: 月度报告生成器
+  - 读取 devgate-metrics.json
+  - 解析 regression-contract.yaml 获取 RCI 名称
+  - 生成结构化 markdown 报告
+  - 幂等：同月不重复追加
+  - 支持 `--dry-run` 预览
+- **tests/hooks/append-learnings.test.ts**: 测试 (12 个用例)
+- **nightly.yml**: 添加 "Append to LEARNINGS" 步骤
+  - 仅在定时任务时运行
+  - 自动 commit + push 到 develop
+
+### Changed
+- **regression-contract.yaml v1.18.0**: 新增 C7-003 (LEARNINGS 自动写回)
+- **nightly.yml**: permissions 升级为 `contents: write`
+
+## [8.10.0] - 2026-01-22
+
+### Added (Phase 4.1: DevGate L2 阈值检查)
+- **nightly.yml**: L2 Strict Gate 阈值检查步骤
+  - P0/P1 RCI 覆盖率 < 100% → nightly fail
+  - P0 manual tests > 0 → nightly fail
+  - RCI 增长 < 2 → 软警告（不 fail）
+- **metrics.cjs**: 输出增强
+  - `rci_coverage.offenders`: 未更新 RCI 的 PR 列表
+  - `dod.p0_manual_tests`: P0 手动测试单独计数
+  - human 输出显示 "Top Offenders" 列表
+
+### Changed
+- **regression-contract.yaml v1.17.0**: 新增 C7-002 (L2 阈值检查)
+
+### Documentation
+- 锁定 Metrics 口径定义：
+  - 窗口归属：按 `created` 时间戳
+  - PR 优先级：按 meta 的 `priority` 字段
+  - RCI 更新判定：merged commit 包含 regression-contract.yaml
+
+## [8.9.0] - 2026-01-22
+
+### Added (Phase 4: DevGate Metrics 指标面板)
+- **scripts/devgate/metrics.sh**: DevGate 指标面板入口
+  - 支持 `--month YYYY-MM` 指定月份
+  - 支持 `--since/--until` 指定时间范围
+  - 支持 `--format json` 输出 JSON
+  - 支持 `--verbose` 详细输出
+- **scripts/devgate/metrics.cjs**: 核心逻辑（Node.js）
+  - P0/P1 PR 数统计
+  - P0/P1 RCI 覆盖率计算（目标 100%）
+  - 新增 RCI 数统计
+  - DoD 条目数 / Manual test 数统计
+- **tests/hooks/metrics.test.ts**: 指标测试 (28 个用例)
+
+### Changed
+- **scripts/devgate/snapshot-prd-dod.sh**: Meta 格式增强
+  - 添加 `priority:P0|P1|NONE` 字段
+  - 添加 `title:"..."` 字段
+  - 添加 `head:<sha>` 和 `merged:<sha>` 字段
+  - 添加 `created:<ISO8601>` 时间戳
+- **.github/workflows/nightly.yml**: 接入 DevGate Metrics
+  - 每日收集指标并上传 artifact
+- **regression-contract.yaml v1.15.0**: 新增 H4-001, H4-002
+
+## [8.8.0] - 2026-01-22
+
+### Added (Phase 3: Hook Core 多仓库治理)
+- **hook-core/**: 可复用 hooks 模块目录
+  - `VERSION`: 版本文件 (1.0.0)
+  - `hooks/`: 核心 hooks 符号链接 (branch-protect.sh, pr-gate-v2.sh)
+  - `scripts/devgate/`: DevGate 脚本符号链接
+- **scripts/install-hooks.sh**: hook-core 安装脚本
+  - 支持 `--dry-run` 预览安装
+  - 支持 `--force` 覆盖已有文件
+  - 自动创建 `.claude/settings.json`
+  - 显示版本信息
+- **tests/hooks/install-hooks.test.ts**: hook-core 安装测试 (23 个用例)
+
+### Changed
+- **regression-contract.yaml v1.14.0**: 新增 H3-001 (hook-core 安装)
+
+## [8.7.0] - 2026-01-22
+
+### Added (Phase 2: PRD/DoD 快照)
+- **scripts/devgate/snapshot-prd-dod.sh**: PR 创建时保存 PRD/DoD 快照
+  - 文件名格式：`PR-{number}-{YYYYMMDD-HHMM}.{prd|dod}.md`
+  - 存储到 `.history/` 目录
+- **scripts/devgate/list-snapshots.sh**: 列出所有快照
+  - 支持 `--json` 输出
+- **scripts/devgate/view-snapshot.sh**: 查看指定 PR 的快照
+  - 支持 `--prd` / `--dod` 单独查看
+- **tests/hooks/pr-gate-phase2.test.ts**: Phase 2 快照功能测试（14 个用例）
+- **.history/.gitkeep**: 快照存储目录
+
+### Changed
+- **hooks/pr-gate-v2.sh v2.8**: PR Gate 通过后提示快照功能
+- **regression-contract.yaml v1.13.0**: 新增 H2-009 (PRD/DoD 快照)
+
+## [8.6.0] - 2026-01-22
+
+### Added (Phase 1: DevGate 闭环)
+- **scripts/devgate/check-dod-mapping.cjs**: DoD ↔ Test 映射检查脚本
+  - 支持三种 Test 类型：`tests/`、`contract:`、`manual:`
+  - 验证测试文件/RCI ID/证据文件存在性
+- **scripts/devgate/detect-priority.cjs**: PR 优先级检测脚本
+  - 支持从 env / title / labels / commit 检测 P0-P3
+- **scripts/devgate/require-rci-update-if-p0p1.sh**: P0/P1 强制 RCI 更新检查
+  - P0/P1 级别 PR 必须更新 regression-contract.yaml
+- **tests/hooks/pr-gate-phase1.test.ts**: Phase 1 规则测试（20 个用例）
+- **evidence/manual/.gitkeep**: 手动证据目录
+
+### Changed
+- **hooks/pr-gate-v2.sh v2.7**: 接入 Phase 1 DevGate 检查
+  - PR 模式新增 DoD 映射检查
+  - PR 模式新增 P0/P1 RCI 更新检查
+- **.github/workflows/ci.yml**: 添加 DevGate checks 步骤
+- **templates/DOD-TEMPLATE.md**: 新增 Test 字段格式要求和示例
+- **regression-contract.yaml v1.12.0**:
+  - 新增 H2-007 (DoD 映射检查)
+  - 新增 H2-008 (P0/P1 强制 RCI 更新)
+  - 新增 C6-001 (CI DevGate 步骤)
+
+### Dependencies
+- 添加 js-yaml、@types/js-yaml（用于解析 regression-contract.yaml）
+
+## [8.5.1] - 2026-01-22
+
+### Security (P0 Critical Fixes)
+- **hooks/branch-protect.sh v15**: jq 缺失时 exit 2 阻止，防止完全绕过保护
+- **hooks/branch-protect.sh v15**: 添加 realpath 检查，防止 symlink 绕过全局配置保护
+- **hooks/branch-protect.sh v15**: 增强分支正则，要求完整格式 `cp-xxx` 或 `feature/xxx`
+- **hooks/pr-gate-v2.sh v2.6**: 找不到本地仓库时 exit 2 阻止，防止 `--repo fake/repo` 绕过
+- **hooks/pr-gate-v2.sh v2.6**: 增强分支正则，与 branch-protect.sh 保持一致
+- **scripts/run-regression.sh**: 移除 eval 命令执行，改用 bash -c（防止命令注入）
+- **scripts/run-regression.sh**: 移除 eval ls，改用 find 检查文件（防止路径注入）
+
 ## [8.4.0] - 2026-01-22
 
 ### Security

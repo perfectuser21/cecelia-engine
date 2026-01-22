@@ -1,0 +1,234 @@
+/**
+ * pr-gate-phase2.test.ts
+ *
+ * Phase 2 测试：PRD/DoD 快照功能
+ *
+ * 测试覆盖：
+ * 1. snapshot-prd-dod.sh - 快照脚本
+ * 2. list-snapshots.sh - 列出快照
+ * 3. view-snapshot.sh - 查看快照
+ */
+
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { execSync } from "child_process";
+import {
+  existsSync,
+  writeFileSync,
+  mkdirSync,
+  rmSync,
+  readdirSync,
+} from "fs";
+import { resolve, join } from "path";
+
+const PROJECT_ROOT = resolve(__dirname, "../..");
+const SCRIPTS_DIR = join(PROJECT_ROOT, "scripts/devgate");
+const SNAPSHOT_SCRIPT = join(SCRIPTS_DIR, "snapshot-prd-dod.sh");
+const LIST_SCRIPT = join(SCRIPTS_DIR, "list-snapshots.sh");
+const VIEW_SCRIPT = join(SCRIPTS_DIR, "view-snapshot.sh");
+
+// 临时测试目录
+const TEST_DIR = join(PROJECT_ROOT, ".test-phase2");
+const TEST_HISTORY_DIR = join(TEST_DIR, ".history");
+
+describe("Phase 2: PRD/DoD Snapshot", () => {
+  beforeAll(() => {
+    // 创建临时测试目录
+    mkdirSync(TEST_DIR, { recursive: true });
+    mkdirSync(TEST_HISTORY_DIR, { recursive: true });
+
+    // 创建测试用的 PRD/DoD
+    writeFileSync(join(TEST_DIR, ".prd.md"), "# Test PRD\n\nTest content");
+    writeFileSync(join(TEST_DIR, ".dod.md"), "# Test DoD\n\n- [ ] Test item");
+
+    // 初始化 git（脚本需要）
+    try {
+      execSync("git init", { cwd: TEST_DIR, stdio: "pipe" });
+    } catch {
+      // 忽略已存在的情况
+    }
+  });
+
+  afterAll(() => {
+    // 清理临时目录
+    if (existsSync(TEST_DIR)) {
+      rmSync(TEST_DIR, { recursive: true, force: true });
+    }
+  });
+
+  describe("snapshot-prd-dod.sh", () => {
+    it("should exist and be executable", () => {
+      expect(existsSync(SNAPSHOT_SCRIPT)).toBe(true);
+      const stat = execSync(`stat -c %a "${SNAPSHOT_SCRIPT}"`, {
+        encoding: "utf-8",
+      });
+      const mode = parseInt(stat.trim(), 8);
+      expect(mode & 0o111).toBeGreaterThan(0);
+    });
+
+    it("should pass syntax check", () => {
+      expect(() => {
+        execSync(`bash -n "${SNAPSHOT_SCRIPT}"`, { encoding: "utf-8" });
+      }).not.toThrow();
+    });
+
+    it("should require PR number argument", () => {
+      try {
+        execSync(`bash "${SNAPSHOT_SCRIPT}"`, {
+          encoding: "utf-8",
+          cwd: TEST_DIR,
+        });
+        expect.fail("Should have thrown");
+      } catch (e: unknown) {
+        const error = e as { status?: number };
+        expect(error.status).toBe(1);
+      }
+    });
+
+    it("should create snapshot with correct filename", () => {
+      const prNumber = "999";
+
+      execSync(`bash "${SNAPSHOT_SCRIPT}" ${prNumber}`, {
+        encoding: "utf-8",
+        cwd: PROJECT_ROOT,
+      });
+
+      // 检查文件是否创建
+      const historyDir = join(PROJECT_ROOT, ".history");
+      const files = readdirSync(historyDir);
+
+      const prdSnapshot = files.find(
+        (f) => f.startsWith(`PR-${prNumber}-`) && f.endsWith(".prd.md")
+      );
+      const dodSnapshot = files.find(
+        (f) => f.startsWith(`PR-${prNumber}-`) && f.endsWith(".dod.md")
+      );
+
+      expect(prdSnapshot).toBeDefined();
+      expect(dodSnapshot).toBeDefined();
+
+      // 清理测试快照
+      if (prdSnapshot) {
+        rmSync(join(historyDir, prdSnapshot), { force: true });
+      }
+      if (dodSnapshot) {
+        rmSync(join(historyDir, dodSnapshot), { force: true });
+      }
+    });
+
+    it("should validate PR number is numeric", () => {
+      try {
+        execSync(`bash "${SNAPSHOT_SCRIPT}" "abc"`, {
+          encoding: "utf-8",
+          cwd: PROJECT_ROOT,
+        });
+        expect.fail("Should have thrown");
+      } catch (e: unknown) {
+        const error = e as { status?: number };
+        expect(error.status).toBe(1);
+      }
+    });
+  });
+
+  describe("list-snapshots.sh", () => {
+    it("should exist and be executable", () => {
+      expect(existsSync(LIST_SCRIPT)).toBe(true);
+      const stat = execSync(`stat -c %a "${LIST_SCRIPT}"`, {
+        encoding: "utf-8",
+      });
+      const mode = parseInt(stat.trim(), 8);
+      expect(mode & 0o111).toBeGreaterThan(0);
+    });
+
+    it("should pass syntax check", () => {
+      expect(() => {
+        execSync(`bash -n "${LIST_SCRIPT}"`, { encoding: "utf-8" });
+      }).not.toThrow();
+    });
+
+    it("should output JSON with --json flag", () => {
+      const result = execSync(`bash "${LIST_SCRIPT}" --json`, {
+        encoding: "utf-8",
+        cwd: PROJECT_ROOT,
+      });
+
+      // 应该是有效的 JSON
+      expect(() => JSON.parse(result)).not.toThrow();
+    });
+
+    it("should handle empty history gracefully", () => {
+      // 在空目录测试
+      const result = execSync(`bash "${LIST_SCRIPT}"`, {
+        encoding: "utf-8",
+        cwd: TEST_DIR,
+      });
+
+      expect(result).toContain("暂无快照");
+    });
+  });
+
+  describe("view-snapshot.sh", () => {
+    it("should exist and be executable", () => {
+      expect(existsSync(VIEW_SCRIPT)).toBe(true);
+      const stat = execSync(`stat -c %a "${VIEW_SCRIPT}"`, {
+        encoding: "utf-8",
+      });
+      const mode = parseInt(stat.trim(), 8);
+      expect(mode & 0o111).toBeGreaterThan(0);
+    });
+
+    it("should pass syntax check", () => {
+      expect(() => {
+        execSync(`bash -n "${VIEW_SCRIPT}"`, { encoding: "utf-8" });
+      }).not.toThrow();
+    });
+
+    it("should require PR number argument", () => {
+      try {
+        execSync(`bash "${VIEW_SCRIPT}"`, {
+          encoding: "utf-8",
+          cwd: PROJECT_ROOT,
+        });
+        expect.fail("Should have thrown");
+      } catch (e: unknown) {
+        const error = e as { status?: number };
+        expect(error.status).toBe(1);
+      }
+    });
+
+    it("should handle non-existent PR gracefully", () => {
+      try {
+        execSync(`bash "${VIEW_SCRIPT}" 99999`, {
+          encoding: "utf-8",
+          cwd: PROJECT_ROOT,
+        });
+        expect.fail("Should have thrown");
+      } catch (e: unknown) {
+        const error = e as { status?: number; stderr?: Buffer };
+        expect(error.status).toBe(1);
+      }
+    });
+
+    it("should support PR number with # prefix", () => {
+      // 先创建一个测试快照
+      execSync(`bash "${SNAPSHOT_SCRIPT}" 998`, {
+        encoding: "utf-8",
+        cwd: PROJECT_ROOT,
+      });
+
+      // 测试带 # 的 PR 号
+      const result = execSync(`bash "${VIEW_SCRIPT}" "#998"`, {
+        encoding: "utf-8",
+        cwd: PROJECT_ROOT,
+      });
+
+      expect(result).toContain("PR #998");
+
+      // 清理
+      const historyDir = join(PROJECT_ROOT, ".history");
+      const files = readdirSync(historyDir);
+      files
+        .filter((f) => f.startsWith("PR-998-"))
+        .forEach((f) => rmSync(join(historyDir, f), { force: true }));
+    });
+  });
+});

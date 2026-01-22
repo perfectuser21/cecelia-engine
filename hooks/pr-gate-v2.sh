@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 # ============================================================================
-# PreToolUse Hook: PR Gate v2.5 (硬门禁版)
+# PreToolUse Hook: PR Gate v2.9 (Phase 6 Skill Orchestration)
 # ============================================================================
 #
+# v2.9: Phase 6 - Skill 编排闭环（检查 QA-DECISION.md + AUDIT-REPORT.md）
+# v2.8: Phase 2 - PRD/DoD 快照提示（实际快照在 /dev 流程中执行）
+# v2.7: Phase 1 闭环 - DoD ↔ Test 映射检查 + P0/P1 强制 RCI 更新
+# v2.6: P0 安全修复 - 找不到仓库阻止 / 正则增强
 # v2.4: 修复硬编码 develop 分支，改用 git config 读取 base 分支
 # v2.3: 修复目标仓库检测 - 解析 --repo 参数，检查正确的仓库
 # v2.2: 增加 PRD/DoD 内容有效性检查（不能是空文件）
 # v2.1: 增加 PRD 检查（与 DoD 检查并列）
 # v8+ 硬门禁规则：
-#   PR → develop：必须 L1 全自动绿
+#   PR → develop：必须 L1 全自动绿 + DoD 映射检查 + P0/P1 RCI 检查 + Skill 产物
 #   develop → main：必须 L1 绿 + L2B/L3 证据链齐全
 #
 # 模式检测：
@@ -77,9 +81,15 @@ if [[ -n "$TARGET_REPO" ]]; then
     done
 
     if [[ -z "$PROJECT_ROOT" ]]; then
-        # 找不到本地仓库，跳过检查（让 gh 自己报错）
-        echo "⚠️ 找不到本地仓库: $TARGET_REPO，跳过 PR Gate 检查" >&2
-        exit 0
+        # P0-1 修复: 找不到本地仓库必须阻止，否则可通过伪造 --repo 绕过检查
+        echo "" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "  ❌ 找不到本地仓库: $TARGET_REPO" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "" >&2
+        echo "如果要为其他仓库创建 PR，请先 cd 到该仓库目录" >&2
+        echo "" >&2
+        exit 2
     fi
 else
     # 没有 --repo 参数，使用当前目录
@@ -132,9 +142,11 @@ CHECKED=0
 echo "  [基础检查]" >&2
 
 # 检查分支
+# P0-2 修复: 增强正则，与 branch-protect.sh 保持一致
 echo -n "  分支... " >&2
 CHECKED=$((CHECKED + 1))
-if [[ "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
+if [[ "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]+$ ]] || \
+   [[ "${CURRENT_BRANCH:-}" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]* ]]; then
     echo "✅ ($CURRENT_BRANCH)" >&2
 elif [[ "$MODE" == "release" && "$CURRENT_BRANCH" == "develop" ]]; then
     echo "✅ ($CURRENT_BRANCH → main)" >&2
@@ -267,6 +279,35 @@ fi
 # Part 2: PR 模式 - PRD + DoD 检查
 # ============================================================================
 if [[ "$MODE" == "pr" ]]; then
+    # ===== Phase 1: DoD ↔ Test 映射检查 =====
+    DEVGATE_DIR="$PROJECT_ROOT/scripts/devgate"
+    DOD_MAPPING_SCRIPT="$DEVGATE_DIR/check-dod-mapping.cjs"
+    RCI_CHECK_SCRIPT="$DEVGATE_DIR/require-rci-update-if-p0p1.sh"
+
+    # DoD 映射检查（如果脚本存在）
+    if [[ -f "$DOD_MAPPING_SCRIPT" ]]; then
+        echo "" >&2
+        echo "  [Phase 1: DoD ↔ Test 映射检查]" >&2
+        CHECKED=$((CHECKED + 1))
+        if node "$DOD_MAPPING_SCRIPT" >&2 2>&1; then
+            echo "" >&2
+        else
+            FAILED=1
+        fi
+    fi
+
+    # P0/P1 强制 RCI 更新检查（如果脚本存在）
+    if [[ -f "$RCI_CHECK_SCRIPT" ]]; then
+        echo "" >&2
+        echo "  [Phase 1: P0/P1 RCI 更新检查]" >&2
+        CHECKED=$((CHECKED + 1))
+        if bash "$RCI_CHECK_SCRIPT" >&2 2>&1; then
+            echo "" >&2
+        else
+            FAILED=1
+        fi
+    fi
+
     # ===== PRD 检查 =====
     echo "" >&2
     echo "  [PRD 检查]" >&2
@@ -370,6 +411,70 @@ if [[ "$MODE" == "pr" ]]; then
         echo "    → 请创建 .dod.md 记录 DoD 清单" >&2
         FAILED=1
     fi
+
+    # ===== Phase 6: Skill 产物检查 =====
+    echo "" >&2
+    echo "  [Phase 6: Skill 产物检查]" >&2
+
+    # 检查 .dod.md 是否引用 QA 决策
+    echo -n "  DoD 引用 QA 决策... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$DOD_FILE" ]]; then
+        DOD_HAS_QA_REF=$(grep -c "^QA:" "$DOD_FILE" 2>/dev/null || echo 0)
+        DOD_HAS_QA_REF=${DOD_HAS_QA_REF//[^0-9]/}
+        [[ -z "$DOD_HAS_QA_REF" ]] && DOD_HAS_QA_REF=0
+        if [[ "$DOD_HAS_QA_REF" -gt 0 ]]; then
+            echo "✅" >&2
+        else
+            echo "❌ (缺少 QA: 引用)" >&2
+            echo "    → DoD 必须包含 'QA: docs/QA-DECISION.md' 引用" >&2
+            FAILED=1
+        fi
+    else
+        echo "⏭️ (DoD 不存在)" >&2
+    fi
+
+    # 检查 QA-DECISION.md 存在
+    QA_DECISION_FILE="$PROJECT_ROOT/docs/QA-DECISION.md"
+    echo -n "  QA 决策文件... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$QA_DECISION_FILE" ]]; then
+        echo "✅" >&2
+    else
+        echo "❌ (docs/QA-DECISION.md 不存在)" >&2
+        echo "    → 请调用 /qa skill 生成 QA 决策" >&2
+        FAILED=1
+    fi
+
+    # 检查 AUDIT-REPORT.md 存在且 Decision: PASS
+    AUDIT_REPORT_FILE="$PROJECT_ROOT/docs/AUDIT-REPORT.md"
+    echo -n "  审计报告文件... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$AUDIT_REPORT_FILE" ]]; then
+        # 检查是否包含 Decision: PASS
+        AUDIT_PASS=$(grep -cE "^Decision:.*PASS" "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)
+        AUDIT_PASS=${AUDIT_PASS//[^0-9]/}
+        [[ -z "$AUDIT_PASS" ]] && AUDIT_PASS=0
+        AUDIT_FAIL=$(grep -cE "^Decision:.*FAIL" "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)
+        AUDIT_FAIL=${AUDIT_FAIL//[^0-9]/}
+        [[ -z "$AUDIT_FAIL" ]] && AUDIT_FAIL=0
+
+        if [[ "$AUDIT_PASS" -gt 0 ]]; then
+            echo "✅ (PASS)" >&2
+        elif [[ "$AUDIT_FAIL" -gt 0 ]]; then
+            echo "❌ (Decision: FAIL)" >&2
+            echo "    → 审计未通过，请修复 L1/L2 问题后重新 /audit" >&2
+            FAILED=1
+        else
+            echo "❌ (缺少 Decision 结论)" >&2
+            echo "    → 审计报告必须包含 'Decision: PASS' 或 'Decision: FAIL'" >&2
+            FAILED=1
+        fi
+    else
+        echo "❌ (docs/AUDIT-REPORT.md 不存在)" >&2
+        echo "    → 请调用 /audit skill 生成审计报告" >&2
+        FAILED=1
+    fi
 fi
 
 # ============================================================================
@@ -451,5 +556,12 @@ else
     echo "  ✅ PR Gate 通过 ($CHECKED 项)" >&2
 fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+# Phase 2: 提示快照（实际快照在 PR 创建成功后由 /dev 流程执行）
+SNAPSHOT_SCRIPT="$PROJECT_ROOT/scripts/devgate/snapshot-prd-dod.sh"
+if [[ -f "$SNAPSHOT_SCRIPT" && "$MODE" == "pr" ]]; then
+    echo "" >&2
+    echo "  💡 PR 创建后将自动保存 PRD/DoD 快照到 .history/" >&2
+fi
 
 exit 0

@@ -1,0 +1,1 @@
+../../hooks/pr-gate-v2.sh

@@ -171,6 +171,40 @@ jobs:
           fi
           exit $FAILED
 
+      # Phase 1: DevGate 检查（DoD 映射 + P0/P1 RCI 更新）
+      - name: DevGate checks
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Phase 1: DevGate 检查"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # DoD 映射检查（如果脚本存在）
+          if [ -f "scripts/devgate/check-dod-mapping.cjs" ]; then
+            echo ""
+            echo "  [DoD ↔ Test 映射检查]"
+            node scripts/devgate/check-dod-mapping.cjs || exit 1
+          else
+            echo "ℹ️ check-dod-mapping.cjs not found, skipping"
+          fi
+
+          # P0/P1 RCI 更新检查（如果脚本存在）
+          if [ -f "scripts/devgate/require-rci-update-if-p0p1.sh" ]; then
+            echo ""
+            echo "  [P0/P1 RCI 更新检查]"
+            # 从 PR title 或 labels 设置环境变量
+            export PR_TITLE="${{ github.event.pull_request.title }}"
+            # labels 需要从 API 获取，这里简化处理
+            bash scripts/devgate/require-rci-update-if-p0p1.sh || exit 1
+          else
+            echo "ℹ️ require-rci-update-if-p0p1.sh not found, skipping"
+          fi
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  ✅ DevGate 检查通过"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
   # Release 检查（仅 develop → main 的 PR）
   release-check:
     if: github.event_name == 'pull_request' && github.base_ref == 'main'

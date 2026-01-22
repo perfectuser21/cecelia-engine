@@ -15,8 +15,8 @@
 #
 # ============================================================================
 
-version: "1.11.0"
-updated: "2026-01-21"
+version: "1.19.0"
+updated: "2026-01-22"
 
 # ============================================================================
 # Hooks 回归契约
@@ -189,6 +189,151 @@ hooks:
       type: log
       contains: "DoD"
     test: "tests/hooks/pr-gate.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H2-007: Phase 1 - DoD 映射检查
+  # --------------------------------------------------------------------------
+  - id: H2-007
+    feature: H2
+    name: "DoD ↔ Test 映射检查"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [pr, gate, dod, phase1]
+    owner: infra
+    steps:
+      given: "PR 模式下"
+      when: "执行 gh pr create"
+      then: "Hook 调用 check-dod-mapping.cjs 验证每条 DoD 有 Test 字段"
+    evidence:
+      type: log
+      contains: "DoD ↔ Test 映射检查"
+    test: "tests/hooks/pr-gate-phase1.test.ts"
+
+  - id: H2-008
+    feature: H2
+    name: "P0/P1 强制 RCI 更新"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [pr, gate, rci, phase1]
+    owner: infra
+    steps:
+      given: "PR 优先级为 P0 或 P1"
+      when: "执行 gh pr create"
+      then: "Hook 调用 require-rci-update-if-p0p1.sh 验证 RCI 已更新"
+    evidence:
+      type: log
+      contains: "P0/P1 → RCI 更新检查"
+    test: "tests/hooks/pr-gate-phase1.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H2-009: Phase 2 - PRD/DoD 快照
+  # --------------------------------------------------------------------------
+  - id: H2-009
+    feature: H2
+    name: "PRD/DoD 快照功能"
+    scope: hook
+    priority: P2
+    trigger: [Release]
+    method: auto
+    tags: [pr, gate, snapshot, phase2]
+    owner: infra
+    steps:
+      given: "PR 创建成功"
+      when: "/dev 流程调用 snapshot-prd-dod.sh"
+      then: "PRD/DoD 复制到 .history/ 目录，文件名包含 PR 号和时间戳"
+    evidence:
+      type: file
+      path: ".history/PR-*.prd.md"
+      exists: true
+    test: "tests/hooks/pr-gate-phase2.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H2-010: Phase 6 - Skill 产物检查
+  # --------------------------------------------------------------------------
+  - id: H2-010
+    feature: H2
+    name: "Skill 产物检查（QA-DECISION + AUDIT-REPORT）"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [pr, gate, skill, phase6]
+    owner: infra
+    steps:
+      given: "PR 模式下"
+      when: "执行 gh pr create"
+      then: "Hook 检查 docs/QA-DECISION.md 和 docs/AUDIT-REPORT.md 存在，且审计通过"
+    evidence:
+      type: log
+      contains: "Phase 6: Skill 产物检查"
+    test: "tests/hooks/pr-gate.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H3: Phase 3 - Hook Core 多仓库治理
+  # --------------------------------------------------------------------------
+  - id: H3-001
+    feature: H3
+    name: "hook-core 安装功能"
+    scope: hook
+    priority: P1
+    trigger: [Release]
+    method: auto
+    tags: [hook-core, install, phase3]
+    owner: infra
+    steps:
+      given: "目标项目是 git 仓库"
+      when: "运行 bash scripts/install-hooks.sh <target_dir>"
+      then: "hook-core 安装到目标项目，包含 hooks/, scripts/devgate/, .claude/settings.json"
+    evidence:
+      type: command
+      run: "bash scripts/install-hooks.sh --version"
+      contains: "hook-core version: 1.0.0"
+    test: "tests/hooks/install-hooks.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H4: Phase 4 - DevGate Metrics 指标面板
+  # --------------------------------------------------------------------------
+  - id: H4-001
+    feature: H4
+    name: "DevGate Metrics 指标计算"
+    scope: hook
+    priority: P1
+    trigger: [Release]
+    method: auto
+    tags: [metrics, devgate, phase4]
+    owner: infra
+    steps:
+      given: ".history/ 目录包含带 meta 的快照文件"
+      when: "运行 bash scripts/devgate/metrics.sh"
+      then: "输出 P0/P1 PR 数、RCI 覆盖率、新增 RCI 数、DoD 条目数"
+    evidence:
+      type: command
+      run: "bash scripts/devgate/metrics.sh --format json"
+      contains: "rci_coverage"
+    test: "tests/hooks/metrics.test.ts"
+
+  - id: H4-002
+    feature: H4
+    name: "快照 Meta 格式增强"
+    scope: hook
+    priority: P1
+    trigger: [Release]
+    method: auto
+    tags: [snapshot, meta, phase4]
+    owner: infra
+    steps:
+      given: "存在 .prd.md 和 .dod.md"
+      when: "运行 snapshot-prd-dod.sh 创建快照"
+      then: "快照顶部包含完整 meta: pr, base, priority, head, merged, created"
+    evidence:
+      type: file
+      path: ".history/PR-*.dod.md"
+      contains: "<!-- pr:"
+    test: "tests/hooks/metrics.test.ts"
 
 # ============================================================================
 # Workflow 回归契约
@@ -461,6 +606,88 @@ ci:
       name: "shell-check"
       status: success
     test: ".github/workflows/ci.yml"
+
+  # --------------------------------------------------------------------------
+  # C6: Phase 1 DevGate
+  # --------------------------------------------------------------------------
+  - id: C6-001
+    feature: C6
+    name: "CI DevGate 检查步骤"
+    scope: ci
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, devgate, phase1]
+    owner: infra
+    steps:
+      given: "PR 提交到 develop"
+      when: "CI 运行 DevGate checks step"
+      then: "DoD 映射检查 + P0/P1 RCI 检查通过"
+    evidence:
+      type: ci_job
+      name: "DevGate checks"
+      status: success
+    test: ".github/workflows/ci.yml"
+
+  # --------------------------------------------------------------------------
+  # C7: Nightly DevGate Metrics
+  # --------------------------------------------------------------------------
+  - id: C7-001
+    feature: C7
+    name: "Nightly DevGate Metrics 收集"
+    scope: ci
+    priority: P2
+    trigger: [Release]
+    method: auto
+    tags: [ci, nightly, metrics, phase4]
+    owner: infra
+    steps:
+      given: "Nightly workflow 运行"
+      when: "执行 DevGate Metrics step"
+      then: "生成 JSON 报告并上传为 artifact"
+    evidence:
+      type: ci_job
+      name: "DevGate Metrics"
+      status: success
+    test: ".github/workflows/nightly.yml"
+
+  - id: C7-002
+    feature: C7
+    name: "Nightly L2 阈值检查"
+    scope: ci
+    priority: P1
+    trigger: [Release]
+    method: auto
+    tags: [ci, nightly, threshold, phase41]
+    owner: infra
+    steps:
+      given: "devgate-metrics.json 已生成"
+      when: "执行 DevGate Threshold Check (L2) step"
+      then: "P0/P1 RCI 覆盖率 100% 且 P0 manual tests = 0"
+    evidence:
+      type: ci_job
+      name: "DevGate Threshold Check (L2)"
+      status: success
+    test: ".github/workflows/nightly.yml"
+
+  - id: C7-003
+    feature: C7
+    name: "LEARNINGS 自动写回"
+    scope: ci
+    priority: P2
+    trigger: [Release]
+    method: auto
+    tags: [ci, nightly, learnings, phase5]
+    owner: infra
+    steps:
+      given: "devgate-metrics.json 已生成"
+      when: "执行 Append to LEARNINGS step"
+      then: "月度报告追加到 docs/LEARNINGS.md 并 commit/push"
+    evidence:
+      type: ci_job
+      name: "Append to LEARNINGS"
+      status: success
+    test: ".github/workflows/nightly.yml"
 
   # --------------------------------------------------------------------------
   # C5: release-check
