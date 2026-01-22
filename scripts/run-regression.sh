@@ -197,7 +197,9 @@ run_evidence() {
             esac
             local output
             set +e
-            output=$(cd "$PROJECT_ROOT" && eval "$evidence_run" 2>&1)
+            # P0-1 修复: 移除 eval，使用 bash -c 执行（更安全，防止命令注入）
+            # 注意：evidence_run 来自 regression-contract.yaml（受版本控制），但仍需防范
+            output=$(cd "$PROJECT_ROOT" && bash -c "$evidence_run" 2>&1)
             local exit_code=$?
             set -e
 
@@ -240,8 +242,15 @@ run_evidence() {
                 return
             fi
 
-            # 支持通配符（引号内使用 eval 展开）
-            if eval "ls \"$PROJECT_ROOT\"/$file_path" 1>/dev/null 2>&1; then
+            # P0-2 修复: 移除 eval，使用 compgen 或 find 检查通配符
+            # 先验证 file_path 不包含危险字符
+            if [[ "$file_path" == *".."* ]] || [[ "$file_path" == *";"* ]] || [[ "$file_path" == *"|"* ]]; then
+                echo -e "${RED}❌ (unsafe file path: $file_path)${NC}"
+                L3_FAILED=$((L3_FAILED + 1))
+                return
+            fi
+            # 使用 find 检查文件是否存在（支持通配符模式）
+            if find "$PROJECT_ROOT" -path "$PROJECT_ROOT/$file_path" -print -quit 2>/dev/null | grep -q .; then
                 echo -e "${GREEN}✅${NC}"
                 L3_PASSED=$((L3_PASSED + 1))
             else

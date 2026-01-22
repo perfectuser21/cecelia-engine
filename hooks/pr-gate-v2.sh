@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================================
-# PreToolUse Hook: PR Gate v2.5 (硬门禁版)
+# PreToolUse Hook: PR Gate v2.6 (硬门禁版)
 # ============================================================================
 #
+# v2.6: P0 安全修复 - 找不到仓库阻止 / 正则增强
 # v2.4: 修复硬编码 develop 分支，改用 git config 读取 base 分支
 # v2.3: 修复目标仓库检测 - 解析 --repo 参数，检查正确的仓库
 # v2.2: 增加 PRD/DoD 内容有效性检查（不能是空文件）
@@ -77,9 +78,15 @@ if [[ -n "$TARGET_REPO" ]]; then
     done
 
     if [[ -z "$PROJECT_ROOT" ]]; then
-        # 找不到本地仓库，跳过检查（让 gh 自己报错）
-        echo "⚠️ 找不到本地仓库: $TARGET_REPO，跳过 PR Gate 检查" >&2
-        exit 0
+        # P0-1 修复: 找不到本地仓库必须阻止，否则可通过伪造 --repo 绕过检查
+        echo "" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "  ❌ 找不到本地仓库: $TARGET_REPO" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "" >&2
+        echo "如果要为其他仓库创建 PR，请先 cd 到该仓库目录" >&2
+        echo "" >&2
+        exit 2
     fi
 else
     # 没有 --repo 参数，使用当前目录
@@ -132,9 +139,11 @@ CHECKED=0
 echo "  [基础检查]" >&2
 
 # 检查分支
+# P0-2 修复: 增强正则，与 branch-protect.sh 保持一致
 echo -n "  分支... " >&2
 CHECKED=$((CHECKED + 1))
-if [[ "${CURRENT_BRANCH:-}" =~ ^(cp-[a-zA-Z0-9]|feature/) ]]; then
+if [[ "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]+$ ]] || \
+   [[ "${CURRENT_BRANCH:-}" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]* ]]; then
     echo "✅ ($CURRENT_BRANCH)" >&2
 elif [[ "$MODE" == "release" && "$CURRENT_BRANCH" == "develop" ]]; then
     echo "✅ ($CURRENT_BRANCH → main)" >&2

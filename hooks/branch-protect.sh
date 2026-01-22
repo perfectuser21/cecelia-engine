@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - 分支保护 Hook
+# v15: P0 安全修复 - jq 缺失阻止 / realpath 防 symlink / 正则增强
 # v14: 验证 BASE_BRANCH 存在性，不存在则回退 develop
 # v13: 修复硬编码 develop 分支，改用 git config 读取 base 分支
 # v12: 增加全局配置目录保护（~/.claude/hooks/, ~/.claude/skills/）
@@ -10,11 +11,18 @@
 
 set -euo pipefail
 
-# 检查 jq 是否存在
+# P0-1 修复: jq 缺失必须阻止，否则完全绕过保护
 if ! command -v jq &>/dev/null; then
-  echo "⚠️ jq 未安装，分支保护 Hook 无法正常工作" >&2
-  echo "   请安装: apt install jq 或 brew install jq" >&2
-  exit 0
+  echo "" >&2
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+  echo "  ❌ jq 未安装，分支保护无法工作" >&2
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+  echo "" >&2
+  echo "请安装 jq:" >&2
+  echo "  Ubuntu/Debian: sudo apt install jq" >&2
+  echo "  macOS: brew install jq" >&2
+  echo "" >&2
+  exit 2
 fi
 
 # Read JSON input from stdin
@@ -38,8 +46,15 @@ fi
 # ===== v12: 全局配置目录保护 =====
 # 阻止直接修改 ~/.claude/hooks/ 和 ~/.claude/skills/
 # 这些文件应该在 zenithjoy-engine 修改后部署
+# P0-2 修复: 使用 realpath 解析 symlink，防止通过符号链接绕过
 HOME_DIR="${HOME:-/home/$(whoami)}"
-if [[ "$FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
+REAL_FILE_PATH="$FILE_PATH"
+if command -v realpath &>/dev/null; then
+    REAL_FILE_PATH=$(realpath -m "$FILE_PATH" 2>/dev/null || echo "$FILE_PATH")
+fi
+if [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
+   [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/skills/"* ]] || \
+   [[ "$FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
    [[ "$FILE_PATH" == "$HOME_DIR/.claude/skills/"* ]]; then
     echo "" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
@@ -105,7 +120,11 @@ fi
 # ===== 分支检查（v10: 增加 PRD/DoD 检查） =====
 
 # feature/* 或 cp-* 分支 - 需要检查 PRD/DoD
-if [[ "$CURRENT_BRANCH" =~ ^feature/ ]] || [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9] ]]; then
+# P0-3 修复: 增强正则，要求完整的分支名格式
+# cp-* 要求: cp- 后至少2个字符，只允许字母数字和连字符
+# feature/* 要求: feature/ 后至少1个字符
+if [[ "$CURRENT_BRANCH" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]* ]] || \
+   [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]+$ ]]; then
 
     # 检查 PRD 文件是否存在
     if [[ ! -f "$PROJECT_ROOT/.prd.md" ]]; then

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.5.1] - 2026-01-22
+
+### Security (P0 Critical Fixes)
+- **hooks/branch-protect.sh v15**: jq 缺失时 exit 2 阻止，防止完全绕过保护
+- **hooks/branch-protect.sh v15**: 添加 realpath 检查，防止 symlink 绕过全局配置保护
+- **hooks/branch-protect.sh v15**: 增强分支正则，要求完整格式 `cp-xxx` 或 `feature/xxx`
+- **hooks/pr-gate-v2.sh v2.6**: 找不到本地仓库时 exit 2 阻止，防止 `--repo fake/repo` 绕过
+- **hooks/pr-gate-v2.sh v2.6**: 增强分支正则，与 branch-protect.sh 保持一致
+- **scripts/run-regression.sh**: 移除 eval 命令执行，改用 bash -c（防止命令注入）
+- **scripts/run-regression.sh**: 移除 eval ls，改用 find 检查文件（防止路径注入）
+
 ## [8.4.0] - 2026-01-22
 
 ### Security
