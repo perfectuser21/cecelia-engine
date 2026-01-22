@@ -7,21 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [8.0.32] - 2026-01-22
-
-### Added
-- **n8n/workflows/cecilia-dev-loop.json**: 完整无头开发循环工作流
-  - 强制使用 /dev skill 执行任务
-  - CI 失败自动重试（默认 3 次）
-  - 支持读取上次结果继续修复 (previous_result)
-  - 飞书通知集成
-- **n8n/templates/headless-prompt.md**: 无头模式提示词模板
-- **n8n/scripts/generate-prompt.sh**: 提示词生成脚本
-- **n8n/scripts/notify-n8n.sh**: N8N 结果通知脚本
-
-### Changed
-- **n8n/README.md**: 重写文档，详细说明无头工作流闭环架构
-
 ## [8.0.31] - 2026-01-22
 
 ### Changed
