@@ -15,7 +15,7 @@
 #
 # ============================================================================
 
-version: "1.18.0"
+version: "1.19.0"
 updated: "2026-01-22"
 
 # ============================================================================
@@ -250,6 +250,27 @@ hooks:
       path: ".history/PR-*.prd.md"
       exists: true
     test: "tests/hooks/pr-gate-phase2.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H2-010: Phase 6 - Skill 产物检查
+  # --------------------------------------------------------------------------
+  - id: H2-010
+    feature: H2
+    name: "Skill 产物检查（QA-DECISION + AUDIT-REPORT）"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [pr, gate, skill, phase6]
+    owner: infra
+    steps:
+      given: "PR 模式下"
+      when: "执行 gh pr create"
+      then: "Hook 检查 docs/QA-DECISION.md 和 docs/AUDIT-REPORT.md 存在，且审计通过"
+    evidence:
+      type: log
+      contains: "Phase 6: Skill 产物检查"
+    test: "tests/hooks/pr-gate.test.ts"
 
   # --------------------------------------------------------------------------
   # H3: Phase 3 - Hook Core 多仓库治理

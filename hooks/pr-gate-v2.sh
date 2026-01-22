@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================================
-# PreToolUse Hook: PR Gate v2.8 (Phase 2 Snapshot)
+# PreToolUse Hook: PR Gate v2.9 (Phase 6 Skill Orchestration)
 # ============================================================================
 #
+# v2.9: Phase 6 - Skill 编排闭环（检查 QA-DECISION.md + AUDIT-REPORT.md）
 # v2.8: Phase 2 - PRD/DoD 快照提示（实际快照在 /dev 流程中执行）
 # v2.7: Phase 1 闭环 - DoD ↔ Test 映射检查 + P0/P1 强制 RCI 更新
 # v2.6: P0 安全修复 - 找不到仓库阻止 / 正则增强
@@ -11,7 +12,7 @@
 # v2.2: 增加 PRD/DoD 内容有效性检查（不能是空文件）
 # v2.1: 增加 PRD 检查（与 DoD 检查并列）
 # v8+ 硬门禁规则：
-#   PR → develop：必须 L1 全自动绿 + DoD 映射检查 + P0/P1 RCI 检查
+#   PR → develop：必须 L1 全自动绿 + DoD 映射检查 + P0/P1 RCI 检查 + Skill 产物
 #   develop → main：必须 L1 绿 + L2B/L3 证据链齐全
 #
 # 模式检测：
@@ -408,6 +409,70 @@ if [[ "$MODE" == "pr" ]]; then
     else
         echo "❌ (.dod.md 不存在)" >&2
         echo "    → 请创建 .dod.md 记录 DoD 清单" >&2
+        FAILED=1
+    fi
+
+    # ===== Phase 6: Skill 产物检查 =====
+    echo "" >&2
+    echo "  [Phase 6: Skill 产物检查]" >&2
+
+    # 检查 .dod.md 是否引用 QA 决策
+    echo -n "  DoD 引用 QA 决策... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$DOD_FILE" ]]; then
+        DOD_HAS_QA_REF=$(grep -c "^QA:" "$DOD_FILE" 2>/dev/null || echo 0)
+        DOD_HAS_QA_REF=${DOD_HAS_QA_REF//[^0-9]/}
+        [[ -z "$DOD_HAS_QA_REF" ]] && DOD_HAS_QA_REF=0
+        if [[ "$DOD_HAS_QA_REF" -gt 0 ]]; then
+            echo "✅" >&2
+        else
+            echo "❌ (缺少 QA: 引用)" >&2
+            echo "    → DoD 必须包含 'QA: docs/QA-DECISION.md' 引用" >&2
+            FAILED=1
+        fi
+    else
+        echo "⏭️ (DoD 不存在)" >&2
+    fi
+
+    # 检查 QA-DECISION.md 存在
+    QA_DECISION_FILE="$PROJECT_ROOT/docs/QA-DECISION.md"
+    echo -n "  QA 决策文件... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$QA_DECISION_FILE" ]]; then
+        echo "✅" >&2
+    else
+        echo "❌ (docs/QA-DECISION.md 不存在)" >&2
+        echo "    → 请调用 /qa skill 生成 QA 决策" >&2
+        FAILED=1
+    fi
+
+    # 检查 AUDIT-REPORT.md 存在且 Decision: PASS
+    AUDIT_REPORT_FILE="$PROJECT_ROOT/docs/AUDIT-REPORT.md"
+    echo -n "  审计报告文件... " >&2
+    CHECKED=$((CHECKED + 1))
+    if [[ -f "$AUDIT_REPORT_FILE" ]]; then
+        # 检查是否包含 Decision: PASS
+        AUDIT_PASS=$(grep -cE "^Decision:.*PASS" "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)
+        AUDIT_PASS=${AUDIT_PASS//[^0-9]/}
+        [[ -z "$AUDIT_PASS" ]] && AUDIT_PASS=0
+        AUDIT_FAIL=$(grep -cE "^Decision:.*FAIL" "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)
+        AUDIT_FAIL=${AUDIT_FAIL//[^0-9]/}
+        [[ -z "$AUDIT_FAIL" ]] && AUDIT_FAIL=0
+
+        if [[ "$AUDIT_PASS" -gt 0 ]]; then
+            echo "✅ (PASS)" >&2
+        elif [[ "$AUDIT_FAIL" -gt 0 ]]; then
+            echo "❌ (Decision: FAIL)" >&2
+            echo "    → 审计未通过，请修复 L1/L2 问题后重新 /audit" >&2
+            FAILED=1
+        else
+            echo "❌ (缺少 Decision 结论)" >&2
+            echo "    → 审计报告必须包含 'Decision: PASS' 或 'Decision: FAIL'" >&2
+            FAILED=1
+        fi
+    else
+        echo "❌ (docs/AUDIT-REPORT.md 不存在)" >&2
+        echo "    → 请调用 /audit skill 生成审计报告" >&2
         FAILED=1
     fi
 fi

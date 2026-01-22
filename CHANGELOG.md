@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.12.0] - 2026-01-22
+
+### Added (Phase 6: Skill 编排闭环)
+- **templates/QA-DECISION.md**: QA 决策产物模板
+  - 测试策略决策（auto/manual）
+  - RCI 新增/更新决策
+  - DoD 条目测试方式
+- **templates/AUDIT-REPORT.md**: 审计报告产物模板
+  - L1-L4 分层审计结果
+  - Blockers 表格
+  - Decision: PASS/FAIL 结论
+
+### Changed
+- **skills/dev/steps/04-dod.md**: 加入调用 /qa 步骤
+  - DoD 草稿 → /qa → QA 决策 → DoD 定稿
+  - DoD 必须引用 `QA: docs/QA-DECISION.md`
+- **skills/dev/steps/07-quality.md**: 加入调用 /audit 步骤
+  - 先 /audit 再 npm run qa
+  - blocker > 0 则停止
+- **hooks/pr-gate-v2.sh v2.9**: Phase 6 Skill 产物检查
+  - 检查 docs/QA-DECISION.md 存在
+  - 检查 docs/AUDIT-REPORT.md 存在且 Decision: PASS
+  - 检查 .dod.md 包含 QA: 引用
+- **regression-contract.yaml v1.19.0**: 新增 H2-007 (Skill 产物检查)
+
+### Documentation
+- Skills 现在真正接入 /dev 主流程
+- /dev = 编排者，/qa = 测试决策，/audit = 代码审计
+- 产物留痕：QA-DECISION.md + AUDIT-REPORT.md
+
 ## [8.11.0] - 2026-01-22
 
 ### Added (Phase 5: LEARNINGS 自动写回)
