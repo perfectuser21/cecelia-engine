@@ -90,14 +90,7 @@ fi
 
 # 自动检测项目根目录
 PROJECT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-# Skills 在 ~/.claude/skills/dev/ 目录下
-SKILL_FILE="$HOME/.claude/skills/dev/SKILL.md"
-
-# SKILL.md 存在性检查
-if [[ ! -f "$SKILL_FILE" ]]; then
-  echo "⚠️ SKILL.md 不存在: $SKILL_FILE"
-  echo "   这不影响 cleanup 检查，继续执行..."
-fi
+# 注：SKILL.md 检查已移除（不影响 cleanup 检查，且路径可能因部署方式不同）
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -206,7 +199,7 @@ else
   echo "  ✅ 无未提交文件"
 fi
 
-# 其他阶段已通过流程验证（step 状态机保证）
+# 其他阶段已通过流程验证（PRD/DoD Hook + PR Gate 保证）
 # check.sh 只验证 Step 11 Cleanup 的检查项
 
 echo ""

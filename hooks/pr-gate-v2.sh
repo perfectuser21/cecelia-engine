@@ -39,16 +39,34 @@ if [[ "$COMMAND" != *"gh pr create"* ]]; then
     exit 0
 fi
 
-# ===== v2.3: 解析 --repo 参数，找到目标仓库 =====
-# 提取 --repo 参数值（兼容 --repo value 和 --repo=value 两种格式）
-TARGET_REPO=$(echo "$COMMAND" | sed -n 's/.*--repo[=[:space:]]\+\([^[:space:]]\+\).*/\1/p' | head -1 | tr -d "'\"")
+# ===== v2.4: 解析 --repo 参数，找到目标仓库 =====
+# v2.4: 增强解析，支持更多格式
+# 提取 --repo 参数值（兼容多种格式）
+# 格式1: --repo owner/repo
+# 格式2: --repo=owner/repo
+# 格式3: -R owner/repo
+# 格式4: https://github.com/owner/repo
+TARGET_REPO=""
+# 尝试 --repo= 格式
+if [[ -z "$TARGET_REPO" ]]; then
+    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-\-repo[=][^ ]+' | sed 's/--repo=//' | tr -d "'\"" | head -1)
+fi
+# 尝试 --repo 空格 格式
+if [[ -z "$TARGET_REPO" ]]; then
+    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-\-repo[ ]+[^ ]+' | sed 's/--repo[ ]*//' | tr -d "'\"" | head -1)
+fi
+# 尝试 -R 短格式
+if [[ -z "$TARGET_REPO" ]]; then
+    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-R[ ]+[^ ]+' | sed 's/-R[ ]*//' | tr -d "'\"" | head -1)
+fi
 
 PROJECT_ROOT=""
 
 if [[ -n "$TARGET_REPO" ]]; then
     # 有 --repo 参数，尝试找到本地仓库
-    # 从 owner/repo 提取 repo 名称
-    REPO_NAME=$(echo "$TARGET_REPO" | sed 's|.*/||')
+    # 从 owner/repo 或 URL 提取 repo 名称
+    # 支持: owner/repo, https://github.com/owner/repo, git@github.com:owner/repo
+    REPO_NAME=$(echo "$TARGET_REPO" | sed 's|.*github\.com[:/]||' | sed 's|\.git$||' | sed 's|.*/||')
 
     # 在常见位置搜索仓库
     for SEARCH_PATH in "$HOME/dev" "$HOME/projects" "$HOME/code" "$HOME"; do

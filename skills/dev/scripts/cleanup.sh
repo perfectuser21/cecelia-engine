@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - Cleanup 脚本
+# v1.2: 报告生成错误记录到日志而非吞掉
 # v1.1: 自动检测 base 分支（从 git config 读取）
 # PR 合并后执行完整清理，确保不留垃圾
 #
@@ -39,11 +40,17 @@ echo ""
 # ========================================
 echo "0. 生成任务报告..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPORT_ERROR_LOG="/tmp/cleanup-report-error-$$.log"
 if [[ -f "$SCRIPT_DIR/generate-report.sh" ]]; then
-    if bash "$SCRIPT_DIR/generate-report.sh" "$CP_BRANCH" "$BASE_BRANCH" "$(pwd)" 2>/dev/null; then
+    # v1.2: 记录错误到日志而非吞掉
+    if bash "$SCRIPT_DIR/generate-report.sh" "$CP_BRANCH" "$BASE_BRANCH" "$(pwd)" 2>"$REPORT_ERROR_LOG"; then
         echo -e "   ${GREEN}[OK] 报告已保存到 .dev-runs/${NC}"
+        rm -f "$REPORT_ERROR_LOG"
     else
         echo -e "   ${YELLOW}[WARN] 报告生成失败，继续 cleanup${NC}"
+        if [[ -s "$REPORT_ERROR_LOG" ]]; then
+            echo -e "   ${YELLOW}错误日志: $REPORT_ERROR_LOG${NC}"
+        fi
     fi
 else
     echo -e "   ${YELLOW}[WARN] generate-report.sh 不存在，跳过${NC}"

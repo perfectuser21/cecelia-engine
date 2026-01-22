@@ -149,7 +149,7 @@ cat > "$JSON_REPORT" << EOF
   },
   "version": "$CURRENT_VERSION",
   "files_changed": [
-$(echo "$FILES_CHANGED" | sed 's/^/    "/; s/$/",/' | sed '$ s/,$//')
+$(if [[ -n "$FILES_CHANGED" ]]; then echo "$FILES_CHANGED" | sed 's/^/    "/; s/$/",/' | sed '$ s/,$//'; fi)
   ]
 }
 EOF

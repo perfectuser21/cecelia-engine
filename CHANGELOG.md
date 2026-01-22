@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.3.0] - 2026-01-22
+
+### Fixed
+- **skills/dev/scripts/check.sh**: 移除无用的 SKILL.md 路径检查，更新过时注释
+- **skills/dev/scripts/cleanup.sh v1.2**: 报告生成错误记录到日志而非吞掉
+- **hooks/pr-gate-v2.sh**: 增强 `--repo` 参数解析
+  - 支持 `-R` 短格式
+  - 支持 URL 格式（`https://github.com/owner/repo`）
+  - 支持 SSH 格式（`git@github.com:owner/repo`）
+- **skills/dev/scripts/generate-report.sh**: 修复空文件列表时的 JSON 生成
+
 ## [8.2.0] - 2026-01-22
 
 ### Fixed
