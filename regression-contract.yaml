@@ -15,7 +15,7 @@
 #
 # ============================================================================
 
-version: "1.12.0"
+version: "1.13.0"
 updated: "2026-01-22"
 
 # ============================================================================
@@ -228,6 +228,28 @@ hooks:
       type: log
       contains: "P0/P1 → RCI 更新检查"
     test: "tests/hooks/pr-gate-phase1.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H2-009: Phase 2 - PRD/DoD 快照
+  # --------------------------------------------------------------------------
+  - id: H2-009
+    feature: H2
+    name: "PRD/DoD 快照功能"
+    scope: hook
+    priority: P2
+    trigger: [Release]
+    method: auto
+    tags: [pr, gate, snapshot, phase2]
+    owner: infra
+    steps:
+      given: "PR 创建成功"
+      when: "/dev 流程调用 snapshot-prd-dod.sh"
+      then: "PRD/DoD 复制到 .history/ 目录，文件名包含 PR 号和时间戳"
+    evidence:
+      type: file
+      path: ".history/PR-*.prd.md"
+      exists: true
+    test: "tests/hooks/pr-gate-phase2.test.ts"
 
 # ============================================================================
 # Workflow 回归契约

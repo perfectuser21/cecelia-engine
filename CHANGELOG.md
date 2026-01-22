@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.7.0] - 2026-01-22
+
+### Added (Phase 2: PRD/DoD 快照)
+- **scripts/devgate/snapshot-prd-dod.sh**: PR 创建时保存 PRD/DoD 快照
+  - 文件名格式：`PR-{number}-{YYYYMMDD-HHMM}.{prd|dod}.md`
+  - 存储到 `.history/` 目录
+- **scripts/devgate/list-snapshots.sh**: 列出所有快照
+  - 支持 `--json` 输出
+- **scripts/devgate/view-snapshot.sh**: 查看指定 PR 的快照
+  - 支持 `--prd` / `--dod` 单独查看
+- **tests/hooks/pr-gate-phase2.test.ts**: Phase 2 快照功能测试（14 个用例）
+- **.history/.gitkeep**: 快照存储目录
+
+### Changed
+- **hooks/pr-gate-v2.sh v2.8**: PR Gate 通过后提示快照功能
+- **regression-contract.yaml v1.13.0**: 新增 H2-009 (PRD/DoD 快照)
+
 ## [8.6.0] - 2026-01-22
 
 ### Added (Phase 1: DevGate 闭环)
