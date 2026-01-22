@@ -15,8 +15,8 @@
 #
 # ============================================================================
 
-version: "1.11.0"
-updated: "2026-01-21"
+version: "1.12.0"
+updated: "2026-01-22"
 
 # ============================================================================
 # Hooks 回归契约
@@ -189,6 +189,45 @@ hooks:
       type: log
       contains: "DoD"
     test: "tests/hooks/pr-gate.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H2-007: Phase 1 - DoD 映射检查
+  # --------------------------------------------------------------------------
+  - id: H2-007
+    feature: H2
+    name: "DoD ↔ Test 映射检查"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [pr, gate, dod, phase1]
+    owner: infra
+    steps:
+      given: "PR 模式下"
+      when: "执行 gh pr create"
+      then: "Hook 调用 check-dod-mapping.cjs 验证每条 DoD 有 Test 字段"
+    evidence:
+      type: log
+      contains: "DoD ↔ Test 映射检查"
+    test: "tests/hooks/pr-gate-phase1.test.ts"
+
+  - id: H2-008
+    feature: H2
+    name: "P0/P1 强制 RCI 更新"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [pr, gate, rci, phase1]
+    owner: infra
+    steps:
+      given: "PR 优先级为 P0 或 P1"
+      when: "执行 gh pr create"
+      then: "Hook 调用 require-rci-update-if-p0p1.sh 验证 RCI 已更新"
+    evidence:
+      type: log
+      contains: "P0/P1 → RCI 更新检查"
+    test: "tests/hooks/pr-gate-phase1.test.ts"
 
 # ============================================================================
 # Workflow 回归契约
@@ -459,6 +498,28 @@ ci:
     evidence:
       type: ci_job
       name: "shell-check"
+      status: success
+    test: ".github/workflows/ci.yml"
+
+  # --------------------------------------------------------------------------
+  # C6: Phase 1 DevGate
+  # --------------------------------------------------------------------------
+  - id: C6-001
+    feature: C6
+    name: "CI DevGate 检查步骤"
+    scope: ci
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, devgate, phase1]
+    owner: infra
+    steps:
+      given: "PR 提交到 develop"
+      when: "CI 运行 DevGate checks step"
+      then: "DoD 映射检查 + P0/P1 RCI 检查通过"
+    evidence:
+      type: ci_job
+      name: "DevGate checks"
       status: success
     test: ".github/workflows/ci.yml"
 

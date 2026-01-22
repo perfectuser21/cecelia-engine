@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.6.0] - 2026-01-22
+
+### Added (Phase 1: DevGate 闭环)
+- **scripts/devgate/check-dod-mapping.cjs**: DoD ↔ Test 映射检查脚本
+  - 支持三种 Test 类型：`tests/`、`contract:`、`manual:`
+  - 验证测试文件/RCI ID/证据文件存在性
+- **scripts/devgate/detect-priority.cjs**: PR 优先级检测脚本
+  - 支持从 env / title / labels / commit 检测 P0-P3
+- **scripts/devgate/require-rci-update-if-p0p1.sh**: P0/P1 强制 RCI 更新检查
+  - P0/P1 级别 PR 必须更新 regression-contract.yaml
+- **tests/hooks/pr-gate-phase1.test.ts**: Phase 1 规则测试（20 个用例）
+- **evidence/manual/.gitkeep**: 手动证据目录
+
+### Changed
+- **hooks/pr-gate-v2.sh v2.7**: 接入 Phase 1 DevGate 检查
+  - PR 模式新增 DoD 映射检查
+  - PR 模式新增 P0/P1 RCI 更新检查
+- **.github/workflows/ci.yml**: 添加 DevGate checks 步骤
+- **templates/DOD-TEMPLATE.md**: 新增 Test 字段格式要求和示例
+- **regression-contract.yaml v1.12.0**:
+  - 新增 H2-007 (DoD 映射检查)
+  - 新增 H2-008 (P0/P1 强制 RCI 更新)
+  - 新增 C6-001 (CI DevGate 步骤)
+
+### Dependencies
+- 添加 js-yaml、@types/js-yaml（用于解析 regression-contract.yaml）
+
 ## [8.5.1] - 2026-01-22
 
 ### Security (P0 Critical Fixes)

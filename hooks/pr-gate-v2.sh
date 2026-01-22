@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # ============================================================================
-# PreToolUse Hook: PR Gate v2.6 (硬门禁版)
+# PreToolUse Hook: PR Gate v2.7 (Phase 1 DevGate)
 # ============================================================================
 #
+# v2.7: Phase 1 闭环 - DoD ↔ Test 映射检查 + P0/P1 强制 RCI 更新
 # v2.6: P0 安全修复 - 找不到仓库阻止 / 正则增强
 # v2.4: 修复硬编码 develop 分支，改用 git config 读取 base 分支
 # v2.3: 修复目标仓库检测 - 解析 --repo 参数，检查正确的仓库
 # v2.2: 增加 PRD/DoD 内容有效性检查（不能是空文件）
 # v2.1: 增加 PRD 检查（与 DoD 检查并列）
 # v8+ 硬门禁规则：
-#   PR → develop：必须 L1 全自动绿
+#   PR → develop：必须 L1 全自动绿 + DoD 映射检查 + P0/P1 RCI 检查
 #   develop → main：必须 L1 绿 + L2B/L3 证据链齐全
 #
 # 模式检测：
@@ -276,6 +277,35 @@ fi
 # Part 2: PR 模式 - PRD + DoD 检查
 # ============================================================================
 if [[ "$MODE" == "pr" ]]; then
+    # ===== Phase 1: DoD ↔ Test 映射检查 =====
+    DEVGATE_DIR="$PROJECT_ROOT/scripts/devgate"
+    DOD_MAPPING_SCRIPT="$DEVGATE_DIR/check-dod-mapping.cjs"
+    RCI_CHECK_SCRIPT="$DEVGATE_DIR/require-rci-update-if-p0p1.sh"
+
+    # DoD 映射检查（如果脚本存在）
+    if [[ -f "$DOD_MAPPING_SCRIPT" ]]; then
+        echo "" >&2
+        echo "  [Phase 1: DoD ↔ Test 映射检查]" >&2
+        CHECKED=$((CHECKED + 1))
+        if node "$DOD_MAPPING_SCRIPT" >&2 2>&1; then
+            echo "" >&2
+        else
+            FAILED=1
+        fi
+    fi
+
+    # P0/P1 强制 RCI 更新检查（如果脚本存在）
+    if [[ -f "$RCI_CHECK_SCRIPT" ]]; then
+        echo "" >&2
+        echo "  [Phase 1: P0/P1 RCI 更新检查]" >&2
+        CHECKED=$((CHECKED + 1))
+        if bash "$RCI_CHECK_SCRIPT" >&2 2>&1; then
+            echo "" >&2
+        else
+            FAILED=1
+        fi
+    fi
+
     # ===== PRD 检查 =====
     echo "" >&2
     echo "  [PRD 检查]" >&2
