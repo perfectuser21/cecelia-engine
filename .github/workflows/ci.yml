@@ -224,8 +224,11 @@ jobs:
             echo "  .dod.md... ✅"
 
             # 检查是否全勾
-            UNCHECKED=$(grep -c '\- \[ \]' .dod.md 2>/dev/null || echo "0")
-            CHECKED=$(grep -c '\- \[x\]' .dod.md 2>/dev/null || echo "0")
+            # 注意：grep -c 找到 0 匹配时输出 "0" 但 exit 1，不能用 || echo "0"
+            UNCHECKED=$(grep -c '\- \[ \]' .dod.md 2>/dev/null) || true
+            CHECKED=$(grep -c '\- \[x\]' .dod.md 2>/dev/null) || true
+            UNCHECKED=${UNCHECKED:-0}
+            CHECKED=${CHECKED:-0}
 
             if [ "$UNCHECKED" -eq 0 ] && [ "$CHECKED" -gt 0 ]; then
               echo "  验收项... ✅ ($CHECKED 项全部完成)"
