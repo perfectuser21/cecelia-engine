@@ -3,7 +3,7 @@
   "project": "zenithjoy-engine",
   "branch": "cp-sample",
   "base_branch": "develop",
-  "mode": "test",
+  "mode": "interactive",
   "timestamp": "2026-01-22T00:00:00Z",
   "date": "2026-01-22",
   "quality_report": {
