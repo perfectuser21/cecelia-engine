@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: read
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +39,137 @@ jobs:
         run: |
           MODE="${{ github.event.inputs.mode || 'nightly' }}"
           bash scripts/run-regression.sh "$MODE"
+
+      - name: DevGate Metrics
+        id: metrics
+        run: |
+          # 收集本月 DevGate 指标
+          MONTH=$(date +%Y-%m)
+          echo "📊 Collecting DevGate Metrics for $MONTH"
+
+          # 生成 JSON 报告
+          bash scripts/devgate/metrics.sh --month "$MONTH" --format json > devgate-metrics.json || true
+
+          # 输出人类可读格式
+          bash scripts/devgate/metrics.sh --month "$MONTH" || true
+
+          # 上传为 artifact
+          echo "metrics_month=$MONTH" >> "$GITHUB_OUTPUT"
+
+      - name: DevGate Threshold Check (L2)
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  DevGate Threshold Check (L2 Strict Gate)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+
+          # 读取 JSON 报告
+          if [ ! -f devgate-metrics.json ]; then
+            echo "⚠️ No metrics file found, skipping threshold check"
+            exit 0
+          fi
+
+          json=$(cat devgate-metrics.json)
+
+          # 提取指标
+          pct=$(echo "$json" | jq '.rci_coverage.pct')
+          p0p1=$(echo "$json" | jq '.prs.total_p0p1')
+          p0_manual=$(echo "$json" | jq '.dod.p0_manual_tests')
+          offenders=$(echo "$json" | jq -r '.rci_coverage.offenders[]? | "  - PR #\(.pr) (\(.priority)) sha:\(.sha)"')
+          rci_growth=$(echo "$json" | jq '.rci_growth.new_ids_count')
+
+          fail=0
+
+          # 检查 1: P0/P1 RCI 覆盖率 = 100%
+          echo "[Check 1] P0/P1 RCI Coverage"
+          if [ "$p0p1" -gt 0 ] && [ "$pct" -lt 100 ]; then
+            echo "❌ RCI Coverage < 100% ($pct%)"
+            if [ -n "$offenders" ]; then
+              echo "Missing RCI updates:"
+              echo "$offenders"
+            fi
+            fail=1
+          else
+            echo "✅ RCI Coverage: $pct% (P0/P1: $p0p1)"
+          fi
+          echo ""
+
+          # 检查 2: P0 不允许 manual tests
+          echo "[Check 2] P0 Manual Tests"
+          if [ "$p0_manual" -gt 0 ]; then
+            echo "❌ P0 manual tests detected ($p0_manual)"
+            echo "P0 PRs should have automated tests, not manual evidence."
+            fail=1
+          else
+            echo "✅ P0 manual tests: 0"
+          fi
+          echo ""
+
+          # 软警告: RCI 增长 < 2
+          echo "[Info] RCI Growth"
+          if [ "$rci_growth" -lt 2 ]; then
+            echo "⚠️ Low RCI Growth ($rci_growth). Consider reviewing regression gaps."
+          else
+            echo "✅ New RCI IDs: $rci_growth"
+          fi
+          echo ""
+
+          # 最终结果
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ "$fail" -eq 1 ]; then
+            echo "❌ DevGate Threshold Check FAILED (L2 Mode)"
+            exit 1
+          fi
+          echo "✅ DevGate Threshold Check PASSED (L2 Mode)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+      - name: Upload Metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: devgate-metrics-${{ steps.metrics.outputs.metrics_month }}
+          path: devgate-metrics.json
+          retention-days: 90
+
+      - name: Append to LEARNINGS
+        if: github.event_name == 'schedule'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Append DevGate Report to LEARNINGS"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+          # 检查指标文件
+          if [ ! -f devgate-metrics.json ]; then
+            echo "⚠️ No metrics file found, skipping"
+            exit 0
+          fi
+
+          # 追加到 LEARNINGS
+          node scripts/devgate/append-learnings.cjs \
+            --metrics devgate-metrics.json \
+            --learnings docs/LEARNINGS.md \
+            --contract regression-contract.yaml
+
+          # 检查是否有变更
+          if git diff --quiet docs/LEARNINGS.md; then
+            echo "ℹ️ No changes to LEARNINGS.md"
+            exit 0
+          fi
+
+          # 配置 git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # 提交并推送
+          MONTH=$(date +%Y-%m)
+          git add docs/LEARNINGS.md
+          git commit -m "docs: DevGate 月度报告 $MONTH
+
+自动生成的 DevGate 指标报告
+
+Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+          git push
+
+          echo "✅ LEARNINGS.md updated and pushed"
 
   notify:
     needs: [regression]

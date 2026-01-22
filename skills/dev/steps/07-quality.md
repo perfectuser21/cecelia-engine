@@ -1,94 +1,130 @@
 # Step 7: 质检
 
-> 跑测试，确保代码质量
+> 调用 /audit 做代码审计，然后跑测试
 
 ---
 
-## 双模式质检
+## 流程
 
-v8.0 引入双模式设计，减少日常 PR 阻力：
-
-| 模式 | 检查内容 | 适用场景 |
-|------|----------|----------|
-| **pr** (默认) | 只 L1 | 日常 PR → develop |
-| **release** | L1 + L2 + L3 | 发版 develop → main |
+```
+写完代码 → 调用 /audit → 审计报告 → blocker=0? → npm run qa
+                                    ↓
+                              blocker>0 → 停止，修复
+```
 
 ---
 
-## PR 模式 (默认)
+## Step 7.1: 调用 /audit（必须）
 
-日常开发只需通过 L1 自动化测试：
+**在跑测试前，必须调用 /audit skill 输出审计报告**：
+
+```
+/audit
+```
+
+**输入**：
+- 本次改动的文件
+- 目标层级：L2（默认）
+
+**输出**：
+- `docs/AUDIT-REPORT.md`（必须创建）
+
+**审计内容**：
+- L1 阻塞性问题（必须修）
+- L2 功能性问题（建议修）
+- L3 最佳实践（可选）
+- L4 过度优化（不修）
+
+---
+
+## Step 7.2: Blocker 检查
+
+**硬规则：blocker > 0 则停止，不允许进入 PR**
+
+```
+查看 docs/AUDIT-REPORT.md:
+
+Decision: PASS   → 继续 Step 7.3
+Decision: FAIL   → 停止，修复 L1/L2 问题后重新审计
+```
+
+---
+
+## Step 7.3: 跑测试
+
+blocker 清零后，跑自动化测试：
 
 ```bash
 npm run qa  # = typecheck + test + build
 ```
 
-### 检查项
+### 双模式质检
+
+| 模式 | 检查内容 | 适用场景 |
+|------|----------|----------|
+| **pr** (默认) | L1 自动化测试 | 日常 PR → develop |
+| **release** | L1 + L2B + L3 证据链 | 发版 develop → main |
+
+---
+
+## PR 模式检查项
 
 - [ ] `npm run typecheck` 通过
 - [ ] `npm run test` 通过
 - [ ] `npm run build` 通过
 - [ ] `.prd.md` 存在且内容有效
 - [ ] `.dod.md` 存在且有验收清单
+<<<<<<< HEAD
 
 **结果判定**：
 - ✅ L1 全绿 → 继续 Step 8 (PR)
 - ❌ L1 有红 → 继续 Loop 1 修复
+=======
+- [ ] `.dod.md` 包含 `QA:` 引用
+- [ ] `docs/QA-DECISION.md` 存在
+- [ ] `docs/AUDIT-REPORT.md` 存在且 `Decision: PASS`
+>>>>>>> origin/develop
 
 ---
 
-## Release 模式
+## Release 模式检查项
 
-发版时需要完整证据链：
+PR 模式检查项 + 以下内容：
 
-```bash
-PR_GATE_MODE=release gh pr create ...
-```
-
-### 完整检查项
-
-**Layer 1 - 自动化测试**：
-- [ ] `npm run qa` 通过
-
-**Layer 2 - 效果验证**：
 - [ ] `.layer2-evidence.md` 存在
-- [ ] 截图 ID (S1, S2) 对应文件存在
-- [ ] curl 输出包含 `HTTP_STATUS: xxx`
-
-**Layer 3 - 需求验收**：
-- [ ] `.dod.md` 存在
-- [ ] 所有 checkbox 打勾 `[x]`
-- [ ] 每项有 `Evidence: \`Sx\`` 或 `\`Cx\`` 引用
-- [ ] 引用的 ID 在 `.layer2-evidence.md` 中存在
+- [ ] 截图 ID 对应文件存在
+- [ ] `.dod.md` 所有 checkbox 打勾
 
 ---
 
-## 快速检查命令
+## Gate 检查
 
-```bash
-# 本地快速质检
-npm run qa
-
-# 检查 shell 语法
-find . -name "*.sh" -exec bash -n {} \;
-```
+PR Gate 会检查：
+1. `docs/AUDIT-REPORT.md` 存在
+2. 包含 `Decision: PASS`（FAIL 则 Gate 失败）
 
 ---
 
 ## 结果处理
 
-| 模式 | 结果 | 动作 |
-|------|------|------|
-| pr | ✅ L1 通过 | 继续 Step 8 (PR) |
-| pr | ❌ L1 失败 | 继续 Loop 1 修复 |
-| release | ✅ 三层通过 | 继续 Step 8 (PR) |
-| release | ❌ 任何失败 | 继续 Loop 1 修复 |
+| 结果 | 动作 |
+|------|------|
+| /audit → FAIL | 修复 blocker，重新 /audit |
+| /audit → PASS, npm run qa 失败 | 修复代码，重跑 |
+| /audit → PASS, npm run qa 通过 | 继续 Step 8 (PR) |
 
 ---
 
 ## 质检原则
 
+<<<<<<< HEAD
 1. **分层检查** - PR 只 L1，Release 才 L2+L3
 2. **快速反馈** - 本地 `npm run qa` 与 CI 结论一致
 3. **证据驱动** - Release 时用截图/curl 证明效果
 4. **PRD/DoD + CI 强制检查** - Hook 强制 PRD/DoD，CI 强制自动化测试
+=======
+1. **先审计后测试** - /audit 是 npm run qa 的前置
+2. **blocker 是硬门禁** - L1/L2 > 0 不能继续
+3. **分层检查** - PR 只 L1，Release 才 L2B+L3
+4. **产物留痕** - 审计报告必须存在
+>>>>>>> origin/develop
