@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.1.0] - 2026-01-22
+
+### Added
+- **hooks/branch-protect.sh v12**: 增加全局配置目录保护
+  - 阻止直接修改 `~/.claude/hooks/` 和 `~/.claude/skills/`
+  - 强制走 zenithjoy-engine 工作流修改后再部署
+  - 防止跳过版本控制直接修改全局配置
+
+### Changed
+- **hooks/branch-protect.sh v11**: PRD/DoD 内容有效性检查
+  - PRD 需要至少 3 行且包含关键字段
+  - DoD 需要至少 3 行且包含 checkbox 格式
+- **hooks/pr-gate-v2.sh v2.2**: 增加 PRD 检查和内容有效性检查
+- **skills/dev/scripts/scan-change-level.sh**: L1-L6 重命名为 T1-T6，避免与质检层级命名冲突
+- **skills/dev/scripts/multi-feature.sh**: 同步到 `origin/develop` 而非 `origin/main`
+- **skills/dev/scripts/check.sh**: 修复 SKILL_FILE 路径
+
+### Fixed
+- 质检层级命名一致性：L1/L2/L3 = 自动化测试/效果验证/需求验收
+- 分支策略一致性：develop 是主开发线，不是 main
+
 ## [8.0.32] - 2026-01-22
 
 ### Added
