@@ -1,17 +1,20 @@
 {
   "summary": {
     "total": 8,
-    "covered": 2,
-    "uncovered": 6,
-    "percentage": 25
+    "covered": 8,
+    "uncovered": 0,
+    "percentage": 100
   },
   "entries": [
     {
       "type": "skill",
       "path": "skills/qa/SKILL.md",
       "name": "/qa",
-      "covered": false,
-      "coveredBy": []
+      "covered": true,
+      "coveredBy": [
+        "C1-008",
+        "C3-005"
+      ]
     },
     {
       "type": "skill",
@@ -22,43 +25,56 @@
         "C1-001",
         "C3-001",
         "C3-002",
-        "C3-003"
+        "C3-003",
+        "C3-004",
+        "C3-005",
+        "C3-006"
       ]
     },
     {
       "type": "skill",
       "path": "skills/audit/SKILL.md",
       "name": "/audit",
-      "covered": false,
-      "coveredBy": []
+      "covered": true,
+      "coveredBy": [
+        "C1-009"
+      ]
     },
     {
       "type": "skill",
       "path": "skills/assurance/SKILL.md",
       "name": "/assurance",
-      "covered": false,
-      "coveredBy": []
+      "covered": true,
+      "coveredBy": [
+        "C1-010"
+      ]
     },
     {
       "type": "script",
       "path": "scripts/run-regression.sh",
       "name": "run-regression",
-      "covered": false,
-      "coveredBy": []
+      "covered": true,
+      "coveredBy": [
+        "C3-004"
+      ]
     },
     {
       "type": "script",
       "path": "scripts/qa-report.sh",
       "name": "qa-report",
-      "covered": false,
-      "coveredBy": []
+      "covered": true,
+      "coveredBy": [
+        "C3-005"
+      ]
     },
     {
       "type": "script",
       "path": "scripts/release-check.sh",
       "name": "release-check",
-      "covered": false,
-      "coveredBy": []
+      "covered": true,
+      "coveredBy": [
+        "C3-006"
+      ]
     },
     {
       "type": "script",
@@ -101,6 +117,18 @@
       "name": "模式检测 - continue"
     },
     {
+      "id": "C1-008",
+      "name": "/qa Skill 加载"
+    },
+    {
+      "id": "C1-009",
+      "name": "/audit Skill 加载"
+    },
+    {
+      "id": "C1-010",
+      "name": "/assurance Skill 加载"
+    },
+    {
       "id": "C2-001",
       "name": "CI 运行 npm run qa"
     },
@@ -125,6 +153,18 @@
       "name": "install-hooks.sh 安装成功"
     },
     {
+      "id": "C3-004",
+      "name": "run-regression.sh 执行回归测试"
+    },
+    {
+      "id": "C3-005",
+      "name": "qa-report.sh 生成报告"
+    },
+    {
+      "id": "C3-006",
+      "name": "release-check.sh 发布检查"
+    },
+    {
       "id": "C6-001",
       "name": "完整开发流程"
     },
@@ -133,5 +173,5 @@
       "name": "安装与部署链路"
     }
   ],
-  "generated_at": "2026-01-23T08:45:22.182Z"
+  "generated_at": "2026-01-23T08:54:07.464Z"
 }
