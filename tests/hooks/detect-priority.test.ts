@@ -89,7 +89,8 @@ describe("detect-priority.cjs", () => {
     });
 
     it("PR title 中间包含 security 不应触发（只匹配前缀）", () => {
-      const result = runDetect({ PR_TITLE: "fix: improve security checks" });
+      // BASE_REF=HEAD 阻止检测 git commit 历史
+      const result = runDetect({ PR_TITLE: "fix: improve security checks", BASE_REF: "HEAD" });
       // 不是 security 前缀，应返回 unknown
       expect(result.priority).toBe("unknown");
     });
@@ -157,13 +158,15 @@ describe("detect-priority.cjs", () => {
 
   describe("无优先级时返回 unknown", () => {
     it("无任何优先级标识应返回 unknown", () => {
-      const result = runDetect({ PR_TITLE: "fix: some bug" });
+      // BASE_REF=HEAD 阻止检测 git commit 历史（否则会检测到当前 commit 的 P0）
+      const result = runDetect({ PR_TITLE: "fix: some bug", BASE_REF: "HEAD" });
       expect(result.priority).toBe("unknown");
       expect(result.source).toBe("default");
     });
 
     it("空输入应返回 unknown", () => {
-      const result = runDetect({});
+      // BASE_REF=HEAD 阻止检测 git commit 历史
+      const result = runDetect({ BASE_REF: "HEAD" });
       expect(result.priority).toBe("unknown");
       expect(result.source).toBe("default");
     });
