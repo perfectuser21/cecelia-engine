@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.22.0] - 2026-01-23
+
+### Fixed (MEDIUM P3 级代码质量修复)
+- **scripts/run-regression.sh**: 删除重复定义的 first_cmd 变量
+- **scripts/devgate/snapshot-prd-dod.sh**: 统一错误消息格式
+- **scripts/devgate/view-snapshot.sh**: 调用外部脚本前检查存在性
+
 ## [8.21.0] - 2026-01-23
 
 ### Fixed (MEDIUM P2 级边界条件修复)

@@ -58,7 +58,13 @@ if [[ -z "$PRD_FILES" ]]; then
     echo "错误: 找不到 PR #${PR_NUMBER} 的快照" >&2
     echo "" >&2
     echo "可用的快照：" >&2
-    bash "$PROJECT_ROOT/scripts/devgate/list-snapshots.sh" >&2
+    # P3 修复: 调用外部脚本前检查存在性
+    LIST_SCRIPT="$PROJECT_ROOT/scripts/devgate/list-snapshots.sh"
+    if [[ -f "$LIST_SCRIPT" ]]; then
+        bash "$LIST_SCRIPT" >&2
+    else
+        echo "  (list-snapshots.sh 不存在)" >&2
+    fi
     exit 1
 fi
 

@@ -183,8 +183,7 @@ run_evidence() {
             # 执行命令
             # 安全注意：evidence_run 来自 regression-contract.yaml（受版本控制）
             # 只允许执行白名单中的命令前缀
-            local first_cmd
-            first_cmd=$(echo "$evidence_run" | awk '{print $1}')
+            # P3 修复: 删除重复的 first_cmd 定义（已在上面定义）
             case "$first_cmd" in
                 npm|node|bash|sh|cat|grep|ls|curl|gh|git|jq|yq)
                     # 允许的命令
