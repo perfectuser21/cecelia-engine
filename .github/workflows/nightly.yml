@@ -167,7 +167,11 @@ jobs:
 自动生成的 DevGate 指标报告
 
 Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          git push
+          # CRITICAL 修复: git push 添加错误检查
+          if ! git push; then
+            echo "❌ git push 失败"
+            exit 1
+          fi
 
           echo "✅ LEARNINGS.md updated and pushed"
 
@@ -176,6 +180,9 @@ Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.co
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # CRITICAL 修复: 显式声明最小权限
+    permissions:
+      contents: read
 
     steps:
       - name: Notify Result
@@ -196,25 +203,33 @@ Co-Authored-By: github-actions[bot] <github-actions[bot]@users.noreply.github.co
             COLOR="red"
           fi
 
-          curl -s -X POST "$FEISHU_WEBHOOK" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "msg_type": "interactive",
-              "card": {
-                "header": {
-                  "title": {"tag": "plain_text", "content": "'"$TITLE"'"},
-                  "template": "'"$COLOR"'"
+          # CRITICAL 修复: 使用 jq 安全生成 JSON，防止注入
+          CONTENT="**Repo**: ${{ github.repository }}\n**Branch**: ${{ github.ref_name }}\n**Run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          JSON_PAYLOAD=$(jq -n \
+            --arg title "$TITLE" \
+            --arg color "$COLOR" \
+            --arg content "$CONTENT" \
+            '{
+              msg_type: "interactive",
+              card: {
+                header: {
+                  title: {tag: "plain_text", content: $title},
+                  template: $color
                 },
-                "elements": [
+                elements: [
                   {
-                    "tag": "div",
-                    "text": {
-                      "tag": "lark_md",
-                      "content": "**Repo**: ${{ github.repository }}\n**Branch**: ${{ github.ref_name }}\n**Run**: [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+                    tag: "div",
+                    text: {
+                      tag: "lark_md",
+                      content: $content
                     }
                   }
                 ]
               }
-            }'
+            }')
+
+          curl -s --fail -X POST "$FEISHU_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
 
           echo "📨 Notification sent to Feishu"

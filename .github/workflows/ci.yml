@@ -312,6 +312,9 @@ jobs:
     if: always() && (needs.version-check.result == 'failure' || needs.test.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # CRITICAL 修复: 显式声明最小权限
+    permissions:
+      contents: read
     steps:
       - name: Notify Notion
         env:
@@ -344,18 +347,28 @@ jobs:
             PR_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           fi
 
-          curl -s -X POST "https://api.notion.com/v1/pages" \
+          # CRITICAL 修复: 使用 jq 安全生成 JSON，防止注入
+          TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          JSON_PAYLOAD=$(jq -n \
+            --arg db_id "$NOTION_DATABASE_ID" \
+            --arg name "❌ CI Failed ($FAILURE_REASON): ${{ github.repository }}" \
+            --arg branch "${{ github.head_ref || github.ref_name }}" \
+            --arg pr_url "$PR_URL" \
+            --arg timestamp "$TIMESTAMP" \
+            '{
+              parent: {database_id: $db_id},
+              properties: {
+                Name: {title: [{text: {content: $name}}]},
+                Status: {select: {name: "Failed"}},
+                Branch: {rich_text: [{text: {content: $branch}}]},
+                PR: {url: $pr_url},
+                Time: {date: {start: $timestamp}}
+              }
+            }')
+
+          curl -s --fail -X POST "https://api.notion.com/v1/pages" \
             -H "Authorization: Bearer $NOTION_TOKEN" \
             -H "Content-Type: application/json" \
             -H "Notion-Version: 2022-06-28" \
-            -d '{
-              "parent": {"database_id": "'"$NOTION_DATABASE_ID"'"},
-              "properties": {
-                "Name": {"title": [{"text": {"content": "❌ CI Failed ('"$FAILURE_REASON"'): ${{ github.repository }}"}}]},
-                "Status": {"select": {"name": "Failed"}},
-                "Branch": {"rich_text": [{"text": {"content": "${{ github.head_ref || github.ref_name }}"}}]},
-                "PR": {"url": "'"$PR_URL"'"},
-                "Time": {"date": {"start": "'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}}
-              }
-            }'
+            -d "$JSON_PAYLOAD"
           echo "📨 Notification sent to Notion (failed: $FAILURE_REASON)"

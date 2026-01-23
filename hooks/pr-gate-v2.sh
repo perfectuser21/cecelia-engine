@@ -27,6 +27,12 @@ set -euo pipefail
 
 INPUT=$(cat)
 
+# CRITICAL 修复: JSON 预验证，防止格式错误或注入
+if ! echo "$INPUT" | jq empty >/dev/null 2>&1; then
+    echo "❌ 无效的 JSON 输入" >&2
+    exit 2
+fi
+
 # 安全提取 tool_name
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""' 2>/dev/null || echo "")
 
@@ -51,17 +57,18 @@ fi
 # 格式3: -R owner/repo
 # 格式4: https://github.com/owner/repo
 TARGET_REPO=""
+# CRITICAL 修复: 使用 # 作为 sed 分隔符，防止 / 注入
 # 尝试 --repo= 格式
 if [[ -z "$TARGET_REPO" ]]; then
-    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-\-repo[=][^ ]+' | sed 's/--repo=//' | tr -d "'\"" | head -1)
+    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-\-repo[=][^ ]+' | sed 's#--repo=##' | tr -d "'\"" | head -1)
 fi
 # 尝试 --repo 空格 格式
 if [[ -z "$TARGET_REPO" ]]; then
-    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-\-repo[ ]+[^ ]+' | sed 's/--repo[ ]*//' | tr -d "'\"" | head -1)
+    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-\-repo[ ]+[^ ]+' | sed 's#--repo[ ]*##' | tr -d "'\"" | head -1)
 fi
 # 尝试 -R 短格式
 if [[ -z "$TARGET_REPO" ]]; then
-    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-R[ ]+[^ ]+' | sed 's/-R[ ]*//' | tr -d "'\"" | head -1)
+    TARGET_REPO=$(echo "$COMMAND" | grep -oE '\-R[ ]+[^ ]+' | sed 's#-R[ ]*##' | tr -d "'\"" | head -1)
 fi
 
 PROJECT_ROOT=""
