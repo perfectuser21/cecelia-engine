@@ -126,9 +126,9 @@ BASE_BRANCH=$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || ech
 echo "" >&2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 if [[ "$MODE" == "release" ]]; then
-    echo "  PR GATE: Release 模式 (L1 + L2B + L3)" >&2
+    echo "  PR GATE: Release 模式 (L1 + L2A + L2B + L3)" >&2
 else
-    echo "  PR GATE: PR 模式 (L1 only)" >&2
+    echo "  PR GATE: PR 模式 (L1 + L2A)" >&2
 fi
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 echo "" >&2

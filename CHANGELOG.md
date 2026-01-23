@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.18.0] - 2026-01-23
+
+### Improved (P2 文档易用性改进)
+- **skills/qa/SKILL.md**: 添加概念速查表，明确三组分层系统区别
+- **skills/qa/SKILL.md**: 快速调用部分添加 ID 命名规范链接
+- **skills/dev/steps/04-dod.md**: 添加 Test 字段格式说明表格
+- **skills/dev/steps/08-pr.md**: 添加版本号变化示例表
+
+## [8.17.0] - 2026-01-23
+
+### Fixed (P1 文档一致性修复)
+- **skills/qa/SKILL.md**: 重构统一输出格式
+  - 按模式分别说明 Decision 枚举值
+  - 添加 L2B Evidence 文件格式定义
+  - 添加 version/updated frontmatter
+  - 澄清 Meta/Unit/E2E 与 L1-L4 概念区别
+- **skills/dev/SKILL.md**: 添加 version/updated frontmatter
+- **skills/audit/SKILL.md**: 统一 frontmatter 格式，移除底部旧格式更新时间
+- **skills/qa/knowledge/criteria.md**: 标注 GP/RCI ID 来源于 regression-contract.yaml
+
+## [8.16.0] - 2026-01-23
+
+### Fixed (P0 矛盾修复)
+- **skills/qa/SKILL.md**: 统一 QA Decision 值格式为英文枚举
+  - 模式2 (Golden Path): `是|否|建议` → `NO_GP | MUST_ADD_GP | MERGE_GP`
+  - 模式3 (RCI): `是|否|建议` → `NO_RCI | MUST_ADD_RCI | UPDATE_RCI`
+  - 模式4 (Feature): `新 Feature|现有 Feature 扩展|不是 Feature` → `NOT_FEATURE | NEW_FEATURE | EXTEND_FEATURE`
+  - 添加每个模式的 Decision 值说明
+- **skills/qa/knowledge/criteria.md**: 同步更新 RCI/GP 模板的 Decision 值
+- **skills/audit/SKILL.md**: 添加与质检分层的关系说明
+  - 明确 audit 的 L1/L2/L3/L4 是问题严重性分类
+  - 明确 audit 本身是质检框架的 L2A 层
+
+## [8.15.0] - 2026-01-23
+
+### Fixed (Skills 矛盾信息修复)
+- **skills/dev/SKILL.md**: 简化流程图，与步骤文件对应
+  - 移除具体 Step 编号，避免与 01-11 步骤文件混淆
+  - 统一术语为 "QA Decision Node"（之前有 "QA Node" 混用）
+- **skills/dev/steps/07-quality.md**: 明确 L1/L2A/L2B/L3/L4 分层定义
+  - L1: 自动化测试 (npm run qa)
+  - L2A: 代码审计 (Audit Node)
+  - L2B: Evidence 证据 (.layer2-evidence.md)
+  - L3: Acceptance 验收 (DoD 全勾)
+  - L4: 过度优化 (不修)
+  - PR 模式: L1 + L2A
+  - Release 模式: L1 + L2A + L2B + L3
+- **hooks/pr-gate-v2.sh**: 更新模式提示文案
+  - PR 模式: "L1 + L2A" (之前写 "L1 only")
+  - Release 模式: "L1 + L2A + L2B + L3"
+- **skills/qa/knowledge/criteria.md**: 添加 E scope 定义
+  - E = Export (QA报告/会话摘要)
+
 ## [8.14.0] - 2026-01-22
 
 ### Changed (Skills 架构重构)

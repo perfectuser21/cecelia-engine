@@ -61,6 +61,9 @@
 
 ### Engine Repo 的 Golden Paths（流程链路）
 
+> **注意**：以下 GP ID 和 RCI ID 是 `regression-contract.yaml` 中的实际定义。
+> 新增 GP/RCI 时请参照此格式，并确保 ID 唯一。
+
 | GP ID | 名称 | 验证的链路 | 涉及 RCI |
 |-------|------|-----------|----------|
 | GP-001 | 完整开发流程 | /dev → 分支 → DoD → PR → CI → 合并 | W1-001, W1-002, W1-003, H2-003, C1-001, C2-001 |
@@ -125,6 +128,7 @@ Scope:
   W = Workflow
   C = CI/Release
   B = Business
+  E = Export (QA报告/会话摘要)
 
 例：H1-001, H2-003, W1-002, C1-001, E1-001
 ```
@@ -144,7 +148,7 @@ GP-{Sequence}
 ### 判定为"应该进 RCI"
 
 ```
-Decision: 是
+Decision: MUST_ADD_RCI
 Reason: [一句话，如"Hook 拦截是安全边界，必须永远不坏"]
 Next Actions:
   - 在 regression-contract.yaml 新增 RCI
@@ -160,7 +164,7 @@ Artifacts:
 ### 判定为"应该进 Golden Path"
 
 ```
-Decision: 是
+Decision: MUST_ADD_GP
 Reason: [一句话，如"端到端流程链路，坏了无法开发"]
 Next Actions:
   - 在 regression-contract.yaml 的 golden_paths 新增条目

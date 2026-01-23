@@ -4,17 +4,38 @@
 
 ---
 
+## 质检分层定义
+
+| 层级 | 名称 | 内容 | 何时跑 |
+|------|------|------|--------|
+| **L1** | 自动化测试 | npm run qa (typecheck + test + build) | PR + Release |
+| **L2A** | 代码审计 | Audit Node → AUDIT-REPORT.md | PR + Release |
+| **L2B** | Evidence 证据 | .layer2-evidence.md (截图/curl) | Release only |
+| **L3** | Acceptance 验收 | DoD 全勾 + Evidence 引用 | Release only |
+| **L4** | 过度优化 | 识别但不修 | 审计时标记 |
+
+---
+
+## 双模式质检
+
+| 模式 | 检查内容 | 适用场景 |
+|------|----------|----------|
+| **PR** (默认) | L1 + L2A | 日常 PR → develop |
+| **Release** | L1 + L2A + L2B + L3 | 发版 develop → main |
+
+---
+
 ## 流程
 
 ```
-写完代码 → Audit Node → 审计报告 → blocker=0? → npm run qa
-                                    ↓
-                              blocker>0 → 停止，修复
+写完代码 → Audit Node (L2A) → 审计报告 → blocker=0? → npm run qa (L1)
+                                              ↓
+                                        blocker>0 → 停止，修复
 ```
 
 ---
 
-## Step 7.1: Audit Node（必须）
+## Step 7.1: Audit Node (L2A)（必须）
 
 **在跑测试前，必须输出审计报告**。
 
@@ -79,7 +100,7 @@ Decision: FAIL   → 停止，修复 L1/L2 问题后重新审计
 
 ---
 
-## Step 7.3: 跑测试
+## Step 7.3: 跑测试 (L1)
 
 blocker 清零后，跑自动化测试：
 
@@ -87,43 +108,41 @@ blocker 清零后，跑自动化测试：
 npm run qa  # = typecheck + test + build
 ```
 
-### 双模式质检
-
-| 模式 | 检查内容 | 适用场景 |
-|------|----------|----------|
-| **pr** (默认) | L1 自动化测试 | 日常 PR → develop |
-| **release** | L1 + L2B + L3 证据链 | 发版 develop → main |
-
 ---
 
-## PR 模式检查项
+## PR 模式检查项 (L1 + L2A)
 
-- [ ] `npm run typecheck` 通过
-- [ ] `npm run test` 通过
-- [ ] `npm run build` 通过
+- [ ] `npm run typecheck` 通过 (L1)
+- [ ] `npm run test` 通过 (L1)
+- [ ] `npm run build` 通过 (L1)
 - [ ] `.prd.md` 存在且内容有效
 - [ ] `.dod.md` 存在且有验收清单
 - [ ] `.dod.md` 包含 `QA:` 引用
 - [ ] `docs/QA-DECISION.md` 存在
-- [ ] `docs/AUDIT-REPORT.md` 存在且 `Decision: PASS`
+- [ ] `docs/AUDIT-REPORT.md` 存在且 `Decision: PASS` (L2A)
 
 ---
 
-## Release 模式检查项
+## Release 模式检查项 (L1 + L2A + L2B + L3)
 
 PR 模式检查项 + 以下内容：
 
-- [ ] `.layer2-evidence.md` 存在
-- [ ] 截图 ID 对应文件存在
-- [ ] `.dod.md` 所有 checkbox 打勾
+- [ ] `.layer2-evidence.md` 存在 (L2B)
+- [ ] 截图 ID 对应文件存在 (L2B)
+- [ ] `.dod.md` 所有 checkbox 打勾 (L3)
+- [ ] DoD 每项有 Evidence 引用 (L3)
 
 ---
 
 ## Gate 检查
 
 PR Gate 会检查：
-1. `docs/AUDIT-REPORT.md` 存在
+1. `docs/AUDIT-REPORT.md` 存在 (L2A)
 2. 包含 `Decision: PASS`（FAIL 则 Gate 失败）
+
+Release Check 额外检查：
+1. `.layer2-evidence.md` 存在且格式正确 (L2B)
+2. `.dod.md` 全勾且有 Evidence 引用 (L3)
 
 ---
 
@@ -139,7 +158,8 @@ PR Gate 会检查：
 
 ## 质检原则
 
-1. **先审计后测试** - Audit Node 是 npm run qa 的前置
+1. **先审计后测试** - L2A 是 L1 的前置
 2. **blocker 是硬门禁** - L1/L2 > 0 不能继续
-3. **分层检查** - PR 只 L1，Release 才 L2B+L3
-4. **产物留痕** - 审计报告必须存在
+3. **分层检查** - PR 跑 L1+L2A，Release 加 L2B+L3
+4. **L4 不修** - 过度优化只标记不修复
+5. **产物留痕** - 审计报告必须存在

@@ -1,5 +1,7 @@
 ---
 name: dev
+version: 1.1.0
+updated: 2026-01-23
 description: |
   统一开发工作流入口。流程编排者，不做判断。
 
@@ -53,7 +55,7 @@ echo "检测到模式: $MODE"
 
 | 模式 | 条件 | 动作 |
 |------|------|------|
-| `new` | 在 develop/main | PRD → 分支 → QA Node → DoD → 代码 → Audit Node → 测试 → PR → CI → Merge |
+| `new` | 在 develop/main | PRD → 分支 → DoD(含QA决策) → 代码 → 质检(含Audit) → PR → CI → Merge |
 | `continue` | 在 cp-*/feature/* + 无 PR | 直接进入代码/测试阶段 |
 | `fix` | 有 PR + CI 红 | 直接进入 CI 修复 |
 | `merge` | 有 PR + CI 绿 | Learning → Cleanup → Merge |
@@ -67,32 +69,31 @@ echo "检测到模式: $MODE"
 │                    /dev 流程编排                         │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│  Step 1: PRD                                            │
+│  PRD 确定 (01-prd.md)                                   │
 │      ↓                                                  │
-│  Step 2: 分支创建                                        │
+│  环境检测 + 分支创建 (02-detect.md, 03-branch.md)        │
 │      ↓                                                  │
-│  Step 3: QA Decision Node                               │
+│  DoD 定稿 (04-dod.md)                                   │
+│      │   含 QA Decision Node                            │
 │      │   规范来源: skills/qa/SKILL.md                   │
 │      │   产物: docs/QA-DECISION.md                      │
 │      ↓                                                  │
-│  Step 4: DoD 定稿                                        │
+│  写代码 + 写测试 (05-code.md, 06-test.md)               │
 │      ↓                                                  │
-│  Step 5: 写代码                                          │
-│      ↓                                                  │
-│  Step 6: Audit Node                                     │
+│  质检 (07-quality.md)                                   │
+│      │   含 Audit Node                                  │
 │      │   规范来源: skills/audit/SKILL.md                │
 │      │   产物: docs/AUDIT-REPORT.md                     │
 │      │   Gate: Decision 必须是 PASS                     │
+│      │   然后: npm run qa                               │
 │      ↓                                                  │
-│  Step 7: 跑测试 (npm run qa)                            │
-│      ↓                                                  │
-│  Step 8: PR Gate                                        │
+│  提交 PR (08-pr.md)                                     │
 │      │   执行者: hooks/pr-gate-v2.sh                    │
-│      │   检查: 产物存在 + L1 测试通过                    │
+│      │   检查: 产物存在 + 测试通过                       │
 │      ↓                                                  │
-│  Step 9: CI                                             │
+│  CI + Merge (09-ci.md)                                  │
 │      ↓                                                  │
-│  Step 10: Merge                                         │
+│  Learning + Cleanup (10-learning.md, 11-cleanup.md)     │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -152,6 +153,35 @@ skills/dev/
 | QA 决策 | docs/QA-DECISION.md | skills/qa/SKILL.md | ✅ 存在 |
 | DoD | .dod.md | - | ✅ 存在 + 引用 QA 决策 |
 | 审计报告 | docs/AUDIT-REPORT.md | skills/audit/SKILL.md | ✅ 存在 + PASS |
+
+---
+
+## 状态追踪（Core/Notion 同步）
+
+有头和无头模式共用同一套追踪机制，在关键点调用 `track.sh`：
+
+```bash
+# 新任务开始时
+bash skills/dev/scripts/track.sh start "$(basename "$(pwd)")" "$(git rev-parse --abbrev-ref HEAD)" ".prd.md"
+
+# 每个步骤
+bash skills/dev/scripts/track.sh step 1 "PRD"
+bash skills/dev/scripts/track.sh step 3 "Branch"
+bash skills/dev/scripts/track.sh step 4 "DoD"
+bash skills/dev/scripts/track.sh step 5 "Code"
+bash skills/dev/scripts/track.sh step 6 "Test"
+bash skills/dev/scripts/track.sh step 7 "PR"
+bash skills/dev/scripts/track.sh step 8 "CI"
+bash skills/dev/scripts/track.sh step 9 "Merge"
+
+# 完成时
+bash skills/dev/scripts/track.sh done "$PR_URL"
+
+# 失败时
+bash skills/dev/scripts/track.sh fail "Error message"
+```
+
+追踪文件 `.cecelia-run-id` 自动管理，Core 是主数据源，Notion 是镜像。
 
 ---
 

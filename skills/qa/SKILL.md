@@ -1,5 +1,7 @@
 ---
 name: qa
+version: 1.1.0
+updated: 2026-01-23
 description: |
   跨仓库 QA 总控。统一管理测试决策、回归契约、Golden Paths 和 Feature 归类。
 ---
@@ -7,6 +9,18 @@ description: |
 # /qa - ZenithJoy QA Controller
 
 你是 ZenithJoy 的 QA 总控 Skill（唯一入口）。你的职责是：跨仓库（Engine + 各业务 repo）统一管理"测试决策 + 回归契约 + Golden Paths + Feature 归类"。
+
+---
+
+## 概念速查（三组分层系统）
+
+本 Skill 及相关文档涉及三组不同的分层概念，请勿混淆：
+
+| 分层系统 | 用途 | 层级 | 定义位置 |
+|---------|------|------|----------|
+| **测试覆盖度** | QA 审计 | Meta / Unit / E2E | 本文件 模式 5 |
+| **问题严重性** | 代码审计 | L1 阻塞 / L2 功能 / L3 最佳实践 / L4 过度优化 | /audit SKILL.md |
+| **质检流程** | PR/Release 检查 | L1 自动测试 / L2A 审计 / L2B 证据 / L3 验收 | /dev 07-quality.md |
 
 ---
 
@@ -89,13 +103,18 @@ Commands:
 
 **输出格式**：
 ```
-Decision: 是|否|建议
+Decision: NO_GP | MUST_ADD_GP | MERGE_GP
 Reason: 一句话
 Next Actions:
   - 在 regression-contract.yaml 新增 golden_paths 条目
   - GP ID 建议: GP-00X
   - rcis: [H1-001, H2-003, C2-001]
 ```
+
+**Decision 值说明**：
+- `NO_GP` = 不是 Golden Path
+- `MUST_ADD_GP` = 必须新增 GP
+- `MERGE_GP` = 合并到现有 GP
 
 ### 模式 3：RCI 判定模式
 
@@ -108,7 +127,7 @@ Next Actions:
 
 **输出格式**：
 ```
-Decision: 是|否|建议
+Decision: NO_RCI | MUST_ADD_RCI | UPDATE_RCI
 Reason: 一句话
 Next Actions:
   - 在 regression-contract.yaml 新增 RCI
@@ -116,6 +135,11 @@ Next Actions:
   - Priority: P0|P1|P2
   - Trigger: [PR, Release]
 ```
+
+**Decision 值说明**：
+- `NO_RCI` = 无需纳入回归契约
+- `MUST_ADD_RCI` = 必须新增 RCI
+- `UPDATE_RCI` = 需要更新现有 RCI
 
 ### 模式 4：Feature 归类模式
 
@@ -128,13 +152,18 @@ Next Actions:
 
 **输出格式**：
 ```
-Decision: 新 Feature|现有 Feature 扩展|不是 Feature
+Decision: NOT_FEATURE | NEW_FEATURE | EXTEND_FEATURE
 Reason: 一句话
 Next Actions:
   - 更新 FEATURES.md
   - ID 建议: H?|W?|C?|B?
   - 状态: Experiment → Committed
 ```
+
+**Decision 值说明**：
+- `NOT_FEATURE` = 不是 Feature
+- `NEW_FEATURE` = 新 Feature
+- `EXTEND_FEATURE` = 现有 Feature 扩展
 
 ### 模式 5：QA 审计模式
 
@@ -163,6 +192,13 @@ Recommendations:
   1. 补 golden_paths
   2. ...
 ```
+
+**概念澄清**：
+- **Meta/Unit/E2E**：测试覆盖度三层（本模式使用）
+- **L1/L2/L3/L4**：问题严重性四层（/audit 使用）
+- **L1/L2A/L2B/L3**：质检流程四层（/dev 使用）
+
+这三组概念各有用途，互不冲突。
 
 ---
 
@@ -209,14 +245,63 @@ PR Gate 会检查：
 
 ---
 
+## L2B Evidence 产物（Release 模式）
+
+Release 模式需要额外的 Evidence 证据文件：`.layer2-evidence.md`
+
+### 文件格式
+
+```markdown
+# L2B Evidence
+
+## 截图证据
+
+| ID | 描述 | 文件 |
+|----|------|------|
+| E1 | 功能 A 正常工作 | docs/evidence/e1-feature-a.png |
+| E2 | API 返回正确 | docs/evidence/e2-api-response.png |
+
+## 命令验证
+
+| ID | 命令 | 预期结果 | 实际结果 |
+|----|------|----------|----------|
+| C1 | curl localhost:3000/health | 200 OK | 200 OK |
+```
+
+### 适用场景
+
+- **PR 模式**：不需要 L2B（只需 L1 + L2A）
+- **Release 模式**：必须提供 L2B + L3
+
+### Gate 检查
+
+Release Check 会检查：
+1. `.layer2-evidence.md` 存在
+2. 包含有效的证据条目
+3. 引用的截图文件存在
+
+---
+
 ## 统一输出格式（独立调用时）
 
 ```
-Decision: 结论（是/否/建议/必须）
+Decision: <模式对应的枚举值>
 Reason: 一句话理由
 Next Actions: 下一步动作（命令或文件修改）
 Artifacts: 涉及的文件列表
 ```
+
+### 各模式 Decision 值
+
+| 模式 | Decision 枚举值 |
+|------|-----------------|
+| 模式 1 (测试计划) | 无 Decision，输出测试命令清单 |
+| 模式 2 (Golden Path) | `NO_GP` \| `MUST_ADD_GP` \| `MERGE_GP` |
+| 模式 3 (RCI) | `NO_RCI` \| `MUST_ADD_RCI` \| `UPDATE_RCI` |
+| 模式 4 (Feature) | `NOT_FEATURE` \| `NEW_FEATURE` \| `EXTEND_FEATURE` |
+| 模式 5 (QA 审计) | `PASS` \| `FAIL` |
+
+**说明**：所有 Decision 值均为英文枚举，便于 Gate 自动检查。
 
 ---
 
@@ -244,6 +329,9 @@ Artifacts: 涉及的文件列表
 用户：审计一下这个 repo 的 QA 体系
 /qa → QA 审计模式 → 输出完成度报告
 ```
+
+> **ID 命名规范**：RCI ID 格式为 `H?-00X` / `W?-00X` / `C?-00X` / `B?-00X`，GP ID 格式为 `GP-00X`。
+> 详见 `knowledge/criteria.md` 的 "ID 命名规范" 章节。
 
 ---
 
