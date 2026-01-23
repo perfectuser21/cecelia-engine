@@ -234,8 +234,24 @@ if (( PROJECT_TYPE & 1 )); then
         fi
     fi
 
-    # Test
-    if grep -q '"test"' package.json 2>/dev/null; then
+    # Test - 使用统一 gate:test 入口
+    if grep -q '"gate:test"' package.json 2>/dev/null; then
+        echo -n "  test (gate)... " >&2
+        CHECK_COUNT=$((CHECK_COUNT + 1))
+        # 保存日志到 artifacts/
+        mkdir -p "$PROJECT_ROOT/artifacts/gate"
+        GATE_TEST_LOG="$PROJECT_ROOT/artifacts/gate/test-$(date +%Y%m%d-%H%M%S).log"
+        if npm run gate:test > "$GATE_TEST_LOG" 2>&1; then
+            echo "[OK]" >&2
+        else
+            echo "[FAIL]" >&2
+            echo "  完整日志: $GATE_TEST_LOG" >&2
+            # 显示失败测试清单
+            grep -E "FAIL|✕" "$GATE_TEST_LOG" | tail -30 >&2 || tail -30 "$GATE_TEST_LOG" >&2
+            FAILED=1
+        fi
+    elif grep -q '"test"' package.json 2>/dev/null; then
+        # 降级：如果没有 gate:test，使用普通 test
         echo -n "  test... " >&2
         CHECK_COUNT=$((CHECK_COUNT + 1))
         if npm test >"$TEST_OUTPUT_FILE" 2>&1; then
