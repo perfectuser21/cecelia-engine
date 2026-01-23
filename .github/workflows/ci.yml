@@ -194,7 +194,8 @@ jobs:
             echo "  [P0/P1 RCI 更新检查]"
             # 从 PR title 或 labels 设置环境变量
             export PR_TITLE="${{ github.event.pull_request.title }}"
-            # labels 需要从 API 获取，这里简化处理
+            # CI 中需要使用 origin/ 前缀
+            export BASE_REF="origin/${{ github.base_ref || 'develop' }}"
             bash scripts/devgate/require-rci-update-if-p0p1.sh || exit 1
           else
             echo "ℹ️ require-rci-update-if-p0p1.sh not found, skipping"
