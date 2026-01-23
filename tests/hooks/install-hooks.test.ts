@@ -19,7 +19,7 @@ import { tmpdir } from 'os'
 const ROOT = path.resolve(__dirname, '../..')
 const HOOK_CORE_DIR = path.join(ROOT, 'hook-core')
 const INSTALL_SCRIPT = path.join(ROOT, 'scripts/install-hooks.sh')
-const TEST_DIR = path.join(tmpdir(), 'test-hook-core-install-vitest')
+const TEST_DIR = path.join(tmpdir(), `test-hook-core-install-vitest-${Date.now()}`)
 
 /** Type for hook configuration object */
 interface HookConfig {

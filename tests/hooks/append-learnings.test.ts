@@ -8,12 +8,13 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import { tmpdir } from 'os';
 
 const ROOT = path.resolve(__dirname, '../..');
 const SCRIPT = path.join(ROOT, 'scripts/devgate/append-learnings.cjs');
 
 describe('append-learnings.cjs 基础功能', () => {
-  const testDir = '/tmp/test-append-learnings';
+  const testDir = path.join(tmpdir(), `test-append-learnings-${Date.now()}`);
 
   beforeAll(() => {
     // 创建测试目录
@@ -166,7 +167,7 @@ hooks:
 });
 
 describe('append-learnings.cjs RCI 名称解析', () => {
-  const testDir = '/tmp/test-append-learnings-rci';
+  const testDir = path.join(tmpdir(), `test-append-learnings-rci-${Date.now()}`);
 
   beforeAll(() => {
     execSync(`rm -rf ${testDir} && mkdir -p ${testDir}/docs`);
@@ -223,7 +224,7 @@ ci:
 });
 
 describe('append-learnings.cjs Top Offenders', () => {
-  const testDir = '/tmp/test-append-learnings-offenders';
+  const testDir = path.join(tmpdir(), `test-append-learnings-offenders-${Date.now()}`);
 
   beforeAll(() => {
     execSync(`rm -rf ${testDir} && mkdir -p ${testDir}/docs`);
