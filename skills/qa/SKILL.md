@@ -89,13 +89,18 @@ Commands:
 
 **输出格式**：
 ```
-Decision: 是|否|建议
+Decision: NO_GP | MUST_ADD_GP | MERGE_GP
 Reason: 一句话
 Next Actions:
   - 在 regression-contract.yaml 新增 golden_paths 条目
   - GP ID 建议: GP-00X
   - rcis: [H1-001, H2-003, C2-001]
 ```
+
+**Decision 值说明**：
+- `NO_GP` = 不是 Golden Path
+- `MUST_ADD_GP` = 必须新增 GP
+- `MERGE_GP` = 合并到现有 GP
 
 ### 模式 3：RCI 判定模式
 
@@ -108,7 +113,7 @@ Next Actions:
 
 **输出格式**：
 ```
-Decision: 是|否|建议
+Decision: NO_RCI | MUST_ADD_RCI | UPDATE_RCI
 Reason: 一句话
 Next Actions:
   - 在 regression-contract.yaml 新增 RCI
@@ -116,6 +121,11 @@ Next Actions:
   - Priority: P0|P1|P2
   - Trigger: [PR, Release]
 ```
+
+**Decision 值说明**：
+- `NO_RCI` = 无需纳入回归契约
+- `MUST_ADD_RCI` = 必须新增 RCI
+- `UPDATE_RCI` = 需要更新现有 RCI
 
 ### 模式 4：Feature 归类模式
 
@@ -128,13 +138,18 @@ Next Actions:
 
 **输出格式**：
 ```
-Decision: 新 Feature|现有 Feature 扩展|不是 Feature
+Decision: NOT_FEATURE | NEW_FEATURE | EXTEND_FEATURE
 Reason: 一句话
 Next Actions:
   - 更新 FEATURES.md
   - ID 建议: H?|W?|C?|B?
   - 状态: Experiment → Committed
 ```
+
+**Decision 值说明**：
+- `NOT_FEATURE` = 不是 Feature
+- `NEW_FEATURE` = 新 Feature
+- `EXTEND_FEATURE` = 现有 Feature 扩展
 
 ### 模式 5：QA 审计模式
 
@@ -212,11 +227,13 @@ PR Gate 会检查：
 ## 统一输出格式（独立调用时）
 
 ```
-Decision: 结论（是/否/建议/必须）
+Decision: NO_RCI | MUST_ADD_RCI | UPDATE_RCI | PASS | FAIL
 Reason: 一句话理由
 Next Actions: 下一步动作（命令或文件修改）
 Artifacts: 涉及的文件列表
 ```
+
+**说明**：不同模式使用不同的 Decision 值，但都是英文枚举值，便于 Gate 检查。
 
 ---
 

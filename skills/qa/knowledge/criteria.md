@@ -145,7 +145,7 @@ GP-{Sequence}
 ### 判定为"应该进 RCI"
 
 ```
-Decision: 是
+Decision: MUST_ADD_RCI
 Reason: [一句话，如"Hook 拦截是安全边界，必须永远不坏"]
 Next Actions:
   - 在 regression-contract.yaml 新增 RCI
@@ -161,7 +161,7 @@ Artifacts:
 ### 判定为"应该进 Golden Path"
 
 ```
-Decision: 是
+Decision: MUST_ADD_GP
 Reason: [一句话，如"端到端流程链路，坏了无法开发"]
 Next Actions:
   - 在 regression-contract.yaml 的 golden_paths 新增条目

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.16.0] - 2026-01-23
+
+### Fixed (P0 矛盾修复)
+- **skills/qa/SKILL.md**: 统一 QA Decision 值格式为英文枚举
+  - 模式2 (Golden Path): `是|否|建议` → `NO_GP | MUST_ADD_GP | MERGE_GP`
+  - 模式3 (RCI): `是|否|建议` → `NO_RCI | MUST_ADD_RCI | UPDATE_RCI`
+  - 模式4 (Feature): `新 Feature|现有 Feature 扩展|不是 Feature` → `NOT_FEATURE | NEW_FEATURE | EXTEND_FEATURE`
+  - 添加每个模式的 Decision 值说明
+- **skills/qa/knowledge/criteria.md**: 同步更新 RCI/GP 模板的 Decision 值
+- **skills/audit/SKILL.md**: 添加与质检分层的关系说明
+  - 明确 audit 的 L1/L2/L3/L4 是问题严重性分类
+  - 明确 audit 本身是质检框架的 L2A 层
+
 ## [8.15.0] - 2026-01-23
 
 ### Fixed (Skills 矛盾信息修复)

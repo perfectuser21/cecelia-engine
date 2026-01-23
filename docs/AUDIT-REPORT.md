@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-fix-skill-contradictions
+Branch: cp-fix-p0-contradictions
 Date: 2026-01-23
-Scope: skills/dev/SKILL.md, skills/dev/steps/07-quality.md, hooks/pr-gate-v2.sh, skills/qa/knowledge/criteria.md
+Scope: skills/qa/SKILL.md, skills/qa/knowledge/criteria.md, skills/audit/SKILL.md
 Target Level: L2
 
 Summary:
@@ -21,15 +21,21 @@ Blockers: []
 
 ## 审计说明
 
-本次改动修复文档矛盾信息：
-1. 统一术语 "QA Decision Node"（移除 "QA Node" 混用）
-2. 简化流程图，与步骤文件对应
-3. 明确 L1/L2A/L2B/L3/L4 分层定义
-4. 添加 E scope 定义到 criteria.md
-5. 更新 pr-gate 模式提示文案
+本次改动修复 P0 级矛盾信息：
 
-改动范围仅限于文档和提示信息：
-- 无语法错误风险（Markdown + Shell echo）
+1. **QA Decision 值统一**
+   - /qa 模式2: `是|否|建议` → `NO_GP | MUST_ADD_GP | MERGE_GP`
+   - /qa 模式3: `是|否|建议` → `NO_RCI | MUST_ADD_RCI | UPDATE_RCI`
+   - /qa 模式4: `新 Feature|现有 Feature 扩展|不是 Feature` → `NOT_FEATURE | NEW_FEATURE | EXTEND_FEATURE`
+   - criteria.md 模板同步更新
+
+2. **L2A/L2B 分层说明**
+   - 在 audit/SKILL.md 添加与质检分层的关系说明
+   - 明确 audit 的 L1/L2/L3/L4 是问题严重性分类
+   - 明确 audit 本身是质检的 L2A 层
+
+改动范围仅限于文档：
+- 无语法错误风险（Markdown）
 - 无功能影响（文档性质）
 - 无边界条件问题
 
@@ -39,4 +45,4 @@ Blockers: []
 
 ---
 
-**审计完成时间**: 2026-01-23 08:48
+**审计完成时间**: 2026-01-23 09:15

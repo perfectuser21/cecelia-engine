@@ -1,20 +1,17 @@
 # QA Decision
 
 Decision: NO_RCI
-Priority: P2
+Priority: P1
 RepoType: Engine
 
 Tests:
-  - dod_item: "统一术语 QA Decision Node"
+  - dod_item: "/qa 模式2/3/4 输出改为英文枚举值"
+    method: manual
+    location: manual:file-check
+  - dod_item: "移除是|否|建议格式"
     method: manual
     location: manual:grep-verify
-  - dod_item: "简化流程图"
-    method: manual
-    location: manual:file-check
-  - dod_item: "L1/L2A/L2B/L3 分层定义"
-    method: manual
-    location: manual:file-check
-  - dod_item: "E scope 添加"
+  - dod_item: "audit/SKILL.md 添加 L2A/L2B 关系说明"
     method: manual
     location: manual:file-check
   - dod_item: "npm run qa 通过"
@@ -25,4 +22,4 @@ RCI:
   new: []
   update: []
 
-Reason: 文档矛盾修复，不涉及核心逻辑改动，无需纳入回归契约
+Reason: P0 级矛盾修复，统一 QA Decision 值格式和分层定义说明
