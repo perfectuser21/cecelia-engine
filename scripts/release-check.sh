@@ -114,8 +114,12 @@ if [[ -f "$L2_EVIDENCE_FILE" ]]; then
     if [[ -n "$CURL_IDS" ]]; then
         for CID in $CURL_IDS; do
             # L2 fix: 使用 sed 提取块（从 C{N} 到下一个 ### 或文件结尾）
-            # 注意：awk 的范围模式 /start/,/end/ 如果 start 也匹配 end，会在第一行就结束
-            CURL_BLOCK=$(sed -n "/^### ${CID}:/,/^### /p" "$L2_EVIDENCE_FILE" 2>/dev/null | head -n -1)
+            # 使用 sed '$d' 替代 head -n -1 以提高可移植性
+            CURL_BLOCK=$(sed -n "/^### ${CID}:/,/^### /p" "$L2_EVIDENCE_FILE" 2>/dev/null | sed '$d')
+            # 如果上面返回空（C{N} 是最后一个块，没有下一个 ###），则提取到文件结尾
+            if [[ -z "$CURL_BLOCK" ]]; then
+                CURL_BLOCK=$(sed -n "/^### ${CID}:/,\$p" "$L2_EVIDENCE_FILE" 2>/dev/null)
+            fi
 
             printf "  curl $CID... "
             CHECKED=$((CHECKED + 1))

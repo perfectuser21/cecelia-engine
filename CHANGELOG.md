@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.3.4] - 2026-01-23
+
+### Fixed
+
+- **release-check.sh 兼容性**: 使用 `sed '$d'` 替代 `head -n -1`
+  - 处理最后一个块（无下一个 ###）的情况
+
 ## [9.3.3] - 2026-01-23
 
 ### Fixed
