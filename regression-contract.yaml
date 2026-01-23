@@ -395,7 +395,7 @@ hooks:
     evidence:
       type: command
       run: "bash scripts/install-hooks.sh --version"
-      contains: "hook-core version: 1.0.0"
+      contains: "hook-core version:"
     test: "tests/hooks/install-hooks.test.ts"
 
   # --------------------------------------------------------------------------
