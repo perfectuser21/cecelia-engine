@@ -1,9 +1,10 @@
 ---
 id: features-registry
-version: 1.11.0
+version: 1.12.0
 created: 2026-01-20
-updated: 2026-01-21
+updated: 2026-01-23
 changelog:
+  - 1.12.0: 新增 W6 Worktree 并行开发
   - 1.11.0: 新增 N1 Cecilia (无头模式 + N8N 集成)
   - 1.10.0: 同步 regression-contract.yaml 版本，GP-005 补 E2-003
   - 1.9.0: QA 清理 - 修复 bugs、移除 W4 残留、更新文档
@@ -76,6 +77,7 @@ Full Regression（全量测试）
 | W3 | 循环回退 | **Committed** | 手动验证 | 质检/CI 失败 → 继续修复 |
 | W5 | 模式自动检测 | **Committed** | 手动验证 | /dev 入口四种模式（new/continue/fix/merge） |
 | ~~W4~~ | ~~测试任务模式~~ | **Deprecated** | - | v8.0.21 删除，功能不需要 |
+| W6 | Worktree 并行开发 | **Committed** | `skills/dev/scripts/worktree-manage.sh` | 检测活跃分支，支持 worktree 隔离 |
 
 ---
 
@@ -155,7 +157,7 @@ Trigger 规则:
 
 > 使用 `bash scripts/rc-filter.sh stats` 获取实时统计
 
-- **Committed Features**: 12（H1-H2, W1/W3/W5, C1-C3/C5, E1-E2, N1）
+- **Committed Features**: 13（H1-H2, W1/W3/W5/W6, C1-C3/C5, E1-E2, N1）
 
 ---
 

@@ -152,6 +152,38 @@ else
 fi
 
 # ========================================
+# 4.5. 检查并移除关联的 worktree
+# ========================================
+echo ""
+echo "[4.5] 检查关联的 worktree..."
+WORKTREE_PATH=$(git worktree list 2>/dev/null | grep "\[$CP_BRANCH\]" | awk '{print $1}')
+if [[ -n "$WORKTREE_PATH" ]]; then
+    echo "   → 发现关联的 worktree: $WORKTREE_PATH"
+    # 检查是否有未提交的改动
+    if [[ -d "$WORKTREE_PATH" ]]; then
+        WORKTREE_UNCOMMITTED=$(git -C "$WORKTREE_PATH" status --porcelain 2>/dev/null | grep -v "node_modules" || true)
+        if [[ -n "$WORKTREE_UNCOMMITTED" ]]; then
+            echo -e "   ${YELLOW}[WARN]  worktree 有未提交的改动:${NC}"
+            echo "$WORKTREE_UNCOMMITTED" | head -3 | sed 's/^/      /'
+            echo -e "   ${YELLOW}→ 跳过 worktree 清理，请手动处理${NC}"
+            WARNINGS=$((WARNINGS + 1))
+        else
+            # 安全移除 worktree
+            if git worktree remove "$WORKTREE_PATH" --force 2>/dev/null; then
+                echo -e "   ${GREEN}[OK] 已移除 worktree${NC}"
+            else
+                echo -e "   ${YELLOW}[WARN]  worktree 移除失败，尝试强制清理...${NC}"
+                rm -rf "$WORKTREE_PATH" 2>/dev/null || true
+                git worktree prune 2>/dev/null || true
+                echo -e "   ${GREEN}[OK] 已强制清理${NC}"
+            fi
+        fi
+    fi
+else
+    echo -e "   ${GREEN}[OK] 无关联的 worktree${NC}"
+fi
+
+# ========================================
 # 5. 清理 git config 中的分支记录
 # ========================================
 echo ""

@@ -71,7 +71,15 @@ echo "检测到模式: $MODE"
 │                                                         │
 │  PRD 确定 (01-prd.md)                                   │
 │      ↓                                                  │
-│  环境检测 + 分支创建 (02-detect.md, 03-branch.md)        │
+│  环境检测 (02-detect.md)                                │
+│      ↓                                                  │
+│  并行开发检测 (02.5-parallel-detect.md) ← 检测活跃分支  │
+│      │   有活跃分支时提供选项:                           │
+│      │   [C] 继续现有分支                               │
+│      │   [W] 创建 worktree 开始新功能                   │
+│      │   [N] 在主工作区创建新分支                       │
+│      ↓                                                  │
+│  分支创建 (03-branch.md)                                │
 │      ↓                                                  │
 │  DoD 定稿 (04-dod.md)                                   │
 │      │   含 QA Decision Node                            │
@@ -94,6 +102,7 @@ echo "检测到模式: $MODE"
 │  CI + Merge (09-ci.md)                                  │
 │      ↓                                                  │
 │  Learning + Cleanup (10-learning.md, 11-cleanup.md)     │
+│      │   含 worktree 清理                               │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -128,6 +137,7 @@ skills/dev/
 ├── steps/          ← 每步详情（按需加载）
 │   ├── 01-prd.md
 │   ├── 02-detect.md
+│   ├── 02.5-parallel-detect.md  ← 并行开发检测
 │   ├── 03-branch.md
 │   ├── 04-dod.md       ← QA Decision Node
 │   ├── 05-code.md
@@ -139,6 +149,7 @@ skills/dev/
 │   └── 11-cleanup.md
 └── scripts/        ← 辅助脚本
     ├── cleanup.sh
+    ├── worktree-manage.sh  ← Worktree 管理
     ├── check.sh
     └── ...
 ```

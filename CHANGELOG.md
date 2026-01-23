@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.3.5] - 2026-01-23
+
+### Fixed
+
+- **release-check.sh 可移植性**: grep 无匹配时添加 `|| true`
+  - 修复最后一个块（C4）处理时 `set -e` 导致脚本提前退出的问题
+
+## [9.3.4] - 2026-01-23
+
+### Fixed
+
+- **release-check.sh 兼容性**: 使用 `sed '$d'` 替代 `head -n -1`
+  - 处理最后一个块（无下一个 ###）的情况
+
+## [9.3.3] - 2026-01-23
+
+### Fixed
+
+- **release-check.sh awk 模式 bug**: 使用 sed 替代 awk 提取证据块
+  - 修复范围模式在同一行匹配开始和结束的问题
+
+## [9.3.2] - 2026-01-23
+
+### Changed
+
+- **Release 证据补充**: 更新 .layer2-evidence.md 用于 v9.3.1 release
+
+## [9.3.1] - 2026-01-23
+
+### Fixed
+
+- **H3-001 回归期望值**: 将 `hook-core version: 1.0.0` 改为通用匹配 `hook-core version:`
+  - 避免版本升级时回归测试失败
+
+## [9.3.0] - 2026-01-23
+
+### Added
+
+- **Worktree 并行开发检测**: 在 /dev 流程中自动检测活跃分支
+  - 新增 `skills/dev/steps/02.5-parallel-detect.md`: 并行开发检测步骤
+  - 新增 `skills/dev/scripts/worktree-manage.sh`: Worktree 管理脚本
+    - `create <task-name>`: 创建新 worktree
+    - `list`: 列出所有 worktree
+    - `remove <branch>`: 移除指定 worktree
+    - `cleanup`: 清理已合并的 worktree
+
+- **Cleanup worktree 清理**: cleanup.sh 新增 Step 4.5
+  - 自动检测并移除关联的 worktree
+  - 安全处理未提交改动的情况
+
+### Changed
+
+- **SKILL.md**: 流程图更新，添加并行检测步骤
+- **03-branch.md**: 添加 worktree 环境感知
+
+---
+
 ## [9.2.0] - 2026-01-23
 
 ### 🎉 里程碑版本：完整质量保证体系

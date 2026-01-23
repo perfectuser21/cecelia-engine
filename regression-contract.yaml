@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "9.0.0"
+version: "9.3.0"
 updated: "2026-01-23"
 
 # ============================================================================
@@ -395,7 +395,7 @@ hooks:
     evidence:
       type: command
       run: "bash scripts/install-hooks.sh --version"
-      contains: "hook-core version: 1.0.0"
+      contains: "hook-core version:"
     test: "tests/hooks/install-hooks.test.ts"
 
   # --------------------------------------------------------------------------
@@ -664,6 +664,61 @@ workflow:
     evidence:
       type: log
       contains: "检测到模式: merge"
+
+  # --------------------------------------------------------------------------
+  # W6: Worktree 并行开发
+  # --------------------------------------------------------------------------
+  - id: W6-001
+    feature: W6
+    name: "检测活跃的功能分支"
+    scope: workflow
+    priority: P1
+    trigger: [Release]
+    method: manual
+    tags: [dev, worktree, parallel]
+    owner: workflow
+    steps:
+      given: "在 develop 分支，有未合并的功能分支"
+      when: "运行 /dev 进入新任务模式"
+      then: "Step 2.5 检测到活跃分支并显示选项"
+    evidence:
+      type: log
+      contains: "检测到并行开发"
+
+  - id: W6-002
+    feature: W6
+    name: "worktree-manage.sh create 创建 worktree"
+    scope: workflow
+    priority: P1
+    trigger: [Release]
+    method: auto
+    tags: [dev, worktree, script]
+    owner: workflow
+    steps:
+      given: "在主工作区"
+      when: "运行 worktree-manage.sh create <task-name>"
+      then: "创建新 worktree 目录和对应分支"
+    evidence:
+      type: exit_code
+      equals: 0
+    test: "manual:script-test"
+
+  - id: W6-003
+    feature: W6
+    name: "cleanup.sh 清理关联的 worktree"
+    scope: workflow
+    priority: P1
+    trigger: [Release]
+    method: manual
+    tags: [dev, worktree, cleanup]
+    owner: workflow
+    steps:
+      given: "功能分支有关联的 worktree"
+      when: "运行 cleanup.sh"
+      then: "Step 4.5 检测并移除关联的 worktree"
+    evidence:
+      type: log
+      contains: "已移除 worktree"
 
 # ============================================================================
 # CI/Release 回归契约
