@@ -19,7 +19,6 @@ const ROOT = path.resolve(__dirname, '../..')
 const METRICS_SCRIPT = path.join(ROOT, 'scripts/devgate/metrics.sh')
 const METRICS_CJS = path.join(ROOT, 'scripts/devgate/metrics.cjs')
 const SNAPSHOT_SCRIPT = path.join(ROOT, 'scripts/devgate/snapshot-prd-dod.sh')
-const TEST_HISTORY_DIR = path.join(ROOT, '.test-metrics-history')
 
 /**
  * 执行命令并返回 stdout，即使退出码非零也不抛错

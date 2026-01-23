@@ -9,10 +9,11 @@
  * 3. require-rci-update-if-p0p1.sh - P0/P1 强制 RCI 更新
  */
 
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { execSync } from "child_process";
-import { existsSync, writeFileSync, unlinkSync, mkdirSync, rmSync } from "fs";
+import { existsSync, writeFileSync, unlinkSync, mkdirSync, rmSync, readdirSync } from "fs";
 import { resolve, join } from "path";
+import { tmpdir } from "os";
 
 const PROJECT_ROOT = resolve(__dirname, "../..");
 const SCRIPTS_DIR = join(PROJECT_ROOT, "scripts/devgate");
@@ -20,14 +21,25 @@ const CHECK_DOD_SCRIPT = join(SCRIPTS_DIR, "check-dod-mapping.cjs");
 const DETECT_PRIORITY_SCRIPT = join(SCRIPTS_DIR, "detect-priority.cjs");
 const REQUIRE_RCI_SCRIPT = join(SCRIPTS_DIR, "require-rci-update-if-p0p1.sh");
 
-// 临时测试目录
-const TEST_DIR = join(PROJECT_ROOT, ".test-phase1");
+// 使用时间戳避免并发测试冲突
+const TEST_DIR = join(tmpdir(), `zenithjoy-test-phase1-${Date.now()}`);
 
 describe("Phase 1: DevGate Scripts", () => {
   beforeAll(() => {
     // 创建临时测试目录
     if (!existsSync(TEST_DIR)) {
       mkdirSync(TEST_DIR, { recursive: true });
+    }
+  });
+
+  beforeEach(() => {
+    // 清理测试文件，防止 test-to-test 污染
+    if (existsSync(TEST_DIR)) {
+      const files = readdirSync(TEST_DIR);
+      files.forEach((f) => {
+        const filePath = join(TEST_DIR, f);
+        rmSync(filePath, { force: true, recursive: true });
+      });
     }
   });
 
