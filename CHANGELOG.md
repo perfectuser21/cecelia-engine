@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.1.3] - 2026-01-23
+
+### Added
+
+- **scan-rci-coverage.cjs `--explain` 模式**: 输出详细审计证据
+  - 分母验证：扫描规则 + 入口清单 + 文件存在性
+  - 分子验证：命中的 RCI 条目 + 匹配原因
+
+- **CI RCI 覆盖率守门**: DevGate 检查集成 `coverage:rci`
+  - 新增业务入口必须添加 RCI 条目，否则 CI 失败
+  - 失败时输出修复指引
+
+### Milestone
+
+**RCI 可验证性**: 100% 覆盖率现在是"可证伪的真实"，而不是"自嗨数字"
+
+验证方式：
+1. `npm run coverage:rci -- --explain` 查看审计证据
+2. 新增入口不加 RCI → CI 阻塞
+
+---
+
 ## [9.1.2] - 2026-01-23
 
 ### Added (RCI 条目补充)

@@ -11,6 +11,7 @@
  *   --output <file>  输出 JSON 到文件
  *   --snapshot       同时生成 BASELINE-SNAPSHOT.md
  *   --json           输出 JSON 格式
+ *   --explain        输出详细审计证据（每个入口的来源和匹配依据）
  *
  * 业务入口：
  *   - skills/{name}/SKILL.md
@@ -381,6 +382,7 @@ function main() {
   let outputFile = null;
   let generateSnapshotFile = false;
   let jsonOutput = false;
+  let explainMode = false;
 
   // 解析参数
   for (let i = 0; i < args.length; i++) {
@@ -391,6 +393,8 @@ function main() {
       generateSnapshotFile = true;
     } else if (args[i] === "--json") {
       jsonOutput = true;
+    } else if (args[i] === "--explain") {
+      explainMode = true;
     }
   }
 
@@ -423,7 +427,100 @@ function main() {
     console.log(`Snapshot written to ${snapshotPath}`);
   }
 
-  if (jsonOutput) {
+  if (explainMode) {
+    // 审计证据模式：输出详细的入口来源和匹配依据
+    console.log("");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("  RCI Coverage Audit Report (--explain)");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("");
+    console.log("  ▸ 分母验证：业务入口清单");
+    console.log("  ───────────────────────────────────────────────────────────────────────────");
+    console.log("");
+
+    // 显示入口扫描规则
+    console.log("  扫描规则：");
+    for (const pattern of ENTRY_PATTERNS) {
+      console.log(`    - ${pattern.glob} (type=${pattern.type}, ${pattern.description})`);
+    }
+    console.log("");
+    console.log("  排除规则：");
+    for (const pattern of EXCLUDE_PATTERNS) {
+      console.log(`    - ${pattern.toString()}`);
+    }
+    console.log("");
+
+    // 列出发现的入口
+    console.log(`  发现入口 (${report.summary.total} 条)：`);
+    console.log("");
+    for (let i = 0; i < report.entries.length; i++) {
+      const entry = report.entries[i];
+      console.log(`    ENTRY #${i + 1}: ${entry.path}`);
+      console.log(`      type=${entry.type}, name=${entry.name}`);
+      console.log(`      file_exists=${fs.existsSync(path.join(PROJECT_ROOT, entry.path))}`);
+      console.log("");
+    }
+
+    console.log("  ▸ 分子验证：覆盖匹配证据");
+    console.log("  ───────────────────────────────────────────────────────────────────────────");
+    console.log("");
+
+    for (const entry of report.entries) {
+      const status = entry.covered ? "✅ COVERED" : "❌ UNCOVERED";
+      console.log(`  ${entry.path} → ${status}`);
+
+      if (entry.covered) {
+        console.log(`    命中 RCI: ${entry.coveredBy.join(", ")}`);
+
+        // 显示匹配依据
+        for (const contractId of entry.coveredBy) {
+          const contract = contracts.find((c) => c.id === contractId);
+          if (contract) {
+            console.log(`    ├─ ${contractId}: "${contract.name}"`);
+            // 找出匹配原因
+            const matchReasons = [];
+            for (const contractPath of contract.paths) {
+              if (entry.path === contractPath) {
+                matchReasons.push(`exact_path_match: "${contractPath}"`);
+              } else if (entry.path.includes(contractPath) || contractPath.includes(entry.path)) {
+                matchReasons.push(`path_contains: "${contractPath}"`);
+              } else if (contractPath.includes(entry.name)) {
+                matchReasons.push(`name_in_path: "${contractPath}" contains "${entry.name}"`);
+              }
+            }
+            if (contract.name.includes(entry.name)) {
+              matchReasons.push(`name_in_contract: "${contract.name}" contains "${entry.name}"`);
+            }
+            for (const reason of matchReasons) {
+              console.log(`    │  └─ ${reason}`);
+            }
+          }
+        }
+      } else {
+        console.log(`    未找到匹配的 RCI 条目`);
+        console.log(`    需要添加 RCI 条目覆盖此入口`);
+      }
+      console.log("");
+    }
+
+    console.log("  ▸ 总结");
+    console.log("  ───────────────────────────────────────────────────────────────────────────");
+    console.log("");
+    console.log(`    Total:     ${report.summary.total}`);
+    console.log(`    Covered:   ${report.summary.covered}`);
+    console.log(`    Uncovered: ${report.summary.uncovered}`);
+    console.log(`    Coverage:  ${report.summary.percentage}%`);
+    console.log("");
+
+    if (report.summary.uncovered === 0) {
+      console.log("    ✅ 所有业务入口都有 RCI 覆盖");
+    } else {
+      console.log("    ⚠️  存在未覆盖的业务入口，需要补充 RCI 条目");
+    }
+
+    console.log("");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  } else if (jsonOutput) {
     console.log(JSON.stringify(report, null, 2));
   } else if (!outputFile && !generateSnapshotFile) {
     // 默认输出摘要
