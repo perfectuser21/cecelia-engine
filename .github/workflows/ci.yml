@@ -71,6 +71,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # DevGate 需要完整历史来 diff base 分支
 
       - name: Detect project type
         id: detect
