@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.3.2] - 2026-01-23
+
+### Changed
+
+- **Release 证据补充**: 更新 .layer2-evidence.md 用于 v9.3.1 release
+
 ## [9.3.1] - 2026-01-23
 
 ### Fixed
