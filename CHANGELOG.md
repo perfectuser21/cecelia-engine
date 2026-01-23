@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.1.2] - 2026-01-23
+
+### Added (RCI 条目补充)
+
+- **C1-008**: /qa Skill 加载
+- **C1-009**: /audit Skill 加载
+- **C1-010**: /assurance Skill 加载
+- **C3-004**: run-regression.sh 执行回归测试
+- **C3-005**: qa-report.sh 生成报告
+- **C3-006**: release-check.sh 发布检查
+
+### Milestone
+
+**RCI 覆盖率达到 100%** (8/8 业务入口)
+
+从此进入增量维护模式：
+- 新增业务入口 → 必须添加 RCI 条目
+- Gate 改动 → 只更新 GCI（不影响 RCI）
+
+---
+
 ## [9.1.1] - 2026-01-23
 
 ### Added

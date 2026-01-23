@@ -23,7 +23,7 @@
 #
 # ============================================================================
 
-version: "9.0.0"
+version: "9.1.2"
 updated: "2026-01-23"
 
 # ============================================================================
@@ -119,6 +119,48 @@ workflow:
       then: "检测为 continue 模式"
     test: "tests/hooks/branch-protect.test.ts"
 
+  - id: C1-008
+    name: "/qa Skill 加载"
+    priority: P1
+    trigger: [Release]
+    method: manual
+    steps:
+      given: "用户在项目目录"
+      when: "运行 /qa"
+      then: "Skill 加载，显示 QA 总控面板"
+    evidence:
+      type: file
+      path: "skills/qa/SKILL.md"
+      exists: true
+
+  - id: C1-009
+    name: "/audit Skill 加载"
+    priority: P1
+    trigger: [Release]
+    method: manual
+    steps:
+      given: "用户在项目目录"
+      when: "运行 /audit"
+      then: "Skill 加载，显示审计面板"
+    evidence:
+      type: file
+      path: "skills/audit/SKILL.md"
+      exists: true
+
+  - id: C1-010
+    name: "/assurance Skill 加载"
+    priority: P1
+    trigger: [Release]
+    method: manual
+    steps:
+      given: "用户在项目目录"
+      when: "运行 /assurance"
+      then: "Skill 加载，判断 Gate/Business 并更新契约"
+    evidence:
+      type: file
+      path: "skills/assurance/SKILL.md"
+      exists: true
+
 # ============================================================================
 # C2: CI/Release
 # ============================================================================
@@ -201,6 +243,45 @@ scripts:
       when: "运行 install-hooks.sh"
       then: "安装 hooks 和 skills 到 ~/.claude/"
     test: "tests/hooks/install-hooks.test.ts"
+
+  - id: C3-004
+    name: "run-regression.sh 执行回归测试"
+    priority: P1
+    trigger: [Release]
+    method: manual
+    steps:
+      given: "RCI 文件存在"
+      when: "运行 run-regression.sh"
+      then: "执行回归测试并输出结果"
+    evidence:
+      type: command
+      run: "bash scripts/run-regression.sh --dry-run"
+
+  - id: C3-005
+    name: "qa-report.sh 生成报告"
+    priority: P2
+    trigger: [Release]
+    method: manual
+    steps:
+      given: "有测试结果"
+      when: "运行 qa-report.sh"
+      then: "生成 QA 报告"
+    evidence:
+      type: command
+      run: "bash scripts/qa-report.sh --help"
+
+  - id: C3-006
+    name: "release-check.sh 发布检查"
+    priority: P1
+    trigger: [Release]
+    method: auto
+    steps:
+      given: "PR 目标是 main"
+      when: "CI 执行 release-check"
+      then: "检查 CHANGELOG 和版本号"
+    evidence:
+      type: command
+      run: "bash scripts/release-check.sh"
 
 # ============================================================================
 # C4: API（预留）
