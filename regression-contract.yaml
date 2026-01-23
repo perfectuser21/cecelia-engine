@@ -15,8 +15,8 @@
 #
 # ============================================================================
 
-version: "1.19.0"
-updated: "2026-01-22"
+version: "1.20.0"
+updated: "2026-01-23"
 
 # ============================================================================
 # Hooks 回归契约
@@ -77,6 +77,47 @@ hooks:
     evidence:
       type: exit_code
       equals: 0
+    test: "tests/hooks/branch-protect.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H1-010~H1-012: v8.24.0 安全修复 (branch-protect.sh)
+  # --------------------------------------------------------------------------
+  - id: H1-010
+    feature: H1
+    name: "JSON 预验证防止注入 (branch-protect)"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, json, injection, v8.24.0]
+    owner: infra
+    steps:
+      given: "Hook 接收包含特殊字符的输入"
+      when: "解析 JSON 输入前"
+      then: "使用 jq 预验证 JSON 格式，无效 JSON 直接报错退出"
+    evidence:
+      type: code
+      file: "hooks/branch-protect.sh"
+      contains: "jq -e . >/dev/null 2>&1"
+    test: "tests/hooks/branch-protect.test.ts"
+
+  - id: H1-011
+    feature: H1
+    name: "路径遍历检查 (branch-protect)"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, path-traversal, v8.24.0]
+    owner: infra
+    steps:
+      given: "Hook 接收文件路径参数"
+      when: "处理路径前"
+      then: "拒绝包含 .. 的路径，防止目录遍历攻击"
+    evidence:
+      type: code
+      file: "hooks/branch-protect.sh"
+      contains: "reject_path_traversal"
     test: "tests/hooks/branch-protect.test.ts"
 
   # --------------------------------------------------------------------------
@@ -273,6 +314,66 @@ hooks:
     test: "tests/hooks/pr-gate.test.ts"
 
   # --------------------------------------------------------------------------
+  # H2-011~H2-013: v8.24.0 安全修复 (pr-gate-v2.sh)
+  # --------------------------------------------------------------------------
+  - id: H2-011
+    feature: H2
+    name: "JSON 预验证防止注入 (pr-gate)"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, json, injection, v8.24.0]
+    owner: infra
+    steps:
+      given: "Hook 接收包含特殊字符的输入"
+      when: "解析 JSON 输入前"
+      then: "使用 jq 预验证 JSON 格式，无效 JSON 直接报错退出"
+    evidence:
+      type: code
+      file: "hooks/pr-gate-v2.sh"
+      contains: "jq -e . >/dev/null 2>&1"
+    test: "tests/hooks/pr-gate.test.ts"
+
+  - id: H2-012
+    feature: H2
+    name: "sed 注入防护 (pr-gate)"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, sed, injection, v8.24.0]
+    owner: infra
+    steps:
+      given: "Hook 使用 sed 处理用户输入"
+      when: "构造 sed 命令"
+      then: "使用 # 作为分隔符，避免 / 分隔符被路径中的 / 破坏"
+    evidence:
+      type: code
+      file: "hooks/pr-gate-v2.sh"
+      contains: "sed -n 's#"
+    test: "tests/hooks/pr-gate.test.ts"
+
+  - id: H2-013
+    feature: H2
+    name: "CRITICAL/HIGH → P0/P1 优先级映射"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, priority, mapping, v8.24.0]
+    owner: infra
+    steps:
+      given: "PR 包含 CRITICAL/HIGH 关键字"
+      when: "detect-priority.cjs 检测优先级"
+      then: "CRITICAL 映射为 P0，HIGH 映射为 P1，security 前缀映射为 P0"
+    evidence:
+      type: code
+      file: "scripts/devgate/detect-priority.cjs"
+      contains: "CRITICAL|HIGH|security"
+    test: "tests/hooks/detect-priority.test.ts"
+
+  # --------------------------------------------------------------------------
   # H3: Phase 3 - Hook Core 多仓库治理
   # --------------------------------------------------------------------------
   - id: H3-001
@@ -334,6 +435,28 @@ hooks:
       path: ".history/PR-*.dod.md"
       contains: "<!-- pr:"
     test: "tests/hooks/metrics.test.ts"
+
+  # --------------------------------------------------------------------------
+  # H4-003: v8.24.0 安全修复 (run-regression.sh)
+  # --------------------------------------------------------------------------
+  - id: H4-003
+    feature: H4
+    name: "RCI ID 格式白名单验证"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, validation, whitelist, v8.24.0]
+    owner: infra
+    steps:
+      given: "run-regression.sh 接收 RCI ID 参数"
+      when: "处理 ID 前"
+      then: "验证 ID 符合 [A-Z][0-9]-[0-9]{3} 格式，拒绝非法字符防止命令注入"
+    evidence:
+      type: code
+      file: "scripts/run-regression.sh"
+      contains: "^[A-Z][0-9]-[0-9]{3}$"
+    test: "scripts/run-regression.sh"
 
 # ============================================================================
 # Workflow 回归契约
@@ -561,6 +684,47 @@ ci:
       type: ci_job
       name: "version-check"
       status: success
+    test: ".github/workflows/ci.yml"
+
+  # --------------------------------------------------------------------------
+  # C1-002~C1-003: v8.24.0 安全修复 (ci.yml)
+  # --------------------------------------------------------------------------
+  - id: C1-002
+    feature: C1
+    name: "CI Job 权限最小化声明"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, ci, permissions, v8.24.0]
+    owner: infra
+    steps:
+      given: "CI workflow 文件"
+      when: "定义 job"
+      then: "每个 job 显式声明 permissions，遵循最小权限原则"
+    evidence:
+      type: code
+      file: ".github/workflows/ci.yml"
+      contains: "permissions:"
+    test: ".github/workflows/ci.yml"
+
+  - id: C1-003
+    feature: C1
+    name: "curl JSON 安全生成"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [security, ci, json, v8.24.0]
+    owner: infra
+    steps:
+      given: "CI 需要发送 JSON 数据"
+      when: "构造 curl 请求"
+      then: "使用 jq -n 生成 JSON，避免字符串拼接注入"
+    evidence:
+      type: code
+      file: ".github/workflows/ci.yml"
+      contains: "jq -n"
     test: ".github/workflows/ci.yml"
 
   # --------------------------------------------------------------------------

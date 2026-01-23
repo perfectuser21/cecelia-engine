@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.25.0] - 2026-01-23
+
+### Fixed (P0 优先级检测 Bug 修复)
+- **scripts/devgate/detect-priority.cjs**: 添加 CRITICAL/HIGH/security 关键字映射
+  - CRITICAL → P0（审计严重性映射）
+  - HIGH → P1（审计严重性映射）
+  - `security:` 前缀 → P0（安全修复类型）
+  - 修复 v8.24.0 安全修复绕过 RCI 检查的 Bug
+
+### Added (v8.24.0 安全修复 RCI 补充)
+- **regression-contract.yaml** v1.20.0:
+  - H1-010: JSON 预验证防止注入 (branch-protect)
+  - H1-011: 路径遍历检查 (branch-protect)
+  - H2-011: JSON 预验证防止注入 (pr-gate)
+  - H2-012: sed 注入防护 (pr-gate)
+  - H2-013: CRITICAL/HIGH → P0/P1 优先级映射
+  - H4-003: RCI ID 格式白名单验证 (run-regression)
+  - C1-002: CI Job 权限最小化声明
+  - C1-003: curl JSON 安全生成
+
+### Improved
+- **skills/qa/SKILL.md** v1.2.0: 添加"严重性 → 优先级映射"章节
+- **skills/audit/SKILL.md** v1.2.0: 添加"严重性 → 优先级映射"章节
+
+### Tests
+- **tests/hooks/detect-priority.test.ts**: 新增 21 个单元测试覆盖优先级检测
+
 ## [8.24.0] - 2026-01-23
 
 ### Security (CRITICAL 级安全修复)

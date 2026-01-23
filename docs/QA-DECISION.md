@@ -1,34 +1,42 @@
 # QA Decision
 
-Decision: NO_RCI
-Priority: P1
+Decision: MUST_ADD_RCI
+Priority: P0
 RepoType: Engine
 
 Tests:
-  - dod_item: "统一输出格式按模式分别说明 Decision 值"
+  - dod_item: "添加 CRITICAL → P0 映射"
+    method: auto
+    location: tests/hooks/detect-priority.test.ts
+  - dod_item: "添加 HIGH → P1 映射"
+    method: auto
+    location: tests/hooks/detect-priority.test.ts
+  - dod_item: "添加 security 关键字 → P0 映射"
+    method: auto
+    location: tests/hooks/detect-priority.test.ts
+  - dod_item: "单元测试覆盖新增映射"
+    method: auto
+    location: tests/hooks/detect-priority.test.ts
+  - dod_item: "补充 v8.24.0 安全修复 RCI"
     method: manual
-    location: manual:file-check
-  - dod_item: "补充 GP/Feature 模式的 Decision 定义"
+    location: manual:verify-rci
+  - dod_item: "更新 QA/Audit SKILL.md 文档"
     method: manual
-    location: manual:file-check
-  - dod_item: "qa/SKILL.md 添加 L2B Evidence 文件说明"
-    method: manual
-    location: manual:file-check
-  - dod_item: "SKILL.md 添加 frontmatter"
-    method: manual
-    location: manual:file-check
-  - dod_item: "criteria.md GP 示例 ID 标注说明"
-    method: manual
-    location: manual:file-check
-  - dod_item: "qa/SKILL.md 澄清概念关系"
-    method: manual
-    location: manual:file-check
+    location: manual:code-review
   - dod_item: "npm run qa 通过"
     method: auto
     location: contract:C2-001
 
 RCI:
-  new: []
+  new:
+    - H1-010
+    - H1-011
+    - H2-011
+    - H2-012
+    - H2-013
+    - H4-003
+    - C1-002
+    - C1-003
   update: []
 
-Reason: 文档一致性修复，无需纳入回归契约
+Reason: P0 级 Bug 修复 - detect-priority.cjs 未识别 CRITICAL/HIGH，导致 v8.24.0 安全修复绕过 RCI 检查。必须添加 8 个新 RCI 条目。

@@ -27,11 +27,34 @@ const { execSync } = require("child_process");
 
 /**
  * 从字符串中提取优先级
+ *
+ * 优先级映射：
+ *   - CRITICAL → P0（最高严重性）
+ *   - HIGH → P1
+ *   - security 前缀 → P0（安全修复）
+ *   - P0/P1/P2/P3 → 对应优先级
+ *
  * @param {string} text
  * @returns {string|null}
  */
 function extractPriority(text) {
   if (!text) return null;
+
+  // CRITICAL → P0（审计严重性映射）
+  if (/\bCRITICAL\b/i.test(text)) {
+    return "P0";
+  }
+
+  // HIGH → P1（审计严重性映射）
+  if (/\bHIGH\b/i.test(text)) {
+    return "P1";
+  }
+
+  // security 前缀 → P0（安全修复类型）
+  // 匹配: security: xxx, security(scope): xxx
+  if (/^security[:(]/i.test(text)) {
+    return "P0";
+  }
 
   // 匹配 P0, P1, P2, P3（不区分大小写）
   const match = text.match(/\b[Pp]([0-3])\b/);
