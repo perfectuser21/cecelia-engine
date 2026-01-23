@@ -108,18 +108,38 @@ if [[ -f "$L2_EVIDENCE_FILE" ]]; then
         done
     fi
 
-    # 检查 curl 证据 (L2 fix: 兼容 macOS)
+    # 检查 curl 证据 - 使用行号方法提取块（更可移植）
     CURL_IDS=$(grep -o '###[[:space:]]*C[0-9]*' "$L2_EVIDENCE_FILE" 2>/dev/null | grep -o 'C[0-9]*' || echo "")
 
     if [[ -n "$CURL_IDS" ]]; then
+        # 获取文件总行数
+        TOTAL_LINES=$(wc -l < "$L2_EVIDENCE_FILE" 2>/dev/null || echo "0")
+
         for CID in $CURL_IDS; do
-            # L2 fix: 使用 sed 提取块（从 C{N} 到下一个 ### 或文件结尾）
-            # 使用 sed '$d' 替代 head -n -1 以提高可移植性
-            CURL_BLOCK=$(sed -n "/^### ${CID}:/,/^### /p" "$L2_EVIDENCE_FILE" 2>/dev/null | sed '$d')
-            # 如果上面返回空（C{N} 是最后一个块，没有下一个 ###），则提取到文件结尾
-            if [[ -z "$CURL_BLOCK" ]]; then
-                CURL_BLOCK=$(sed -n "/^### ${CID}:/,\$p" "$L2_EVIDENCE_FILE" 2>/dev/null)
+            # 找到当前块的起始行号
+            START_LINE=$(grep -n "^### ${CID}:" "$L2_EVIDENCE_FILE" 2>/dev/null | head -1 | cut -d: -f1)
+
+            if [[ -z "$START_LINE" ]]; then
+                printf "  curl $CID... "
+                echo "[FAIL] (块不存在)"
+                FAILED=1
+                continue
             fi
+
+            # 找到下一个 ### 的行号（作为结束）
+            # 注意：grep 无匹配时返回 exit 1，需要 || true 防止 set -e 退出
+            END_LINE=$(tail -n +$((START_LINE + 1)) "$L2_EVIDENCE_FILE" 2>/dev/null | grep -n "^### " | head -1 | cut -d: -f1 || true)
+
+            if [[ -n "$END_LINE" ]]; then
+                # 有下一个块，计算实际结束行
+                END_LINE=$((START_LINE + END_LINE - 1))
+            else
+                # 没有下一个块，取到文件末尾
+                END_LINE=$TOTAL_LINES
+            fi
+
+            # 提取块内容
+            CURL_BLOCK=$(sed -n "${START_LINE},${END_LINE}p" "$L2_EVIDENCE_FILE" 2>/dev/null)
 
             printf "  curl $CID... "
             CHECKED=$((CHECKED + 1))

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.3.5] - 2026-01-23
+
+### Fixed
+
+- **release-check.sh 可移植性**: grep 无匹配时添加 `|| true`
+  - 修复最后一个块（C4）处理时 `set -e` 导致脚本提前退出的问题
+
 ## [9.3.4] - 2026-01-23
 
 ### Fixed
