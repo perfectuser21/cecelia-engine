@@ -236,7 +236,13 @@ run_evidence() {
         file)
             # 检查文件是否存在
             local file_path
-            # 安全：转义 id 中的特殊字符防止 yq 注入
+            # CRITICAL 修复: 严格验证 id 格式，只允许安全字符 [A-Za-z0-9_-]
+            if [[ ! "$id" =~ ^[A-Za-z0-9_-]+$ ]]; then
+                echo -e "${YELLOW}⏭️ (invalid id format: $id)${NC}"
+                L3_SKIPPED=$((L3_SKIPPED + 1))
+                return
+            fi
+            # 安全：转义 id 中的特殊字符防止 yq 注入（双重保护）
             local safe_id
             safe_id=$(printf '%s' "$id" | sed 's/["\\]/\\&/g')
             file_path=$(yq eval ".. | select(has(\"evidence\")) | select(.id == \"$safe_id\") | .evidence.path" "$RC_FILE" 2>/dev/null | head -1)

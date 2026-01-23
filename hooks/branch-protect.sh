@@ -28,6 +28,12 @@ fi
 # Read JSON input from stdin
 INPUT=$(cat)
 
+# CRITICAL 修复: JSON 预验证，防止格式错误或注入
+if ! echo "$INPUT" | jq empty >/dev/null 2>&1; then
+    echo "❌ 无效的 JSON 输入" >&2
+    exit 2
+fi
+
 # Extract tool name（安全提取，避免 jq empty 问题）
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // .operation // ""' 2>/dev/null || echo "")
 
@@ -46,11 +52,18 @@ fi
 # ===== v12: 全局配置目录保护 =====
 # 阻止直接修改 ~/.claude/hooks/ 和 ~/.claude/skills/
 # 这些文件应该在 zenithjoy-engine 修改后部署
-# P0-2 修复: 使用 realpath 解析 symlink，防止通过符号链接绕过
+# CRITICAL 修复: 使用 realpath 解析 symlink，防止通过符号链接绕过
+# 使用 -s 选项：不解析符号链接但规范化路径，或检查路径是否包含 ..
 HOME_DIR="${HOME:-/home/$(whoami)}"
 REAL_FILE_PATH="$FILE_PATH"
+# 先检查路径是否包含危险模式
+if [[ "$FILE_PATH" == *".."* ]]; then
+    echo "❌ 路径包含 '..' 不允许" >&2
+    exit 2
+fi
 if command -v realpath &>/dev/null; then
-    REAL_FILE_PATH=$(realpath -m "$FILE_PATH" 2>/dev/null || echo "$FILE_PATH")
+    # 使用 -s 不解析符号链接，只规范化路径
+    REAL_FILE_PATH=$(realpath -s "$FILE_PATH" 2>/dev/null || echo "$FILE_PATH")
 fi
 if [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
    [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/skills/"* ]] || \

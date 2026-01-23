@@ -333,8 +333,13 @@ EOF
         passed="true"
         score=100
     else
-        # 提取错误摘要（最后 10 行）
-        error_summary=$(echo "$output" | tail -10 | jq -Rs . 2>/dev/null || echo "null")
+        # CRITICAL 修复: 提取错误摘要，确保正确的 JSON 转义
+        # 使用 printf 避免 echo 的特殊字符问题，jq -Rs 确保正确转义
+        error_summary=$(printf '%s' "$output" | tail -10 | jq -Rs . 2>/dev/null)
+        # 如果 jq 失败，使用 null
+        if [[ -z "$error_summary" ]]; then
+            error_summary="null"
+        fi
     fi
 
     cat <<EOF

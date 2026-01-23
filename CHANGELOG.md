@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [8.24.0] - 2026-01-23
+
+### Security (CRITICAL 级安全修复)
+- **hooks/branch-protect.sh**: JSON 预验证 + 路径遍历检查 (..)
+- **hooks/pr-gate-v2.sh**: JSON 预验证 + sed 使用 # 分隔符防注入
+- **scripts/run-regression.sh**: id 格式白名单验证 [A-Za-z0-9_-]
+- **scripts/qa-report.sh**: printf 替代 echo + jq 转义防止特殊字符问题
+- **.github/workflows/ci.yml**: notify-failure Job 权限声明 + jq 生成 JSON
+- **.github/workflows/nightly.yml**: notify Job 权限声明 + jq 生成 JSON + git push 错误检查
+
+### Fixed
+- **skills/dev/SKILL.md**: 补充完整步骤追踪 (Step 2 Detect + Step 7-11)
+
 ## [8.23.0] - 2026-01-23
 
 ### Fixed (LOW 级代码风格修复)
