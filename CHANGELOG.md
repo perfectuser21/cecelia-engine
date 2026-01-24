@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [9.4.0] - 2026-01-24
+
+### Added
+
+- **GitHub Actions Auto Merge**: 配置自动合并工作流
+  - 在 PR approved + CI 通过后自动合并
+  - 使用 squash merge 保持历史简洁
+  - 适配 A+ (100%) Team Organization 保护要求
+  - 超时 5 分钟避免配额浪费
+
+### Changed
+
+- **升级到 Team Organization**: A+ (100%) Branch Protection
+  - required_approving_review_count: 1（必须人工审核）
+  - restrictions: 空（禁止任何人直接 push）
+  - enforce_admins: true（Admin 也必须遵守）
+  - 转移仓库到 ZenithJoycloud Organization
+
 ## [9.3.6] - 2026-01-23
 
 ### Fixed
