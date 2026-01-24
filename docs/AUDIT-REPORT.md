@@ -14,7 +14,7 @@ Target Level: L2
 | L3 (最佳实践) | 0 |
 | L4 (过度优化) | 0 |
 
-**Decision: PASS**
+Decision: PASS
 
 ## Findings
 
