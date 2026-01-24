@@ -230,12 +230,12 @@ CHECK_COUNT=$((CHECK_COUNT + 1))
 if [[ "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
    [[ "${CURRENT_BRANCH:-}" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]*$ ]]; then
     echo "[OK] ($CURRENT_BRANCH)" >&2
-elif [[ "$MODE" == "release" && "$CURRENT_BRANCH" == "develop" ]]; then
+elif [[ "$MODE" == "release" && ( "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" =~ ^release- ) ]]; then
     echo "[OK] ($CURRENT_BRANCH -> main)" >&2
 else
     echo "[FAIL] ($CURRENT_BRANCH)" >&2
     echo "    -> PR 模式：必须在 cp-* 或 feature/* 分支" >&2
-    echo "    -> Release 模式：允许 develop 分支" >&2
+    echo "    -> Release 模式：允许 develop 或 release-* 分支" >&2
     FAILED=1
 fi
 
