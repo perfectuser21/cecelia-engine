@@ -36,6 +36,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - 集成 Ralph Wiggum 官方插件（已安装）
   - 说明真正有强制能力的只有 2 个 Hook: PreToolUse:Write 和 Stop
 
+- **8.x/9.0 要求验证**: 所有要求 100% 保留
+  - docs/REQUIREMENT-VERIFICATION.md: 完整的要求对比和验证清单
+  - Gate Contract 6 大红线: 全部保留（DoD、QA 决策、P0 检测、RCI、白名单、分支保护）
+  - 新增 Stop Hook 强化: Audit + 测试 + 时效性检查（0% → 100% 强制能力）
+  - Ralph Loop 100% 自动执行: 写代码 + 写测试 + 质检 + 失败重试
+
 ### Integration
 
 - **Ralph Loop 集成**: 与 Stop Hook 协作实现自动质检循环
