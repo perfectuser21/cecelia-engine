@@ -231,6 +231,44 @@ jobs:
           echo "  ✅ DevGate 检查通过"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+      # Ralph Loop 统计（如果追踪文件存在）
+      - name: Display Ralph Loop Metrics
+        if: always()
+        run: |
+          if [[ -f .ralph-loop-tracking.json ]]; then
+            echo "## 📊 Ralph Loop 统计" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # 提取统计信息
+            TOTAL_ITERATIONS=$(jq '.total_iterations' .ralph-loop-tracking.json)
+            PROJECT=$(jq -r '.project' .ralph-loop-tracking.json)
+            BRANCH=$(jq -r '.branch' .ralph-loop-tracking.json)
+
+            echo "**项目**: $PROJECT" >> $GITHUB_STEP_SUMMARY
+            echo "**分支**: $BRANCH" >> $GITHUB_STEP_SUMMARY
+            echo "**总迭代次数**: $TOTAL_ITERATIONS" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            echo "### 迭代历史" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            # 显示所有迭代
+            jq -r '.iterations[] |
+              "- **Iteration \(.iteration)** (\(.timestamp | split("T")[1] | split(".")[0] | split("Z")[0])): " +
+              (if .result == "blocked" then
+                "❌ 阻止在 **\(.blocked_at)** - \(.reason)"
+               else
+                "✅ \(.result) - \(.message)"
+               end)' .ralph-loop-tracking.json >> $GITHUB_STEP_SUMMARY
+
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "---" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "完整追踪数据已归档到 \`.archive/ralph-loops/\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "ℹ️ No Ralph Loop tracking data found (normal for non-ralph-loop sessions)"
+          fi
+
   # Contract Drift Check - 防止派生视图漂移
   contract-drift-check:
     runs-on: ubuntu-latest

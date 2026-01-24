@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-# Stop Hook: 质检门控（两阶段分离）
+# Stop Hook: 质检门控（两阶段分离）+ Ralph Loop 追踪
 # ============================================================================
 # 根据当前阶段（p0/p1/p2/pending）决定检查什么：
 #
@@ -19,6 +19,10 @@
 #
 # p2/pending:
 #   - 直接允许结束（exit 0）
+#
+# Ralph Loop 追踪:
+#   - 每次 exit 2 记录失败原因
+#   - exit 0 生成最终报告并归档
 # ============================================================================
 
 set -euo pipefail
@@ -49,6 +53,41 @@ fi
 
 # ===== 获取项目根目录 =====
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+# ===== Ralph Loop 追踪初始化 =====
+TRACKING_FILE="$PROJECT_ROOT/.ralph-loop-tracking.json"
+CURRENT_ITERATION=1
+
+# 读取当前迭代次数（如果追踪文件存在）
+if [[ -f "$TRACKING_FILE" ]]; then
+    CURRENT_ITERATION=$(jq '.total_iterations + 1' "$TRACKING_FILE" 2>/dev/null || echo "1")
+fi
+
+# 记录迭代的辅助函数
+record_iteration() {
+    local blocked_at="$1"
+    local reason="$2"
+    local result="${3:-blocked}"
+    local message="${4:-}"
+
+    # 调用 ralph-tracker.sh 记录
+    if [[ -f "$PROJECT_ROOT/scripts/ralph-tracker.sh" ]]; then
+        if [[ "$result" == "blocked" ]]; then
+            bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" record \
+                --iteration "$CURRENT_ITERATION" \
+                --phase "${PHASE:-unknown}" \
+                --result "$result" \
+                --blocked-at "$blocked_at" \
+                --reason "$reason" 2>/dev/null || true
+        else
+            bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" record \
+                --iteration "$CURRENT_ITERATION" \
+                --phase "${PHASE:-unknown}" \
+                --result "$result" \
+                --message "$message" 2>/dev/null || true
+        fi
+    fi
+}
 
 # ===== 检查是否在 git 仓库中 =====
 if ! git rev-parse --git-dir &>/dev/null; then
@@ -103,6 +142,12 @@ echo "  [Stop Hook: Step 7 质检门控]" >&2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 echo "" >&2
 echo "  分支: $CURRENT_BRANCH" >&2
+
+# 显示 Ralph Loop 迭代信息
+if [[ $CURRENT_ITERATION -gt 1 ]] || [[ -f "$TRACKING_FILE" ]]; then
+    echo "  📊 Ralph Loop 迭代: #$CURRENT_ITERATION" >&2
+fi
+
 echo "" >&2
 
 # ===== Step 7.1: 检查 Audit 报告 (L2A) =====
@@ -118,7 +163,17 @@ if [[ ! -f "$AUDIT_REPORT" ]]; then
     echo "    2. 或手动创建 docs/AUDIT-REPORT.md" >&2
     echo "" >&2
     echo "  参考: skills/dev/steps/07-quality.md" >&2
+
+    # Ralph Loop 追踪
+    if [[ -f "$TRACKING_FILE" ]]; then
+        bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" history >&2 || true
+    fi
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+    # 记录此次迭代
+    record_iteration "Step 7.1" "Audit report missing (docs/AUDIT-REPORT.md not found)"
+
     exit 2
 fi
 
@@ -139,7 +194,17 @@ if [[ "$AUDIT_DECISION" != "PASS" ]]; then
     echo "    4. 确保 Decision: PASS" >&2
     echo "" >&2
     echo "  (Retry Loop: Audit → FAIL → 修复 → 重新审计)" >&2
+
+    # Ralph Loop 追踪
+    if [[ -f "$TRACKING_FILE" ]]; then
+        bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" history >&2 || true
+    fi
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+    # 记录此次迭代
+    record_iteration "Step 7.2" "Audit Decision: $AUDIT_DECISION (L1/L2 issues found)"
+
     exit 2
 fi
 
@@ -163,7 +228,17 @@ if [[ ! -f "$QUALITY_GATE_FILE" ]]; then
     echo "  如果测试失败，请修复后重新运行 npm run qa:gate" >&2
     echo "  (Retry Loop: 失败 → 修复 → 再试，直到通过)" >&2
     echo "" >&2
+
+    # Ralph Loop 追踪
+    if [[ -f "$TRACKING_FILE" ]]; then
+        bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" history >&2 || true
+    fi
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+    # 记录此次迭代
+    record_iteration "Step 7.3" "Quality gate file missing (.quality-gate-passed not found)"
+
     exit 2
 fi
 
@@ -190,7 +265,16 @@ if (( LATEST_CODE_MTIME > GATE_MTIME )); then
     echo "" >&2
     echo "  请重新运行质检: npm run qa" >&2
     echo "" >&2
+
+    # Ralph Loop 追踪
+    if [[ -f "$TRACKING_FILE" ]]; then
+        bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" history >&2 || true
+    fi
+
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+    # 记录此次迭代
+    record_iteration "Step 7.3" "Quality gate result stale (code modified after quality check)"
 
     # exit 2: 阻止会话结束
     exit 2
@@ -231,6 +315,15 @@ if command -v gh &>/dev/null; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
+        # Ralph Loop 追踪
+        if [[ -f "$TRACKING_FILE" ]]; then
+            bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" history >&2 || true
+        fi
+
+        # 记录此次迭代
+        record_iteration "Step 8" "PR not created yet (quality passed but PR pending)"
+
+
         # exit 2: 阻止会话结束，让 AI 继续创建 PR
         exit 2
     fi
@@ -258,6 +351,19 @@ if command -v gh &>/dev/null; then
         echo "  后续: CI 自动运行，下次启动检测 CI 结果（p1/p2）" >&2
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+
+        # Ralph Loop 最终报告
+        if [[ -f "$TRACKING_FILE" ]]; then
+            record_iteration "" "" "success" "PR created (#$PR_NUMBER), p0 phase completed"
+            echo "" >&2
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+            echo "  📊 Ralph Loop 完成报告" >&2
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+            bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" report >&2 || true
+            bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" archive >&2 || true
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        fi
 
         # exit 0: p0 阶段结束，允许会话结束
         exit 0
@@ -299,6 +405,15 @@ if command -v gh &>/dev/null; then
             echo "" >&2
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
+            # Ralph Loop 追踪
+            if [[ -f "$TRACKING_FILE" ]]; then
+                bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" history >&2 || true
+            fi
+
+            # 记录此次迭代
+            record_iteration "Step 9" "CI failed (need to fix and push again)"
+
+
             # exit 2: 阻止会话结束，让 AI 继续修复 CI
             exit 2
 
@@ -312,6 +427,19 @@ if command -v gh &>/dev/null; then
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
             echo "  ✅ p1 任务完成（CI 全绿）" >&2
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+
+            # Ralph Loop 最终报告
+            if [[ -f "$TRACKING_FILE" ]]; then
+                record_iteration "" "" "success" "CI passed, PR will be auto-merged"
+                echo "" >&2
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+                echo "  📊 Ralph Loop 完成报告" >&2
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+                bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" report >&2 || true
+                bash "$PROJECT_ROOT/scripts/ralph-tracker.sh" archive >&2 || true
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+            fi
+
             # exit 0: 允许结束
             exit 0
         else

@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.1.0] - 2026-01-24
+
+### Added
+
+- **Ralph Loop 迭代追踪机制**: 自动追踪 `/ralph-loop` 插件的迭代过程
+  - `scripts/ralph-tracker.sh`: Ralph Loop 追踪工具（init/record/report/history/archive 命令）
+  - `hooks/stop.sh`: 集成自动追踪，每次 exit 2 记录失败原因，exit 0 生成最终报告
+  - `.github/workflows/ci.yml`: 在 GitHub Actions Summary 显示迭代统计
+  - `docs/RALPH-LOOP-TRACKING.md`: 完整使用文档
+  - `.ralph-loop-tracking.json`: 追踪数据格式（包含 iterations 数组和统计信息）
+  - `.archive/ralph-loops/`: 归档目录，保存历史追踪数据
+
+### Features
+
+- **实时迭代显示**: Stop Hook 输出显示"📊 Ralph Loop 迭代: #N"
+- **失败原因记录**: 精确记录每次阻止在哪一步（Step 7.1/7.2/7.3/8/9）
+- **最终报告**: 会话结束时生成完整报告（总迭代、成功率、耗时）
+- **CI 集成**: GitHub Actions Summary 自动显示迭代历史
+- **容错设计**: 追踪失败不影响 Stop Hook 主流程（`|| true`）
+
 ## [10.0.2] - 2026-01-24
 
 ### Added
