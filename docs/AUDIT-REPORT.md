@@ -1,38 +1,86 @@
-# Audit Report - PROD-READINESS.md 文档创建
+# Audit Report
 
-**任务**: 创建 v10.0.0 生产就绪报告
-**审计时间**: 2026-01-24
-**审计层级**: L0 (无需审计)
+**Branch**: cp-01242217-p0-quality-enforcement
+**Date**: 2026-01-24
+**Scope**: scripts/devgate/impact-check.sh, .github/workflows/ci.yml, scripts/qa-with-gate.sh
+**Target Level**: L2
 
 ---
 
-## 审计结果
+## Summary
+
+| Layer | 数量 | 说明 |
+|-------|------|------|
+| L1 | 0 | 阻塞性问题 |
+| L2 | 0 | 功能性问题（3 个已修复）|
+| L3 | 0 | 最佳实践问题（未审计）|
+| L4 | 0 | 过度优化问题（不审计）|
+
+---
+
+## Decision
 
 Decision: PASS
 
----
-
-## L1: 阻塞性问题
-
-✅ 无阻塞性问题（纯文档任务）
+L1 和 L2 问题已全部清零，代码可以继续 PR 创建。
 
 ---
 
-## L2: 功能性问题
+## Findings
 
-✅ 无功能性问题
+### 已修复的 L2 问题
 
-**变更内容**:
-- 新增 `docs/production/PROD-READINESS.md`
-- 纯文档，无代码逻辑
+**L2-001**: `scripts/qa-with-gate.sh:78,88-89` - Audit 字段提取不够健壮
+- **Issue**: grep 可能提取多行，导致错误值
+- **Fix**: 添加 `head -1` 和 `sed` 精确提取 Summary 块
+- **Status**: ✅ fixed
 
-**检查项**:
-- ✅ Markdown 格式正确
-- ✅ 内容完整（三层防御、验收完成度、核心机制）
-- ✅ 引用链接有效
+**L2-002**: `scripts/qa-with-gate.sh:92-130` - Fallback JSON 拼接不安全
+- **Issue**: 手动拼接 JSON 不处理特殊字符
+- **Fix**: 要求 jq 必须存在，移除 fallback
+- **Status**: ✅ fixed
+
+**L2-003**: `scripts/devgate/impact-check.sh:25` - features/ 路径过于宽泛
+- **Issue**: features/ 目录下任何文件改动都会触发检查
+- **Fix**: 从 CORE_PATHS 移除 `features/`，添加注释说明
+- **Status**: ✅ fixed
 
 ---
 
-## 总结
+## Blockers
 
-纯文档任务，内容来自已验证的红队证据和 PR #252 合并验证，符合预期，允许发布。
+**Blockers**: []
+
+L1 和 L2 问题已全部修复，无阻塞项。
+
+---
+
+## 审计详情
+
+### 审计范围
+
+1. **scripts/devgate/impact-check.sh** (80 lines)
+   - Impact Check 逻辑
+   - 前向一致性检查
+   - 核心路径定义
+
+2. **.github/workflows/ci.yml** (partial)
+   - impact-check job
+   - evidence-gate job
+   - ci-passed 依赖更新
+
+3. **scripts/qa-with-gate.sh** (evidence 生成部分)
+   - .quality-evidence.json 生成
+   - Audit Report 字段提取
+   - JSON 格式保证
+
+### 审计方法
+
+- **L1 检查**: 语法检查、功能逻辑、错误处理
+- **L2 检查**: 边界情况、健壮性、特殊字符处理
+- **工具**: bash -n (语法), 代码审查（逻辑）
+
+---
+
+**审计完成时间**: 2026-01-24
+**审计人**: Claude Code (Audit Skill)
