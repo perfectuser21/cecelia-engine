@@ -499,38 +499,29 @@ if [[ "$MODE" == "pr" ]]; then
     DOD_FILE="$PROJECT_ROOT/.dod.md"
     echo -n "  DoD 文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
-    if [[ -f "$DOD_FILE" ]]; then
-        # 检查 DoD 内容有效性
-        # L2 修复: DoD checkbox 正则支持大小写 x/X
-        DOD_LINES=$(clean_number "$(wc -l < "$DOD_FILE" 2>/dev/null)")
-        DOD_HAS_CHECKBOX=$(clean_number "$(grep -cE '^\s*-\s*\[[ xX]\]' "$DOD_FILE" 2>/dev/null || echo 0)")
 
-        if [[ "$DOD_LINES" -lt 3 || "$DOD_HAS_CHECKBOX" -eq 0 ]]; then
-            echo "[FAIL] (内容无效)" >&2
-            echo "    -> DoD 需要至少 3 行，且包含验收清单 (- [ ] 格式)" >&2
+    if [[ ! -f "$DOD_FILE" ]]; then
+        echo "[FAIL] (.dod.md 不存在)" >&2
+        echo "    -> 必须提供 .dod.md 作为验收清单" >&2
+        FAILED=1
+    else
+        # 两阶段友好：不再要求"本次必须修改过"，改为"DoD 是否完成"
+        # 只要还有未勾项，就认为本次验收未完成
+        DOD_UNCHECKED=$(clean_number "$(grep -cE '^[[:space:]]*-[[:space:]]*\[[[:space:]]\]' "$DOD_FILE" 2>/dev/null || echo 0)")
+
+        if [[ "$DOD_UNCHECKED" -gt 0 ]]; then
+            echo "[FAIL] (DoD 未完成：仍有未勾选项 $DOD_UNCHECKED)" >&2
+            echo "    -> 请完成验收并勾选 .dod.md 中所有条目后再提交 PR" >&2
             FAILED=1
         else
-            # 检查 .dod.md 是否在当前分支有修改
-            DOD_MODIFIED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-            DOD_NEW=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c '\.dod\.md' || echo 0)")
-
-            if [[ "$DOD_MODIFIED" -gt 0 || "$DOD_NEW" -gt 0 ]]; then
-                echo "[OK]" >&2
+            # 仅作提示：本次是否修改过（不作为门槛）
+            DOD_TOUCHED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
+            if [[ "$DOD_TOUCHED" -gt 0 ]]; then
+                echo "[OK] (本次已更新 & 全勾)" >&2
             else
-                DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-                if [[ "$DOD_IN_BRANCH" -gt 0 ]]; then
-                    echo "[OK] (本分支已提交)" >&2
-                else
-                    echo "[FAIL] (.dod.md 未更新)" >&2
-                    echo "    -> 当前 .dod.md 是旧任务的，请为本次任务更新 DoD" >&2
-                    FAILED=1
-                fi
+                echo "[OK] (全勾)" >&2
             fi
         fi
-    else
-        echo "[FAIL] (.dod.md 不存在)" >&2
-        echo "    -> 请创建 .dod.md 记录 DoD 清单" >&2
-        FAILED=1
     fi
 
     # ===== Phase 6: Skill 产物检查 =====
@@ -558,16 +549,16 @@ if [[ "$MODE" == "pr" ]]; then
     echo -n "  QA 决策文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
     if [[ -f "$QA_DECISION_FILE" ]]; then
-        # A2 fix: 不仅检查存在，还要验证内容有效
-        QA_HAS_DECISION=$(clean_number "$(grep -cE '^Decision:' "$QA_DECISION_FILE" 2>/dev/null || echo 0)")
+        # 允许：前导空格、Decision 大小写、冒号后空格
+        QA_HAS_DECISION=$(clean_number "$(grep -cEi '^[[:space:]]*Decision[[:space:]]*:' "$QA_DECISION_FILE" 2>/dev/null || echo 0)")
         QA_FILE_SIZE=$(wc -c < "$QA_DECISION_FILE" 2>/dev/null || echo 0)
+
         if [[ "$QA_FILE_SIZE" -lt 10 ]]; then
             echo "[FAIL] (QA-DECISION.md 为空或内容过少)" >&2
-            echo "    -> 请调用 /qa skill 生成有效的 QA 决策" >&2
             FAILED=1
         elif [[ "$QA_HAS_DECISION" -eq 0 ]]; then
             echo "[FAIL] (缺少 Decision 字段)" >&2
-            echo "    -> QA-DECISION.md 必须包含 'Decision: ...' 字段" >&2
+            echo "    -> QA-DECISION.md 必须包含 'Decision: ...' 字段（允许空格/大小写）" >&2
             FAILED=1
         else
             echo "[OK]" >&2
@@ -583,24 +574,27 @@ if [[ "$MODE" == "pr" ]]; then
     echo -n "  审计报告文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
     if [[ -f "$AUDIT_REPORT_FILE" ]]; then
-        # 检查是否包含 Decision: PASS
-        AUDIT_PASS=$(clean_number "$(grep -cE '^Decision:.*PASS' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
-        AUDIT_FAIL=$(clean_number "$(grep -cE '^Decision:.*FAIL' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
+        # 允许：前导空格、Decision 大小写、PASS/FAIL 大小写、冒号后空格
+        AUDIT_PASS=$(clean_number "$(grep -cEi '^[[:space:]]*Decision[[:space:]]*:[[:space:]]*PASS([[:space:]]|$)' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
+        AUDIT_FAIL=$(clean_number "$(grep -cEi '^[[:space:]]*Decision[[:space:]]*:[[:space:]]*FAIL([[:space:]]|$)' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
+        AUDIT_HAS_DECISION=$(clean_number "$(grep -cEi '^[[:space:]]*Decision[[:space:]]*:' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
 
         if [[ "$AUDIT_PASS" -gt 0 ]]; then
             echo "[OK] (PASS)" >&2
         elif [[ "$AUDIT_FAIL" -gt 0 ]]; then
             echo "[FAIL] (Decision: FAIL)" >&2
-            echo "    -> 审计未通过，请修复 L1/L2 问题后重新 /audit" >&2
+            echo "    -> 必须先运行 /audit 并修复到 PASS 才能提交 PR" >&2
+            FAILED=1
+        elif [[ "$AUDIT_HAS_DECISION" -gt 0 ]]; then
+            echo "[FAIL] (Decision 不是 PASS/FAIL)" >&2
+            echo "    -> Decision 必须明确为 PASS 或 FAIL" >&2
             FAILED=1
         else
-            echo "[FAIL] (缺少 Decision 结论)" >&2
-            echo "    -> 审计报告必须包含 'Decision: PASS' 或 'Decision: FAIL'" >&2
+            echo "[FAIL] (缺少 Decision 字段)" >&2
             FAILED=1
         fi
     else
         echo "[FAIL] (docs/AUDIT-REPORT.md 不存在)" >&2
-        echo "    -> 请调用 /audit skill 生成审计报告" >&2
         FAILED=1
     fi
 fi
