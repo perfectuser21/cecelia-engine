@@ -1,0 +1,117 @@
+name: Auto Merge
+
+on:
+  pull_request_review:
+    types: [submitted]
+  check_suite:
+    types: [completed]
+
+# 每个 PR 只允许一个合并工作流运行
+concurrency:
+  group: merge-${{ github.event.pull_request.number || github.event.check_suite.pull_requests[0].number }}
+  cancel-in-progress: false
+
+jobs:
+  auto-merge:
+    # 只在 PR approved 且 CI 通过时才合并
+    if: |
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved') ||
+      (github.event_name == 'check_suite' && github.event.check_suite.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Get PR number
+        id: pr
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            echo "number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            # check_suite 事件需要从 API 获取 PR 号
+            PR_NUMBER=$(echo '${{ toJSON(github.event.check_suite.pull_requests) }}' | jq -r '.[0].number // empty')
+            if [ -z "$PR_NUMBER" ]; then
+              echo "No PR associated with this check suite"
+              exit 0
+            fi
+            echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check PR status
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+          if [ -z "$PR_NUMBER" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 获取 PR 详情
+          PR_DATA=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER)
+
+          # 检查 PR 状态
+          STATE=$(echo "$PR_DATA" | jq -r '.state')
+          MERGEABLE=$(echo "$PR_DATA" | jq -r '.mergeable')
+          MERGED=$(echo "$PR_DATA" | jq -r '.merged')
+
+          echo "PR #$PR_NUMBER status:"
+          echo "  State: $STATE"
+          echo "  Mergeable: $MERGEABLE"
+          echo "  Merged: $MERGED"
+
+          # 如果已经合并或关闭，跳过
+          if [ "$STATE" != "open" ] || [ "$MERGED" = "true" ]; then
+            echo "PR is not open or already merged"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 检查是否有 approved review
+          REVIEWS=$(gh api repos/${{ github.repository }}/pulls/$PR_NUMBER/reviews --jq '[.[] | select(.state == "APPROVED")] | length')
+
+          if [ "$REVIEWS" -eq 0 ]; then
+            echo "No approved reviews yet"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 检查 CI 状态
+          CI_STATUS=$(gh api repos/${{ github.repository }}/commits/$(echo "$PR_DATA" | jq -r '.head.sha')/status --jq '.state')
+
+          echo "  Reviews: $REVIEWS"
+          echo "  CI Status: $CI_STATUS"
+
+          # 必须同时满足：有 approval + CI 通过
+          if [ "$CI_STATUS" = "success" ]; then
+            echo "ready=true" >> $GITHUB_OUTPUT
+          else
+            echo "CI not passed yet"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Merge PR
+        if: steps.check.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER="${{ steps.pr.outputs.number }}"
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  🤖 Auto Merge PR #$PR_NUMBER"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "✅ CI passed"
+          echo "✅ Review approved"
+          echo ""
+          echo "Merging..."
+
+          # 使用 squash merge（保持历史简洁）
+          gh pr merge $PR_NUMBER --squash --auto
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  ✅ PR #$PR_NUMBER merged"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

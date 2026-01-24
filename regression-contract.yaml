@@ -18,8 +18,8 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "9.3.0"
-updated: "2026-01-23"
+version: "10.0.0"
+updated: "2026-01-24"
 
 # ============================================================================
 # Hooks 回归契约
@@ -377,6 +377,103 @@ hooks:
     test: "tests/hooks/detect-priority.test.ts"
 
   # --------------------------------------------------------------------------
+  # H7: Stop Hook Quality Gate (v2.0.0 核心)
+  # --------------------------------------------------------------------------
+  - id: H7-001
+    feature: H7
+    name: "p0 阶段质检门禁"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [stop-hook, quality-gate, p0, v2.0.0]
+    owner: infra
+    steps:
+      given: "p0 阶段（无 PR）"
+      when: "会话尝试结束（StopHook 触发）"
+      then: "检查 L2A (AUDIT-REPORT.md PASS) + L1 (.quality-gate-passed) + PR 创建，全部通过则 exit 0，否则 exit 2"
+    evidence:
+      type: code
+      file: "hooks/stop.sh"
+      contains: "PHASE: p0"
+    test: "tests/hooks/stop-hook.test.ts"
+
+  - id: H7-002
+    feature: H7
+    name: "p1 阶段 CI 状态检查"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [stop-hook, ci-check, p1, v2.0.0]
+    owner: infra
+    steps:
+      given: "p1 阶段（PR + CI fail）"
+      when: "会话尝试结束（StopHook 触发）"
+      then: "检查 CI 状态：FAILURE → exit 2 | PENDING → exit 0 | SUCCESS → exit 0"
+    evidence:
+      type: code
+      file: "hooks/stop.sh"
+      contains: "PHASE: p1"
+    test: "tests/hooks/stop-hook.test.ts"
+
+  - id: H7-003
+    feature: H7
+    name: "阶段检测集成"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [stop-hook, phase-detection, v2.0.0]
+    owner: infra
+    steps:
+      given: "任意阶段"
+      when: "StopHook 触发"
+      then: "调用 scripts/detect-phase.sh 检测当前阶段（p0/p1/p2/pending/unknown），根据阶段执行对应检查"
+    evidence:
+      type: command
+      run: "bash scripts/detect-phase.sh"
+      contains: "PHASE:"
+    test: "tests/hooks/stop-hook.test.ts"
+
+  - id: H7-004
+    feature: H7
+    name: "stop.sh v10.0.0 两阶段语义对齐"
+    scope: hook
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [stop-hook, v10.0.0, contract-rebase]
+    owner: infra
+    steps:
+      given: "v10.0.0 Contract Rebase"
+      when: "hooks/stop.sh 执行"
+      then: "使用 v2.0.0 两阶段语义（p0/p1/p2），不再使用旧的 Loop/Ralph 术语"
+    evidence:
+      type: manual
+      desc: "代码审查确认无旧术语残留"
+
+  # --------------------------------------------------------------------------
+  # H8: Session End Hook
+  # --------------------------------------------------------------------------
+  - id: H8-001
+    feature: H8
+    name: "session-end.sh 会话结束状态追踪"
+    scope: hook
+    priority: P2
+    trigger: [Release]
+    method: manual
+    tags: [session, tracking, v10.0.0]
+    owner: infra
+    steps:
+      given: "Claude Code 会话结束时"
+      when: "hooks/session-end.sh 触发"
+      then: "记录会话结束状态，清理临时文件"
+    evidence:
+      type: manual
+      desc: "检查会话结束后的清理效果"
+
+  # --------------------------------------------------------------------------
   # H3: Phase 3 - Hook Core 多仓库治理
   # --------------------------------------------------------------------------
   - id: H3-001
@@ -525,37 +622,54 @@ workflow:
 
   - id: W1-004
     feature: W1
-    name: "Loop 1 循环（5→6→7）"
+    name: "p0 阶段完整流程"
     scope: workflow
-    priority: P1
-    trigger: [Release]
+    priority: P0
+    trigger: [PR, Release]
     method: manual
-    tags: [dev, loop]
+    tags: [dev, p0, v2.0.0, two-phase]
     owner: workflow
     steps:
-      given: "Step 7 质检失败"
-      when: "发现问题"
-      then: "返回 Step 5 继续修复，而非结束"
+      given: "进入 p0 阶段（本地开发）"
+      when: "执行 PRD → DoD → Code → Audit (PASS) → Test (L1) → PR"
+      then: "创建 PR 后结束，不等待 CI（Stop Hook 检查 phase=p0，直接 exit 0）"
     evidence:
       type: log
-      description: "对话记录显示循环"
+      description: "PR 创建后 Stop Hook 输出 'p0 阶段: PR 已创建 → exit 0'"
 
   - id: W1-005
     feature: W1
-    name: "CI 失败后循环"
+    name: "p1 阶段事件驱动修复"
     scope: workflow
-    priority: P1
-    trigger: [Release]
+    priority: P0
+    trigger: [PR, Release]
     method: manual
-    tags: [dev, loop, ci]
+    tags: [dev, p1, v2.0.0, two-phase, event-driven]
     owner: workflow
     steps:
-      given: "Step 9 CI 红"
-      when: "wait-for-merge.sh 检测到失败"
-      then: "返回 Step 5 重新循环"
+      given: "PR 已创建，CI 检测到失败（phase=p1）"
+      when: "CI fail 事件触发（n8n 轮询 Notion / GitHub webhook / cron）"
+      then: "PHASE_OVERRIDE=p1 启动 → 诊断 → 修复 → push → 退出（不等待 CI，等下次唤醒）"
     evidence:
       type: log
-      contains: "CI 失败"
+      contains: "p1 阶段.*CI.*fail.*修复.*push.*exit 0"
+
+  - id: W1-006
+    feature: W1
+    name: "p2 阶段自动 merge"
+    scope: workflow
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, p2, v2.0.0, two-phase, auto-merge]
+    owner: workflow
+    steps:
+      given: "PR CI 全部通过（phase=p2）"
+      when: "CI pass 事件触发（GitHub Actions auto-merge job）"
+      then: "自动合并 PR → Learning（总结经验）→ Cleanup（清理分支）→ 完成"
+    evidence:
+      type: log
+      contains: "p2 阶段.*CI pass.*merge.*learning.*cleanup"
 
   # --------------------------------------------------------------------------
   # W3: 循环回退
@@ -1129,6 +1243,144 @@ n8n:
       type: file
       path: "n8n/workflows/prd-executor-simple.json"
       exists: true
+
+  - id: N1-004
+    feature: N1
+    name: "p1 阶段无头修复语义"
+    scope: n8n
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [n8n, cecelia, p1, v2.0.0, headless]
+    owner: infra
+    steps:
+      given: "CI fail 触发无头修复（PHASE_OVERRIDE=p1）"
+      when: "运行 cecelia-run 执行修复流程"
+      then: "修复 → push → 检测 CI pending → exit 0（不挂着等）"
+    evidence:
+      type: log
+      contains: "p1.*CI pending.*exit 0"
+    test: "手动模拟 p1 场景"
+
+  # --------------------------------------------------------------------------
+  # P1: Regression Testing Framework - 回归测试框架
+  # --------------------------------------------------------------------------
+  - id: P1-001
+    feature: P1
+    name: "rc-filter.sh 正确过滤 RCI"
+    scope: regression
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [regression, filter, pr, release]
+    owner: qa
+    steps:
+      given: "regression-contract.yaml 存在多个 trigger 的 RCI"
+      when: "运行 bash scripts/rc-filter.sh pr"
+      then: "只输出 trigger 包含 PR 的 RCI id"
+    evidence:
+      type: command
+      run: "bash scripts/rc-filter.sh pr | head -5"
+      contains: "H1-001|H2-001"
+    test: "bash scripts/rc-filter.sh pr && bash scripts/rc-filter.sh release"
+
+  - id: P1-002
+    feature: P1
+    name: "run-regression.sh 执行回归测试"
+    scope: regression
+    priority: P0
+    trigger: [Release]
+    method: auto
+    tags: [regression, execution]
+    owner: qa
+    steps:
+      given: "RCI 定义存在"
+      when: "运行 bash scripts/run-regression.sh"
+      then: "执行对应的自动化测试"
+    evidence:
+      type: command
+      run: "bash scripts/run-regression.sh --dry-run"
+      contains: "Dry Run"
+    test: "bash scripts/run-regression.sh --dry-run"
+
+  - id: P1-003
+    feature: P1
+    name: "regression-contract.yaml 格式解析"
+    scope: regression
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [regression, yaml, validation]
+    owner: qa
+    steps:
+      given: "regression-contract.yaml 存在"
+      when: "使用 yq 解析 YAML 结构"
+      then: "成功解析 rci_definitions 数组"
+    evidence:
+      type: command
+      run: "yq '.rci_definitions | length' regression-contract.yaml"
+      contains: "[0-9]+"
+    test: "yq '.rci_definitions[] | select(.id == \"H1-001\")' regression-contract.yaml"
+
+  # --------------------------------------------------------------------------
+  # P2: DevGate Quality Checks
+  # --------------------------------------------------------------------------
+  - id: P2-001
+    feature: P2
+    name: "qa-with-gate.sh 执行"
+    scope: devgate
+    priority: P2
+    trigger: [Release]
+    method: manual
+    tags: [devgate, qa, v10.0.0]
+    owner: qa
+    steps:
+      given: "执行 QA 检查"
+      when: "运行 scripts/qa-with-gate.sh"
+      then: "执行完整的 QA 检查流程，输出结果"
+    evidence:
+      type: manual
+      desc: "验证 QA 检查流程完整性"
+
+  # --------------------------------------------------------------------------
+  # N1: Infrastructure Scripts
+  # --------------------------------------------------------------------------
+  - id: N1-001
+    feature: N1
+    name: "generate-path-views.sh 视图生成"
+    scope: infrastructure
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [contract, views, v10.0.0, contract-rebase]
+    owner: infra
+    steps:
+      given: "feature-registry.yml 已更新"
+      when: "运行 scripts/generate-path-views.sh"
+      then: "生成 MINIMAL/GOLDEN/OPTIMAL-PATHS.md 派生视图"
+    evidence:
+      type: manual
+      desc: "验证视图生成无 git diff"
+
+  # --------------------------------------------------------------------------
+  # W1-007: Phase Detection
+  # --------------------------------------------------------------------------
+  - id: W1-007
+    feature: W1
+    name: "detect-phase.sh 阶段检测"
+    scope: workflow
+    priority: P2
+    trigger: [Release]
+    method: manual
+    tags: [workflow, phase-detection, v10.0.0]
+    owner: infra
+    steps:
+      given: "在任意工作阶段"
+      when: "运行 scripts/detect-phase.sh"
+      then: "正确识别当前阶段（p0/p1/p2/pending/unknown）"
+    evidence:
+      type: manual
+      desc: "验证阶段检测逻辑"
 
 # ============================================================================
 # Golden Paths (E2E 关键链路)

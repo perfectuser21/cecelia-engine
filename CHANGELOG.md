@@ -7,6 +7,173 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.0.2] - 2026-01-24
+
+### Added
+
+- **docs/production/PROD-READINESS.md**: v10.0.0 生产就绪报告
+  - 三层防御体系实证验收
+  - 验收完成度统计 (单元测试 186/186, RCI 13/13)
+  - 核心机制说明 (GitHub 原生 Auto-merge, 两阶段工作流)
+  - 生产使用指南和回归验证清单
+
+## [10.0.1] - 2026-01-24
+
+### Fixed
+
+- **pr-gate-v2.sh**: 验证逻辑宽松匹配，避免误判
+  - QA-DECISION.md Decision 字段支持 Markdown 标题和空格变化
+  - AUDIT-REPORT.md Decision: PASS 大小写不敏感，增加 TBD 拦截
+  - DoD 检查改为"全勾完成"而非"本次修改"，对齐两阶段工作流
+
+## [10.0.0] - 2026-01-24
+
+### BREAKING CHANGES
+
+- **Contract Rebase**: 文档架构重构，建立单一事实源体系
+  - `features/feature-registry.yml` 成为唯一的 Feature 定义位置
+  - 所有其他文档（FEATURES.md, Minimal/Golden/Optimal Paths）变为派生视图
+  - 旧的手动维护模式废弃，全部改为自动生成
+  - 修改 feature 定义必须先更新 registry，再运行生成脚本
+
+### Added
+
+- **单一事实源**: `features/feature-registry.yml`
+  - Platform Core 5: H1 (Branch Protection), H7 (Stop Hook), H2 (PR Gate), W1 (Two-Phase), N1 (Cecelia)
+  - Product Core 5: P1 (Regression), P2 (DevGate), P3 (QA Reporting), P4 (CI Gates), P5 (Worktree)
+  - 机器可读的 YAML 结构化定义，包含 entrypoints/golden_path/minimal_paths/tests/rcis
+
+- **Contract 文档**:
+  - `docs/contracts/WORKFLOW-CONTRACT.md` - 两阶段工作流契约（p0/p1/p2 状态机）
+  - `docs/contracts/QUALITY-CONTRACT.md` - 三套质量分层体系（质检流程/问题严重性/测试覆盖度）
+
+- **派生视图（自动生成，不可手动编辑）**:
+  - `docs/paths/MINIMAL-PATHS.md` - 最小验收路径（每个 feature 1-3 条）
+  - `docs/paths/GOLDEN-PATHS.md` - 端到端成功路径（GP-001 ~ GP-007）
+  - `docs/paths/OPTIMAL-PATHS.md` - 推荐体验路径
+  - `scripts/generate-path-views.sh` - 从 registry 生成视图的脚本
+
+- **自动化防漂移机制**:
+  - CI `contract-drift-check` job - 检测视图与 registry 不同步，失败时提供修复步骤
+  - 强制开发者更新 registry 后运行生成脚本，确保一致性
+  - 系统特性：可持续自动维护，防止"2 周后又漂移"
+
+- **DRCA v2.0 事件驱动诊断闭环**:
+  - `docs/runbooks/DRCA-v2.md` - 事件驱动诊断闭环
+  - 核心变化：从"连续等待诊断"升级到"事件驱动诊断"
+  - CI fail → 诊断 → 修复 → push → 退出 → 等待下次事件唤醒（不挂着）
+
+- **RCI v2.0.0 语义对齐**:
+  - **W1-004**: "Loop 1 循环" → "p0 阶段完整流程"（P0）
+  - **W1-005**: "CI 失败后循环" → "p1 阶段事件驱动修复"（P0）
+  - **W1-006**: 新增 "p2 阶段自动 merge"（P0）
+  - **N1-004**: 新增 "p1 阶段无头修复语义"（P0）
+  - **H7-001/002/003**: Stop Hook 质量门禁 RCI（P0）
+
+- **验收清单**: `docs/CONTRACT-REBASE-ACCEPTANCE.md` - 94% 完成度追踪
+
+### Changed
+
+- **FEATURES.md**: 从独立文档变为派生视图，指向 registry 为真源
+  - 添加 H7: Stop Hook Quality Gate（v2.0.0 核心）
+  - 更新 W1: "11 步流程" → "Two-Phase Dev Workflow"
+  - 更新 W5: "四模式" → "Phase Detection (p0/p1/p2/pending/unknown)"
+  - 废弃 W3: "循环回退" → 被 p1 事件驱动循环替代
+  - 添加 v2.0.0 重要变更说明，指向单一事实源
+
+- **regression-contract.yaml**: 添加 H7/W1/N1 的 v2.0.0 RCI
+  - H7: 3 条 RCI（p0 质检门禁 / p1 CI 状态 / 阶段检测集成）
+  - W1: 更新 W1-004/005 语义，新增 W1-006（p0/p1/p2 完整覆盖）
+  - N1: 新增 N1-004（p1 无头修复语义）
+
+- **skills/dev/SKILL.md**: 更新流程图，对齐 v2.0.0 两阶段工作流
+
+### Documentation
+
+- `docs/ENFORCEMENT-REALITY.md` - Stop Hook 强制能力的现实
+- 所有 Contract 和 Path 文档包含明确的来源说明和更新规则
+
+## [9.5.0] - 2026-01-24
+
+### Added
+
+- **两阶段工作流**: 用 Stop Hook 强制本地质检（100% 强制能力）
+  - 阶段 1: 本地开发 + 质检（Stop Hook 阻止未质检退出）
+  - 阶段 2: 提交 PR + CI（服务器端验证）
+  - hooks/stop.sh: 质检门控，检查 .quality-gate-passed 存在性和时效性
+  - scripts/qa-with-gate.sh: 运行质检，成功时生成门控文件
+  - npm run qa:gate: 带门控的质检命令
+  - Retry Loop: AI 被迫循环直到质检通过
+  - 时效性检查: 代码改动后质检结果失效，必须重新质检
+
+### Changed
+
+- **pr-gate-v2.sh v4.0**: 快速模式（FAST_MODE=true）
+  - 只检查产物存在性，不运行测试
+  - 测试已在阶段 1 通过 Stop Hook 强制完成
+  - 减少 PR 创建等待时间
+
+### Documentation
+
+- **极简工作流**: PreToolUse + Ralph Loop + Stop Hook
+  - docs/SIMPLIFIED-WORKFLOW.md: 极简流程说明（一句话：PreToolUse 管入口，Ralph Loop 自己跑，Stop Hook 管出口）
+  - docs/COMPLETE-WORKFLOW-WITH-RALPH.md: Ralph Loop 完整流程图和使用示例
+  - docs/TWO-PHASE-WORKFLOW.md: 两阶段工作流详细文档
+  - 集成 Ralph Wiggum 官方插件（已安装）
+  - 说明真正有强制能力的只有 2 个 Hook: PreToolUse:Write 和 Stop
+
+- **8.x/9.0 要求验证**: 所有要求 100% 保留
+  - docs/REQUIREMENT-VERIFICATION.md: 完整的要求对比和验证清单
+  - Gate Contract 6 大红线: 全部保留（DoD、QA 决策、P0 检测、RCI、白名单、分支保护）
+  - 新增 Stop Hook 强化: Audit + 测试 + 时效性检查（0% → 100% 强制能力）
+  - Ralph Loop 100% 自动执行: 写代码 + 写测试 + 质检 + 失败重试
+
+### Integration
+
+- **Ralph Loop 集成**: 与 Stop Hook 协作实现自动质检循环
+  - Ralph Loop: 外层循环，重复注入任务提示语
+  - Stop Hook: 质检门控，跑不完不让结束
+  - completion-promise: Ralph 的结束信号
+  - max-iterations: 防止无限循环（双重保护）
+
+## [9.4.1] - 2026-01-24
+
+### Fixed
+
+- **pr-gate-v2.sh v3.1**: 添加 timeout 保护，防止测试命令卡住
+  - 所有测试命令（typecheck, lint, test, build, pytest, go test）添加 120s 超时
+  - 超时时明确提示 `[TIMEOUT - 120s]` 而不是无限等待
+  - 降级支持：系统没有 timeout 命令时直接运行（旧版 macOS）
+  - 修复用户发现的关键漏洞：测试卡住时 Hook 永远等待的问题
+
+## [9.4.0] - 2026-01-24
+
+### Added
+
+- **GitHub Actions Auto Merge**: 配置自动合并工作流
+  - 在 PR approved + CI 通过后自动合并
+  - 使用 squash merge 保持历史简洁
+  - 适配 A+ (100%) Team Organization 保护要求
+  - 超时 5 分钟避免配额浪费
+
+### Changed
+
+- **升级到 Team Organization**: A+ (100%) Branch Protection
+  - required_approving_review_count: 1（必须人工审核）
+  - restrictions: 空（禁止任何人直接 push）
+  - enforce_admins: true（Admin 也必须遵守）
+  - 转移仓库到 ZenithJoycloud Organization
+
+## [9.3.6] - 2026-01-23
+
+### Fixed
+
+- **测试目录污染**: 修复 pr-gate-phase2.test.ts 污染 PROJECT_ROOT
+  - 所有测试改用独立临时目录（带时间戳避免冲突）
+  - 添加 beforeEach 清理，防止测试之间污染
+  - 添加 afterAll 全局清理，防止残留文件
+  - 修复 Hook 环境测试不稳定问题（186/186 稳定通过）
+
 ## [9.3.5] - 2026-01-23
 
 ### Fixed

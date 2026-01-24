@@ -58,13 +58,13 @@ Full Regression（全量测试）
 
 | ID | Feature | 状态 | 最小验收 | 说明 |
 |----|---------|------|----------|------|
-| H1 | branch-protect | **Committed** | `tests/hooks/branch-protect.test.ts` | 分支保护（main/develop 禁写） |
-| H2 | pr-gate-v2 | **Committed** | `tests/hooks/pr-gate.test.ts` | PR 前质检（L1 + 双模式） |
+| H1 | Branch Protection | **Committed** | `tests/hooks/branch-protect.test.ts` | 分支保护（main/develop 禁写） |
+| H2 | PR Gate (Dual Mode) | **Committed** | `tests/hooks/pr-gate.test.ts` | PR 前质检（PR 模式：L1+L2A / Release 模式：L1+L2A+L2B+L3） |
+| H7 | Stop Hook Quality Gate | **Committed** | `tests/hooks/stop-hook.test.ts` (TODO) | **v2.0.0 核心** - 两阶段质检强制门禁（p0: 质检+PR / p1: CI 状态） |
 | ~~H3~~ | ~~project-detect~~ | **Deprecated** | - | v8.0.2 删除，死代码（检测结果无人使用） |
 | ~~H4~~ | ~~session-init~~ | **Deprecated** | - | v8.0.1 删除，只显示一次无实际用途 |
 | ~~H5~~ | ~~stop-gate~~ | **Deprecated** | - | v8.0.1 删除，功能已合并到 pr-gate-v2 |
 | ~~H6~~ | ~~pr-gate~~ | **Deprecated** | - | 被 pr-gate-v2 替代 |
-| ~~H7~~ | ~~subagent-quality-gate~~ | **Deprecated** | - | v8.0 删除 |
 
 ---
 
@@ -72,10 +72,10 @@ Full Regression（全量测试）
 
 | ID | Feature | 状态 | 最小验收 | 说明 |
 |----|---------|------|----------|------|
-| W1 | /dev 11 步流程 | **Committed** | 手动验证 | 统一开发入口 |
+| W1 | Two-Phase Dev Workflow | **Committed** | 手动验证 | **v2.0.0 核心** - 两阶段工作流（p0: 发 PR / p1: 修 CI / p2: 自动 merge） |
 | ~~W2~~ | ~~步骤状态机~~ | **Deprecated** | - | v8.0.11 简化，不再强制追踪 step |
-| W3 | 循环回退 | **Committed** | 手动验证 | 质检/CI 失败 → 继续修复 |
-| W5 | 模式自动检测 | **Committed** | 手动验证 | /dev 入口四种模式（new/continue/fix/merge） |
+| ~~W3~~ | ~~循环回退~~ | **Deprecated** | - | v2.0.0 废弃，被 p1 事件驱动循环替代 |
+| W5 | Phase Detection | **Committed** | `scripts/detect-phase.sh` | **v2.0.0 更新** - 阶段检测（p0/p1/p2/pending/unknown） |
 | ~~W4~~ | ~~测试任务模式~~ | **Deprecated** | - | v8.0.21 删除，功能不需要 |
 | W6 | Worktree 并行开发 | **Committed** | `skills/dev/scripts/worktree-manage.sh` | 检测活跃分支，支持 worktree 隔离 |
 
@@ -169,5 +169,24 @@ Trigger 规则:
 
 ---
 
+## v2.0.0 重要变更（Contract Rebase）
+
+**单一事实源**：
+- **机器可读真源**: `features/feature-registry.yml`
+- **本文件（FEATURES.md）**: 人类可读视图，从 registry 派生
+
+**重要**：修改 feature 定义时，应先更新 `features/feature-registry.yml`，再同步本文件。
+
+**新增 Contract 文档**：
+- `docs/contracts/WORKFLOW-CONTRACT.md` - 两阶段工作流契约
+- `docs/contracts/QUALITY-CONTRACT.md` - 质量契约（三套分层）
+- `docs/paths/MINIMAL-PATHS.md` - 最小验收路径
+- `docs/paths/GOLDEN-PATHS.md` - 端到端成功路径
+
+详见：`docs/CONTRACT-REBASE-ACCEPTANCE.md`
+
+---
+
 *Feature Registry = 能力地图*
 *Regression Contract = 全量的宪法*
+*v2.0.0: Contract Rebase - 单一事实源*

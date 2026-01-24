@@ -248,7 +248,7 @@ describe("Phase 1: DevGate Scripts", () => {
     it("should return unknown when no priority found", () => {
       const result = execSync(`node "${DETECT_PRIORITY_SCRIPT}"`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
+        cwd: TEST_DIR,  // Use clean test directory to avoid reading .prd.md from project root
         env: {
           ...process.env,
           PR_PRIORITY: "",

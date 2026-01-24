@@ -1,121 +1,192 @@
 ---
 name: dev
-version: 1.1.0
-updated: 2026-01-23
+version: 2.0.0
+updated: 2026-01-24
 description: |
-  统一开发工作流入口。流程编排者，不做判断。
+  统一开发工作流入口（两阶段 + 事件驱动）。
 
   触发条件：
   - 用户说任何开发相关的需求
   - 用户说 /dev
   - Hook 输出 [SKILL_REQUIRED: dev]
+
+  v2.0.0 变更：
+  - 两阶段分离：p0 (发 PR) + p1 (修 CI)
+  - Stop Hook 强制质检（会话结束时强制）
+  - 事件驱动循环（不挂着等待）
 ---
 
-# /dev - 统一开发工作流
+# /dev - 统一开发工作流（v2.0）
 
 ## 核心定位
 
-**流程编排者**：只负责编排流程顺序，不做测试/审计判断。
+**流程编排者 + 两阶段分离**：
+- 阶段检测 → `scripts/detect-phase.sh`
+- 质检强制 → `hooks/stop.sh` (Stop Hook)
+- 放行判断 → `hooks/pr-gate-v2.sh` (PreToolUse:Bash)
 
 判断由专门的规范负责：
 - 测试决策 → 参考 `skills/qa/SKILL.md`
 - 代码审计 → 参考 `skills/audit/SKILL.md`
-- 放行判断 → 由 pr-gate Hook 执行
 
 ---
 
-## 入口：四种模式自动检测
+## 入口：阶段检测（两阶段）
 
-**进入 /dev 后，首先运行模式检测**：
+**进入 /dev 后，首先运行阶段检测**：
 
 ```bash
-# 获取当前状态
-CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-PR_NUMBER=$(gh pr list --head "$CURRENT_BRANCH" --state open --json number -q '.[0].number' 2>/dev/null)
-CI_STATUS=""
-if [[ -n "$PR_NUMBER" ]]; then
-    CI_STATUS=$(gh pr checks "$PR_NUMBER" --json state -q '.[].state' 2>/dev/null | grep -q "FAILURE" && echo "red" || echo "green")
-fi
+# 运行阶段检测
+bash scripts/detect-phase.sh
 
-# 判断模式
-if [[ "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" == "main" ]]; then
-    MODE="new"  # 新任务模式
-elif [[ -z "$PR_NUMBER" ]]; then
-    MODE="continue"  # 继续开发模式
-elif [[ "$CI_STATUS" == "red" ]]; then
-    MODE="fix"  # 修复模式
-else
-    MODE="merge"  # 合并模式
-fi
-
-echo "检测到模式: $MODE"
+# 输出格式
+# PHASE: p0 / p1 / p2 / pending / unknown
+# DESCRIPTION: ...
+# ACTION: ...
 ```
 
-### 模式处理
+### 阶段定义
 
-| 模式 | 条件 | 动作 |
-|------|------|------|
-| `new` | 在 develop/main | PRD → 分支 → DoD(含QA决策) → 代码 → 质检(含Audit) → PR → CI → Merge |
-| `continue` | 在 cp-*/feature/* + 无 PR | 直接进入代码/测试阶段 |
-| `fix` | 有 PR + CI 红 | 直接进入 CI 修复 |
-| `merge` | 有 PR + CI 绿 | Learning → Cleanup → Merge |
+| 阶段 | 条件 | 目标 | 策略 |
+|------|------|------|------|
+| **p0** | 无 PR | 发 PR | 质检循环 → 创建 PR → 结束（不等 CI）|
+| **p1** | PR + CI fail | 修到 CI 绿 | 事件驱动循环：修复 → push → 退出 → 等唤醒 |
+| **p2** | PR + CI pass | 不介入 | 直接退出（GitHub 自动 merge）|
+| **pending** | PR + CI pending | - | 直接退出（稍后再查）|
+| **unknown** | gh API 错误 | - | 直接退出（不误判）|
+
+**详细文档**: `docs/PHASE-DETECTION.md`
 
 ---
 
-## 流程节点
+## 流程节点（两阶段分离）
+
+### p0 阶段：Published（发 PR 之前）
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    /dev 流程编排                         │
+│                 p0: Published 阶段                       │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
+│  阶段检测 (scripts/detect-phase.sh)                     │
+│      → PHASE: p0                                        │
+│      ↓                                                  │
 │  PRD 确定 (01-prd.md)                                   │
 │      ↓                                                  │
 │  环境检测 (02-detect.md)                                │
 │      ↓                                                  │
-│  并行开发检测 (02.5-parallel-detect.md) ← 检测活跃分支  │
-│      │   有活跃分支时提供选项:                           │
-│      │   [C] 继续现有分支                               │
-│      │   [W] 创建 worktree 开始新功能                   │
-│      │   [N] 在主工作区创建新分支                       │
+│  并行开发检测 (02.5-parallel-detect.md)                 │
 │      ↓                                                  │
 │  分支创建 (03-branch.md)                                │
 │      ↓                                                  │
 │  DoD 定稿 (04-dod.md)                                   │
 │      │   含 QA Decision Node                            │
-│      │   规范来源: skills/qa/SKILL.md                   │
 │      │   产物: docs/QA-DECISION.md                      │
 │      ↓                                                  │
 │  写代码 + 写测试 (05-code.md, 06-test.md)               │
 │      ↓                                                  │
-│  质检 (07-quality.md)                                   │
-│      │   含 Audit Node                                  │
-│      │   规范来源: skills/audit/SKILL.md                │
-│      │   产物: docs/AUDIT-REPORT.md                     │
-│      │   Gate: Decision 必须是 PASS                     │
-│      │   然后: npm run qa                               │
+│  质检循环 (07-quality.md) ← Stop Hook 强制              │
+│      │   L2A: Audit (Decision: PASS)                    │
+│      │   L1: npm run qa:gate                            │
+│      │   失败 → 修复 → 重试（质检循环）                 │
 │      ↓                                                  │
 │  提交 PR (08-pr.md)                                     │
-│      │   执行者: hooks/pr-gate-v2.sh                    │
-│      │   检查: 产物存在 + 测试通过                       │
+│      │   Stop Hook: PR 创建后立即结束                   │
+│      │   不检查 CI（p0 不等待 CI）                      │
 │      ↓                                                  │
-│  CI + Merge (09-ci.md)                                  │
-│      ↓                                                  │
-│  Learning + Cleanup (10-learning.md, 11-cleanup.md)     │
-│      │   含 worktree 清理                               │
+│  结束对话 ✅ （不等 CI）                                 │
 │                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### p1 阶段：CI fail 修复（事件驱动循环）
+
+```
+┌─────────────────────────────────────────────────────────┐
+│            p1: CI fail 修复（事件驱动）                  │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│  阶段检测 (scripts/detect-phase.sh)                     │
+│      → PHASE: p1                                        │
+│      ↓                                                  │
+│  CI 修复循环 (09-ci.md) ← Stop Hook 强制                │
+│      │   1. 拉取 CI 失败详情                            │
+│      │      gh pr checks <PR> --json ...                │
+│      │   2. 分析失败原因（typecheck/test/build）        │
+│      │   3. 修复问题                                    │
+│      │   4. push 代码                                   │
+│      │   5. 尝试结束                                    │
+│      │      Stop Hook:                                  │
+│      │        CI fail → exit 2（继续修）                │
+│      │        CI pending → exit 0（退出，等唤醒）       │
+│      │        CI pass → exit 0（结束）                  │
+│      ↓                                                  │
+│  结束对话 ✅ （GitHub 自动 merge）                       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### p2 阶段：CI pass（已完成）
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    p2: CI pass                          │
+├─────────────────────────────────────────────────────────┤
+│  阶段检测 → PHASE: p2                                   │
+│  直接退出 ✅ （GitHub 自动 merge）                       │
+└─────────────────────────────────────────────────────────┘
+```
+
+### pending / unknown：中间态
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                 pending / unknown                       │
+├─────────────────────────────────────────────────────────┤
+│  pending: CI 运行中 → 直接退出（稍后再查）              │
+│  unknown: gh API 错误 → 直接退出（不误判）              │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 核心规则
+## 核心规则（v2.0）
+
+### 1. 两阶段分离 ✅
+
+```
+p0: 发 PR → 结束（不等 CI）
+p1: 修 CI → 结束（不等 merge）
+p2: 直接退出（GitHub 自动 merge）
+```
+
+### 2. Stop Hook 强制质检 ✅
+
+```
+p0: 质检未通过 OR PR 未创建 → exit 2（继续）
+p1: CI fail → exit 2（继续修）
+    CI pending → exit 0（退出，等唤醒）
+    CI pass → exit 0（结束）
+```
+
+### 3. 事件驱动循环 ✅
+
+```
+❌ 不挂着等待: while CI pending; do sleep; done
+✅ push 后退出: push → exit 0 → 等下次唤醒
+```
+
+### 4. 分支策略
 
 1. **只在 cp-* 或 feature/* 分支写代码** - Hook 强制
 2. **develop 是主开发线** - PR 合并回 develop
 3. **main 始终稳定** - 只在里程碑时从 develop 合并
-4. **产物门控** - QA-DECISION.md 和 AUDIT-REPORT.md 必须存在
-5. **Gate 放行** - pr-gate Hook 检查所有产物和测试
+
+### 5. 产物门控
+
+- QA-DECISION.md（Step 4 生成）
+- AUDIT-REPORT.md（Step 7 生成，Decision: PASS）
+- .quality-gate-passed（Step 7 生成，测试通过）
 
 ---
 

@@ -231,6 +231,63 @@ jobs:
           echo "  ✅ DevGate 检查通过"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  # Contract Drift Check - 防止派生视图漂移
+  contract-drift-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          yq --version
+
+      - name: Generate path views from registry
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Contract Drift Check"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "检查 feature-registry.yml 和派生视图是否同步"
+          echo ""
+
+          # 生成派生视图
+          bash scripts/generate-path-views.sh
+
+      - name: Check for drift
+        run: |
+          # 检查是否有未提交的变更
+          if ! git diff --exit-code docs/paths/; then
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "  ❌ Contract Drift 检测到"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "features/feature-registry.yml 已变更，但派生视图未更新！"
+            echo ""
+            echo "修复方法："
+            echo "  1. 在本地运行: bash scripts/generate-path-views.sh"
+            echo "  2. 提交生成的视图文件:"
+            echo "     git add docs/paths/"
+            echo "     git commit -m 'docs: 更新派生视图（自动生成）'"
+            echo ""
+            echo "变更的文件:"
+            git diff --name-only docs/paths/
+            echo ""
+            exit 1
+          fi
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  ✅ Contract Drift Check 通过"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "feature-registry.yml 和派生视图已同步"
+
   # Release 检查（仅 develop → main 的 PR）
   release-check:
     if: github.event_name == 'pull_request' && github.base_ref == 'main'

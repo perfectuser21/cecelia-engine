@@ -1,6 +1,7 @@
 # Step 7: 质检
 
 > Audit Node 做代码审计，然后跑测试
+> **Stop Hook 强制执行：p0 阶段必须完成质检才能创建 PR**
 
 ---
 
@@ -136,9 +137,15 @@ PR 模式检查项 + 以下内容：
 
 ## Gate 检查
 
-PR Gate 会检查：
+**Stop Hook 执行检查（p0 阶段）**：
 1. `docs/AUDIT-REPORT.md` 存在 (L2A)
-2. 包含 `Decision: PASS`（FAIL 则 Gate 失败）
+2. 包含 `Decision: PASS`（FAIL 则 Stop Hook 阻止会话结束，exit 2）
+3. `npm run qa` 通过（L1）
+4. `.quality-gate-passed` 文件存在（测试通过标记）
+
+**PR Gate 检查（提交 PR 时）**：
+- 验证所有产物存在（PRD/DoD/QA-DECISION/AUDIT-REPORT）
+- 支持双模式：PR 模式（L1+L2A）/ Release 模式（L1+L2A+L2B+L3）
 
 Release Check 额外检查：
 1. `.layer2-evidence.md` 存在且格式正确 (L2B)

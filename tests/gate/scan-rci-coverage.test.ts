@@ -66,14 +66,16 @@ describe("scan-rci-coverage.cjs", () => {
     it("应该解析 RCI 条目 ID", () => {
       const contracts = parseRCI();
       expect(contracts.length).toBeGreaterThan(0);
-      expect(contracts[0].id).toMatch(/^C\d-\d{3}$/);
+      // v10.0.0: 新标识系统 H/P/W/N instead of C1/C2
+      expect(contracts[0].id).toMatch(/^[A-Z]\d+-\d{3}$/);
     });
 
     it("应该解析 RCI 条目名称", () => {
       const contracts = parseRCI();
-      const c1001 = contracts.find((c: any) => c.id === "C1-001");
-      expect(c1001).toBeDefined();
-      expect(c1001.name).toContain("/dev");
+      // v10.0.0: H1-001 (Branch Protection) instead of C1-001
+      const h1001 = contracts.find((c: any) => c.id === "H1-001");
+      expect(h1001).toBeDefined();
+      expect(h1001.name).toContain("分支");
     });
   });
 
@@ -81,11 +83,11 @@ describe("scan-rci-coverage.cjs", () => {
     it("被覆盖的入口应该返回 covered=true", () => {
       const entry = { type: "skill", path: "skills/dev/SKILL.md", name: "/dev" };
       const contracts = [
-        { id: "C1-001", name: "/dev 流程可启动", paths: ["skills/dev/SKILL.md"] },
+        { id: "W1-001", name: "/dev 流程启动", paths: ["skills/dev/SKILL.md"] },
       ];
       const result = checkCoverage(entry, contracts);
       expect(result.covered).toBe(true);
-      expect(result.by).toContain("C1-001");
+      expect(result.by).toContain("W1-001");
     });
 
     it("未覆盖的入口应该返回 covered=false", () => {

@@ -1,0 +1,449 @@
+---
+# ============================================================================
+# Feature Registry - ZenithJoy Engine
+# ============================================================================
+# 版本: 2.0.0 (Contract Rebase - 对齐两阶段工作流)
+# 更新: 2026-01-24
+#
+# 核心原则:
+# - Feature Registry 回答"系统有什么能力"（What）
+# - Regression Contract 回答"哪些能力必须永远不坏"（How）
+# - 本文件是"单一事实源"，其他文档只能引用或由脚本生成
+#
+# 分层:
+# - platform_features: 平台基础设施（Hook机制、质检流程、阶段检测）
+# - product_features:  引擎核心能力（工作流、测试、报告、自动化）
+# ============================================================================
+
+version: "2.0.0"
+updated: "2026-01-24"
+
+# ============================================================================
+# Platform Core 5 - 平台基础设施（按"断了就全死"排序）
+# ============================================================================
+platform_features:
+  # --------------------------------------------------------------------------
+  # H1: Branch Protection - 分支保护
+  # --------------------------------------------------------------------------
+  - id: H1
+    name: Branch Protection
+    status: Committed
+    priority: P0
+    description: |
+      防止在 main/develop 分支直接写代码，强制使用 cp-*/feature/* 工作分支
+
+    entrypoints:
+      - type: hook
+        event: PreToolUse:Write, PreToolUse:Edit
+        file: hooks/branch-protect.sh
+
+    golden_path: |
+      检测当前分支 → main/develop → exit 2 (阻止) | cp-*/feature/* → exit 0 (放行)
+
+    minimal_paths:
+      - "在 main 分支尝试写代码 → 被阻止"
+      - "在 cp-* 分支写代码 → 放行"
+
+    tests:
+      - type: auto
+        file: tests/hooks/branch-protect.test.ts
+        coverage: H1-001, H1-002, H1-003, H1-010, H1-011
+
+    rcis:
+      - H1-001  # 拦截 main/develop 写入
+      - H1-002  # cp-* 分支允许写入
+      - H1-003  # feature/* 分支允许写入
+      - H1-010  # JSON 注入防护
+      - H1-011  # 路径遍历防护
+
+  # --------------------------------------------------------------------------
+  # H7: Stop Hook Quality Gate - 质检强制门禁（v2.0.0 核心）
+  # --------------------------------------------------------------------------
+  - id: H7
+    name: Stop Hook Quality Gate
+    status: Committed
+    priority: P0
+    description: |
+      两阶段工作流的质检强制门禁（100% 能力）
+      - p0: 检查本地质检 + PR 创建 → 通过则 exit 0（不检查 CI）
+      - p1: 检查 CI 状态 → fail: exit 2 | pending: exit 0 | pass: exit 0
+      - p2/pending/unknown: 直接 exit 0
+
+    entrypoints:
+      - type: hook
+        event: StopHook
+        file: hooks/stop.sh
+
+    golden_path: |
+      StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1: 检查CI | p2: exit 0
+
+    minimal_paths:
+      - "p0 阶段: 质检未过 → exit 2（继续修）| 质检通过+PR创建 → exit 0"
+      - "p1 阶段: CI fail → exit 2 | CI pending → exit 0 | CI pass → exit 0"
+      - "p2 阶段: 直接 exit 0"
+
+    tests:
+      - type: auto
+        file: tests/hooks/stop-hook.test.ts
+        status: TODO
+        coverage: H7-001, H7-002, H7-003
+
+    rcis:
+      - H7-001  # p0 质检门禁
+      - H7-002  # p1 CI 状态检查
+      - H7-003  # 阶段检测集成
+
+    dependencies:
+      - scripts/detect-phase.sh  # 阶段检测
+      - docs/AUDIT-REPORT.md     # L2A 审计报告
+      - .quality-gate-passed     # L1 测试通过标记
+
+  # --------------------------------------------------------------------------
+  # H2: PR Gate (Dual Mode) - 提交门禁
+  # --------------------------------------------------------------------------
+  - id: H2
+    name: PR Gate (Dual Mode)
+    status: Committed
+    priority: P0
+    description: |
+      PR 创建前的质检门禁，支持双模式：
+      - PR 模式: L1 (测试) + L2A (审计)
+      - Release 模式: L1 + L2A + L2B (证据) + L3 (验收)
+
+    entrypoints:
+      - type: hook
+        event: PreToolUse:Bash (gh pr create)
+        file: hooks/pr-gate-v2.sh
+
+    golden_path: |
+      检测命令 (gh pr create) → 判断模式 (PR/Release) → 检查产物 → 通过/阻止
+
+    minimal_paths:
+      - "PR 模式: 检查 PRD + DoD + QA-DECISION + AUDIT-REPORT (PASS) + L1"
+      - "Release 模式: 额外检查 .layer2-evidence.md + DoD 全勾"
+
+    tests:
+      - type: auto
+        file: tests/hooks/pr-gate.test.ts
+        coverage: H2-001, H2-002, H2-003, H2-004
+
+    rcis:
+      - H2-001  # 拦截 gh pr create
+      - H2-002  # L1 失败阻止
+      - H2-003  # 双模式检测
+      - H2-004  # 产物检查
+
+  # --------------------------------------------------------------------------
+  # W1: Two-Phase Dev Workflow - 两阶段工作流（v2.0.0）
+  # --------------------------------------------------------------------------
+  - id: W1
+    name: Two-Phase Dev Workflow
+    status: Committed
+    priority: P0
+    description: |
+      v2.0.0 两阶段开发工作流：
+      - p0 (Published): 本地质检 → 创建 PR → 结束（不等 CI）
+      - p1 (CI fail): 事件驱动修复 → push → 退出 → 等唤醒
+      - p2 (CI pass): 自动合并
+      - pending/unknown: 退出（不误判）
+
+    entrypoints:
+      - type: cli
+        command: /dev
+        file: skills/dev/SKILL.md
+      - type: script
+        file: scripts/detect-phase.sh
+
+    golden_path: |
+      /dev → PRD → Branch → DoD (QA Node) → Code → Quality (Audit Node) →
+      PR (p0 结束) → CI fail (p1 唤醒) → Fix → Push → CI pass (p2 自动 merge)
+
+    minimal_paths:
+      - "p0: PRD → DoD → Code → Audit (PASS) → Test (L1) → PR → 结束"
+      - "p1: CI fail → 修复 → push → 退出（不等 CI）"
+      - "p2: CI pass → 自动 merge → Learning → Cleanup"
+
+    optimal_path: |
+      完整的 Golden Path（11 步）：
+      1. PRD 确定
+      2. 环境检测
+      3. 分支创建 (cp-MMDDTTTT-xxx)
+      4. DoD 定稿 (含 QA Decision Node)
+      5. 写代码
+      6. 写测试
+      7. 质检循环 (Audit + L1, Stop Hook 强制)
+      8. 提交 PR (p0 结束)
+      9. CI 修复 (p1 事件驱动)
+      10. Learning
+      11. Cleanup
+
+    tests:
+      - type: manual
+        description: Golden Path 手动验证
+        coverage: W1-001, W1-002, W1-003, W1-004, W1-005
+
+    rcis:
+      - W1-001  # /dev 入口可调用
+      - W1-002  # PRD/DoD 生成
+      - W1-003  # 阶段检测正确
+      - W1-004  # p0 阶段完整流程
+      - W1-005  # p1 阶段事件驱动修复
+      - W1-006  # p2 阶段自动 merge
+
+  # --------------------------------------------------------------------------
+  # N1: Cecelia Headless Mode - 无头自动化
+  # --------------------------------------------------------------------------
+  - id: N1
+    name: Cecelia Headless Mode
+    status: Committed
+    priority: P1
+    description: |
+      无头 Claude Code，供 n8n 调度执行开发任务
+      - 触发: Notion 任务 / GitHub CI fail 通知
+      - 执行: cecelia-run → claude -p "/dev ..." → 输出 JSON
+      - 状态同步: Core API + Notion 镜像
+
+    entrypoints:
+      - type: cli
+        command: cecelia-run
+        file: /home/xx/bin/cecelia-run
+      - type: cli
+        command: cecelia-api
+        file: /home/xx/bin/cecelia-api
+      - type: n8n
+        workflow: Task Dispatcher v2.0
+
+    golden_path: |
+      n8n 触发 → cecelia-run → PHASE_OVERRIDE (可选) → claude -p "/dev ..." →
+      执行流程 → 输出 JSON → cecelia-api 更新 Core + 同步 Notion
+
+    minimal_paths:
+      - "Notion 任务 → n8n 轮询 (5分钟) → cecelia-run → 执行 → 更新状态"
+      - "CI fail → PHASE_OVERRIDE=p1 → cecelia-run → 修复 → push → 退出"
+
+    tests:
+      - type: manual
+        description: Notion 任务执行验证
+        coverage: N1-001, N1-002
+
+    rcis:
+      - N1-001  # cecelia-run 基本执行
+      - N1-002  # 状态同步 (Core + Notion)
+      - N1-003  # N8N Workflow 定义存在
+      - N1-004  # p1 阶段无头修复语义
+
+# ============================================================================
+# Product Core 5 - 引擎核心能力
+# ============================================================================
+product_features:
+  # --------------------------------------------------------------------------
+  # P1: Regression Testing Framework - 回归测试框架
+  # --------------------------------------------------------------------------
+  - id: P1
+    name: Regression Testing Framework
+    status: Committed
+    priority: P0
+    description: |
+      基于 regression-contract.yaml 的回归测试框架
+      - 定义: 回归契约 (RCI) 定义必须永远不坏的能力
+      - 过滤: rc-filter.sh 按 trigger (PR/Release/Nightly) 过滤
+      - 执行: run-regression.sh 执行对应测试集合
+
+    entrypoints:
+      - type: script
+        file: scripts/run-regression.sh
+      - type: script
+        file: scripts/rc-filter.sh
+      - type: config
+        file: regression-contract.yaml
+
+    golden_path: |
+      定义 RCI (regression-contract.yaml) → rc-filter.sh 过滤 →
+      run-regression.sh 执行 → 验证契约不被破坏
+
+    minimal_paths:
+      - "PR: rc-filter.sh pr → 跑 trigger=[PR] 的 RCI"
+      - "Release: rc-filter.sh release → 跑 trigger=[Release] 的 RCI"
+      - "Nightly: run-regression.sh nightly → 跑全部 RCI"
+
+    tests:
+      - type: auto
+        file: tests/regression/*.test.ts
+        description: RCI 自动化测试集合
+
+    rcis:
+      - P1-001  # rc-filter.sh 正确过滤
+      - P1-002  # run-regression.sh 执行
+      - P1-003  # regression-contract.yaml 解析
+
+  # --------------------------------------------------------------------------
+  # P2: DevGate - 开发门禁检查
+  # --------------------------------------------------------------------------
+  - id: P2
+    name: DevGate
+    status: Committed
+    priority: P0
+    description: |
+      CI 中的开发门禁检查（三合一）：
+      1. DoD 映射检查: 每个 DoD 验收项必须有对应测试
+      2. P0/P1 RCI 更新检查: P0/P1 修复必须更新 regression-contract.yaml
+      3. RCI 覆盖率检查: 新增业务入口必须有对应 RCI 条目
+
+    entrypoints:
+      - type: ci
+        job: test → DevGate checks
+        scripts:
+          - scripts/devgate/check-dod-mapping.cjs
+          - scripts/devgate/require-rci-update-if-p0p1.sh
+          - scripts/devgate/scan-rci-coverage.cjs
+
+    golden_path: |
+      CI test job → DevGate checks → 三个检查全部通过 → CI 继续
+
+    minimal_paths:
+      - "DoD 映射: .dod.md 每项 → 对应测试文件存在"
+      - "P0/P1 检查: PR title 含 P0/P1 → regression-contract.yaml 必须更新"
+      - "RCI 覆盖率: 新增入口 → 必须有对应 RCI"
+
+    tests:
+      - type: ci
+        description: GitHub Actions CI 中执行
+        coverage: C6-001, C7-001, C7-002, C7-003
+
+    rcis:
+      - C6-001  # DoD 映射检查
+      - C7-001  # P0/P1 检测
+      - C7-002  # RCI 更新检查
+      - C7-003  # RCI 覆盖率检查
+
+  # --------------------------------------------------------------------------
+  # P3: Quality Reporting - 质量报告导出
+  # --------------------------------------------------------------------------
+  - id: P3
+    name: Quality Reporting
+    status: Committed
+    priority: P1
+    description: |
+      导出质量审计和开发会话报告（JSON + TXT）：
+      - E1: QA Reporting - 生成 QA 审计 JSON
+      - E2: Dev Session Reporting - 生成开发任务报告
+
+    entrypoints:
+      - type: script
+        file: scripts/qa-report.sh
+        output: qa-report.json
+      - type: script
+        file: skills/dev/scripts/generate-report.sh
+        output: dev-session-report.json + .txt
+
+    golden_path: |
+      执行脚本 → 扫描 repo 结构 → 生成 JSON/TXT 报告 → 供 Dashboard/Cecelia 使用
+
+    minimal_paths:
+      - "QA Report: bash scripts/qa-report.sh → qa-report.json"
+      - "Dev Session: bash skills/dev/scripts/generate-report.sh → dev-session-report.*"
+
+    tests:
+      - type: auto
+        coverage: E1-001, E1-002, E1-003, E2-001, E2-002, E2-003
+
+    rcis:
+      - E1-001  # QA Report 生成
+      - E1-002  # 格式验证
+      - E1-003  # 数据完整性
+      - E2-001  # Dev Session Report 生成
+      - E2-002  # 格式验证
+      - E2-003  # 数据完整性
+
+  # --------------------------------------------------------------------------
+  # P4: CI Quality Gates - CI 质量门禁
+  # --------------------------------------------------------------------------
+  - id: P4
+    name: CI Quality Gates
+    status: Committed
+    priority: P0
+    description: |
+      GitHub Actions CI 中的质量门禁：
+      - version-check: 检查 package.json 版本号更新
+      - test job: L1 自动化测试 + DevGate 检查
+      - release-check: Release 模式额外检查 (L3 回归 + L4 Evidence)
+
+    entrypoints:
+      - type: ci
+        file: .github/workflows/ci.yml
+        jobs:
+          - version-check
+          - test
+          - release-check
+          - ci-passed
+          - notify-failure
+
+    golden_path: |
+      PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → ci-passed
+
+    minimal_paths:
+      - "version-check: PR 时检查版本号更新"
+      - "test: 跑 L1 (typecheck + test + build) + DevGate"
+      - "release-check: PR to main 时跑 L3 回归 + L4 Evidence"
+
+    tests:
+      - type: ci
+        description: GitHub Actions 自动执行
+        coverage: C1-001, C1-002, C1-003, C2-001, C3-001, C5-001
+
+    rcis:
+      - C1-001  # version-check 执行
+      - C1-002  # version-check 正确性
+      - C1-003  # version-check 错误检测
+      - C2-001  # test job L1 执行
+      - C3-001  # shell scripts 语法检查
+      - C5-001  # release-check 执行
+
+  # --------------------------------------------------------------------------
+  # P5: Worktree 并行开发
+  # --------------------------------------------------------------------------
+  - id: P5
+    name: Worktree Parallel Development
+    status: Committed
+    priority: P2
+    description: |
+      支持多分支并行开发：
+      - 检测活跃分支 (cp-*, feature/*)
+      - 提供 worktree 隔离选项
+      - 自动清理 worktree
+
+    entrypoints:
+      - type: script
+        file: skills/dev/scripts/worktree-manage.sh
+      - type: workflow
+        step: skills/dev/steps/02.5-parallel-detect.md
+
+    golden_path: |
+      /dev 启动 → 检测活跃分支 → 提示用户选择 (继续/worktree/新分支) →
+      创建 worktree (可选) → 开发 → cleanup 清理 worktree
+
+    minimal_paths:
+      - "检测活跃分支: 列出 cp-*, feature/* 分支"
+      - "创建 worktree: 在独立目录开发"
+      - "清理 worktree: cleanup.sh 自动移除"
+
+    tests:
+      - type: manual
+        description: 手动验证 worktree 流程
+        coverage: W6-001, W6-002, W6-003
+
+    rcis:
+      - W6-001  # 活跃分支检测
+      - W6-002  # worktree 创建
+      - W6-003  # worktree 清理
+
+# ============================================================================
+# 视图生成规则
+# ============================================================================
+#
+# MINIMAL-PATHS.md  = 每个 feature 的 minimal_paths 聚合
+# OPTIMAL-PATHS.md  = 每个 feature 的 optimal_path 聚合
+# GOLDEN-PATHS.md   = 每个 feature 的 golden_path 聚合
+#
+# 生成脚本: scripts/generate-path-views.sh (TODO)
+# ============================================================================

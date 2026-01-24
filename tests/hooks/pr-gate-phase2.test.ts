@@ -28,7 +28,8 @@ const LIST_SCRIPT = join(SCRIPTS_DIR, "list-snapshots.sh");
 const VIEW_SCRIPT = join(SCRIPTS_DIR, "view-snapshot.sh");
 
 // 临时测试目录 - use os.tmpdir() to avoid polluting the project
-const TEST_DIR = join(tmpdir(), "zenithjoy-test-phase2");
+// 使用时间戳避免并发测试冲突
+const TEST_DIR = join(tmpdir(), `zenithjoy-test-phase2-${Date.now()}`);
 const TEST_HISTORY_DIR = join(TEST_DIR, ".history");
 
 describe("Phase 2: PRD/DoD Snapshot", () => {
@@ -53,10 +54,33 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
     }
   });
 
+  // 每个测试前清理 .history 目录，避免测试之间污染
+  beforeEach(() => {
+    if (existsSync(TEST_HISTORY_DIR)) {
+      const files = readdirSync(TEST_HISTORY_DIR);
+      files.forEach((f) => rmSync(join(TEST_HISTORY_DIR, f), { force: true }));
+    }
+  });
+
   afterAll(() => {
     // 清理临时目录
     if (existsSync(TEST_DIR)) {
       rmSync(TEST_DIR, { recursive: true, force: true });
+    }
+
+    // 清理可能残留在 PROJECT_ROOT 的测试文件
+    const projectHistoryDir = join(PROJECT_ROOT, ".history");
+    if (existsSync(projectHistoryDir)) {
+      const files = readdirSync(projectHistoryDir);
+      files
+        .filter((f) => f.startsWith("PR-998-") || f.startsWith("PR-999-"))
+        .forEach((f) => {
+          try {
+            rmSync(join(projectHistoryDir, f), { force: true });
+          } catch (e) {
+            // Ignore cleanup errors
+          }
+        });
     }
   });
 
@@ -99,11 +123,11 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
 
       execSync(`bash "${SNAPSHOT_SCRIPT}" ${prNumber}`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
+        cwd: TEST_DIR,
       });
 
-      // Check files were created in project's .history dir
-      const historyDir = join(PROJECT_ROOT, ".history");
+      // Check files were created in test .history dir
+      const historyDir = TEST_HISTORY_DIR;
       const files = readdirSync(historyDir);
 
       const prdSnapshot = files.find(
@@ -116,13 +140,7 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
       expect(prdSnapshot).toBeDefined();
       expect(dodSnapshot).toBeDefined();
 
-      // Clean up test snapshots from project directory
-      if (prdSnapshot) {
-        rmSync(join(historyDir, prdSnapshot), { force: true });
-      }
-      if (dodSnapshot) {
-        rmSync(join(historyDir, dodSnapshot), { force: true });
-      }
+      // Clean up happens in afterAll
     });
 
     it("should validate PR number is numeric", () => {
@@ -131,7 +149,7 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
       try {
         execSync(`bash "${SNAPSHOT_SCRIPT}" "abc"`, {
           encoding: "utf-8",
-          cwd: PROJECT_ROOT,
+          cwd: TEST_DIR,
         });
       } catch (e: unknown) {
         didThrow = true;
@@ -163,7 +181,7 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
     it("should output JSON with --json flag", () => {
       const result = execSync(`bash "${LIST_SCRIPT}" --json`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
+        cwd: TEST_DIR,
       });
 
       // 应该是有效的 JSON
@@ -203,7 +221,7 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
       try {
         execSync(`bash "${VIEW_SCRIPT}"`, {
           encoding: "utf-8",
-          cwd: PROJECT_ROOT,
+          cwd: TEST_DIR,
         });
       } catch (e: unknown) {
         didThrow = true;
@@ -221,7 +239,7 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
       try {
         execSync(`bash "${VIEW_SCRIPT}" 99999`, {
           encoding: "utf-8",
-          cwd: PROJECT_ROOT,
+          cwd: TEST_DIR,
         });
       } catch (e: unknown) {
         didThrow = true;
@@ -237,23 +255,18 @@ describe("Phase 2: PRD/DoD Snapshot", () => {
       // 先创建一个测试快照
       execSync(`bash "${SNAPSHOT_SCRIPT}" 998`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
+        cwd: TEST_DIR,
       });
 
       // 测试带 # 的 PR 号
       const result = execSync(`bash "${VIEW_SCRIPT}" "#998"`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
+        cwd: TEST_DIR,
       });
 
       expect(result).toContain("PR #998");
 
-      // 清理
-      const historyDir = join(PROJECT_ROOT, ".history");
-      const files = readdirSync(historyDir);
-      files
-        .filter((f) => f.startsWith("PR-998-"))
-        .forEach((f) => rmSync(join(historyDir, f), { force: true }));
+      // Clean up happens in afterAll
     });
   });
 });

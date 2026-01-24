@@ -1,42 +1,18 @@
-# QA Decision
+# QA Decision: v10.0.2 Release
 
-Decision: MUST_ADD_RCI
-Priority: P0
-RepoType: Engine
+## Decision: L0 - 无需测试
 
-Tests:
-  - dod_item: "添加 CRITICAL → P0 映射"
-    method: auto
-    location: tests/hooks/detect-priority.test.ts
-  - dod_item: "添加 HIGH → P1 映射"
-    method: auto
-    location: tests/hooks/detect-priority.test.ts
-  - dod_item: "添加 security 关键字 → P0 映射"
-    method: auto
-    location: tests/hooks/detect-priority.test.ts
-  - dod_item: "单元测试覆盖新增映射"
-    method: auto
-    location: tests/hooks/detect-priority.test.ts
-  - dod_item: "补充 v8.24.0 安全修复 RCI"
-    method: manual
-    location: manual:verify-rci
-  - dod_item: "更新 QA/Audit SKILL.md 文档"
-    method: manual
-    location: manual:code-review
-  - dod_item: "npm run qa 通过"
-    method: auto
-    location: contract:C2-001
+## 测试策略
+Release PR，代码已在 develop 分支验证完成。
 
-RCI:
-  new:
-    - H1-010
-    - H1-011
-    - H2-011
-    - H2-012
-    - H2-013
-    - H4-003
-    - C1-002
-    - C1-003
-  update: []
+## 理由
+- 所有功能已在 PR #252, #253, #254, #256 中验证
+- 单元测试 186/186 通过
+- RCI 覆盖率 13/13 (100%)
+- 三层防御体系实证验收通过
+- 仅合并操作，无新代码
 
-Reason: P0 级 Bug 修复 - detect-priority.cjs 未识别 CRITICAL/HIGH，导致 v8.24.0 安全修复绕过 RCI 检查。必须添加 8 个新 RCI 条目。
+## 验收方式
+- CI 通过（确认合并无冲突）
+- 版本号正确 (10.0.2)
+- PROD-READINESS.md 可访问

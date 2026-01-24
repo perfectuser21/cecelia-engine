@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 # ============================================================================
-# PreToolUse Hook: PR Gate v3.0
+# PreToolUse Hook: PR Gate v4.0
 # ============================================================================
 # PR -> develop: L1 全自动绿 + DoD 映射检查 + P0/P1 RCI 检查 + Skill 产物
 # develop -> main: L1 绿 + L2B/L3 证据链齐全
 # ============================================================================
+# v3.1: 添加 timeout 保护，防止测试命令卡住
+# v4.0: 快速模式 - 只检查产物，不运行测试（交给 CI + SessionEnd Hook）
+# ============================================================================
 
 set -euo pipefail
+
+# ===== 配置 =====
+# 快速模式：true=只检查产物，false=运行完整测试
+FAST_MODE=true
+
+# 测试命令超时时间（秒）- 仅在 FAST_MODE=false 时使用
+COMMAND_TIMEOUT=120
 
 # ===== 工具函数 =====
 
@@ -15,6 +25,24 @@ clean_number() {
     local val="${1:-0}"
     val="${val//[^0-9]/}"
     echo "${val:-0}"
+}
+
+# 带 timeout 的命令执行
+# 用法: run_with_timeout <timeout_seconds> <command...>
+# 返回值: 0=成功, 1=失败, 124=超时
+run_with_timeout() {
+    local timeout_sec="$1"
+    shift
+
+    # 检查 timeout 命令是否可用
+    if command -v timeout &>/dev/null; then
+        timeout "$timeout_sec" "$@"
+        return $?
+    else
+        # 降级：没有 timeout 命令，直接运行（有风险）
+        "$@"
+        return $?
+    fi
 }
 
 # ===== jq 检查 =====
@@ -52,8 +80,31 @@ fi
 # 提取 command
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
 
-# 只拦截 gh pr create
-if [[ "$COMMAND" != *"gh pr create"* ]]; then
+# 拦截所有可能创建 PR 的命令
+# 1. gh pr create
+# 2. gh api -X POST .../pulls
+# 3. curl -X POST .../pulls
+# 4. 其他 API 调用方式
+
+IS_PR_CREATION=false
+
+# 检查 gh pr create
+if [[ "$COMMAND" == *"gh pr create"* ]]; then
+    IS_PR_CREATION=true
+fi
+
+# 检查 gh api 创建 PR（repos/.../pulls 或 repos/.../git/refs）
+if [[ "$COMMAND" == *"gh api"* ]] && [[ "$COMMAND" == *"/pulls"* ]]; then
+    IS_PR_CREATION=true
+fi
+
+# 检查 curl 创建 PR
+if [[ "$COMMAND" == *"curl"* ]] && [[ "$COMMAND" == *"api.github.com"* ]] && [[ "$COMMAND" == *"/pulls"* ]]; then
+    IS_PR_CREATION=true
+fi
+
+# 如果不是创建 PR 的命令，放行
+if [[ "$IS_PR_CREATION" == "false" ]]; then
     exit 0
 fi
 
@@ -179,12 +230,12 @@ CHECK_COUNT=$((CHECK_COUNT + 1))
 if [[ "${CURRENT_BRANCH:-}" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
    [[ "${CURRENT_BRANCH:-}" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]*$ ]]; then
     echo "[OK] ($CURRENT_BRANCH)" >&2
-elif [[ "$MODE" == "release" && "$CURRENT_BRANCH" == "develop" ]]; then
+elif [[ "$MODE" == "release" && ( "$CURRENT_BRANCH" == "develop" || "$CURRENT_BRANCH" =~ ^release- ) ]]; then
     echo "[OK] ($CURRENT_BRANCH -> main)" >&2
 else
     echo "[FAIL] ($CURRENT_BRANCH)" >&2
     echo "    -> PR 模式：必须在 cp-* 或 feature/* 分支" >&2
-    echo "    -> Release 模式：允许 develop 分支" >&2
+    echo "    -> Release 模式：允许 develop 或 release-* 分支" >&2
     FAILED=1
 fi
 
@@ -193,6 +244,16 @@ fi
 # ============================================================================
 echo "" >&2
 echo "  [L1: 自动化测试]" >&2
+
+# v4.0: 快速模式检查
+if [ "$FAST_MODE" = "true" ]; then
+    echo "  ⚡ 快速模式：跳过本地测试，交给 CI" >&2
+    echo "    (会话结束时 SessionEnd Hook 会检查 CI 状态)" >&2
+    echo "" >&2
+else
+    echo "  🐢 完整模式：本地运行所有测试" >&2
+    echo "" >&2
+fi
 
 # L3 修复: 改用位标志检测项目类型
 PROJECT_TYPE=0  # 位标志: 1=node, 2=python, 4=go
@@ -207,55 +268,80 @@ trap 'rm -f "$TEST_OUTPUT_FILE"' EXIT
 # Node.js 项目 (PROJECT_TYPE & 1)
 if (( PROJECT_TYPE & 1 )); then
     # Typecheck
-    if grep -q '"typecheck"' package.json 2>/dev/null; then
+    if grep -q '"typecheck"' package.json 2>/dev/null && [ "$FAST_MODE" != "true" ]; then
         echo -n "  typecheck... " >&2
         CHECK_COUNT=$((CHECK_COUNT + 1))
         # L2 修复: 保存测试输出到文件
-        if npm run typecheck >"$TEST_OUTPUT_FILE" 2>&1; then
+        # v3.1: 添加 timeout 保护
+        if run_with_timeout "$COMMAND_TIMEOUT" npm run typecheck >"$TEST_OUTPUT_FILE" 2>&1; then
             echo "[OK]" >&2
         else
-            echo "[FAIL]" >&2
-            # 显示最后几行错误
-            tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+                echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+                echo "    测试命令超时，可能卡住了" >&2
+            else
+                echo "[FAIL]" >&2
+                # 显示最后几行错误
+                tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            fi
             FAILED=1
         fi
     fi
 
     # Lint
-    if grep -q '"lint"' package.json 2>/dev/null; then
+    if grep -q '"lint"' package.json 2>/dev/null && [ "$FAST_MODE" != "true" ]; then
         echo -n "  lint... " >&2
         CHECK_COUNT=$((CHECK_COUNT + 1))
-        if npm run lint >"$TEST_OUTPUT_FILE" 2>&1; then
+        if run_with_timeout "$COMMAND_TIMEOUT" npm run lint >"$TEST_OUTPUT_FILE" 2>&1; then
             echo "[OK]" >&2
         else
-            echo "[FAIL]" >&2
-            tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+                echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+                echo "    测试命令超时，可能卡住了" >&2
+            else
+                echo "[FAIL]" >&2
+                tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            fi
             FAILED=1
         fi
     fi
 
     # Test
-    if grep -q '"test"' package.json 2>/dev/null; then
+    if grep -q '"test"' package.json 2>/dev/null && [ "$FAST_MODE" != "true" ]; then
         echo -n "  test... " >&2
         CHECK_COUNT=$((CHECK_COUNT + 1))
-        if npm test >"$TEST_OUTPUT_FILE" 2>&1; then
+        if run_with_timeout "$COMMAND_TIMEOUT" npm test >"$TEST_OUTPUT_FILE" 2>&1; then
             echo "[OK]" >&2
         else
-            echo "[FAIL]" >&2
-            tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+                echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+                echo "    测试命令超时，可能卡住了" >&2
+            else
+                echo "[FAIL]" >&2
+                tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            fi
             FAILED=1
         fi
     fi
 
     # Build
-    if grep -q '"build"' package.json 2>/dev/null; then
+    if grep -q '"build"' package.json 2>/dev/null && [ "$FAST_MODE" != "true" ]; then
         echo -n "  build... " >&2
         CHECK_COUNT=$((CHECK_COUNT + 1))
-        if npm run build >"$TEST_OUTPUT_FILE" 2>&1; then
+        if run_with_timeout "$COMMAND_TIMEOUT" npm run build >"$TEST_OUTPUT_FILE" 2>&1; then
             echo "[OK]" >&2
         else
-            echo "[FAIL]" >&2
-            tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+                echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+                echo "    测试命令超时，可能卡住了" >&2
+            else
+                echo "[FAIL]" >&2
+                tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            fi
             FAILED=1
         fi
     fi
@@ -267,11 +353,18 @@ if (( PROJECT_TYPE & 2 )); then
         echo -n "  pytest... " >&2
         CHECK_COUNT=$((CHECK_COUNT + 1))
         # L2 修复: 保存 pytest 输出
-        if pytest -q >"$TEST_OUTPUT_FILE" 2>&1; then
+        # v3.1: 添加 timeout 保护
+        if run_with_timeout "$COMMAND_TIMEOUT" pytest -q >"$TEST_OUTPUT_FILE" 2>&1; then
             echo "[OK]" >&2
         else
-            echo "[FAIL]" >&2
-            tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+                echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+                echo "    测试命令超时，可能卡住了" >&2
+            else
+                echo "[FAIL]" >&2
+                tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+            fi
             FAILED=1
         fi
     fi
@@ -282,11 +375,18 @@ if (( PROJECT_TYPE & 4 )); then
     echo -n "  go test... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
     # L2 修复: 保存 go test 输出
-    if go test ./... >"$TEST_OUTPUT_FILE" 2>&1; then
+    # v3.1: 添加 timeout 保护
+    if run_with_timeout "$COMMAND_TIMEOUT" go test ./... >"$TEST_OUTPUT_FILE" 2>&1; then
         echo "[OK]" >&2
     else
-        echo "[FAIL]" >&2
-        tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -eq 124 ]; then
+            echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+            echo "    测试命令超时，可能卡住了" >&2
+        else
+            echo "[FAIL]" >&2
+            tail -10 "$TEST_OUTPUT_FILE" >&2 || true
+        fi
         FAILED=1
     fi
 fi
@@ -399,38 +499,29 @@ if [[ "$MODE" == "pr" ]]; then
     DOD_FILE="$PROJECT_ROOT/.dod.md"
     echo -n "  DoD 文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
-    if [[ -f "$DOD_FILE" ]]; then
-        # 检查 DoD 内容有效性
-        # L2 修复: DoD checkbox 正则支持大小写 x/X
-        DOD_LINES=$(clean_number "$(wc -l < "$DOD_FILE" 2>/dev/null)")
-        DOD_HAS_CHECKBOX=$(clean_number "$(grep -cE '^\s*-\s*\[[ xX]\]' "$DOD_FILE" 2>/dev/null || echo 0)")
 
-        if [[ "$DOD_LINES" -lt 3 || "$DOD_HAS_CHECKBOX" -eq 0 ]]; then
-            echo "[FAIL] (内容无效)" >&2
-            echo "    -> DoD 需要至少 3 行，且包含验收清单 (- [ ] 格式)" >&2
+    if [[ ! -f "$DOD_FILE" ]]; then
+        echo "[FAIL] (.dod.md 不存在)" >&2
+        echo "    -> 必须提供 .dod.md 作为验收清单" >&2
+        FAILED=1
+    else
+        # 两阶段友好：不再要求"本次必须修改过"，改为"DoD 是否完成"
+        # 只要还有未勾项，就认为本次验收未完成
+        DOD_UNCHECKED=$(clean_number "$(grep -cE '^[[:space:]]*-[[:space:]]*\[[[:space:]]\]' "$DOD_FILE" 2>/dev/null || echo 0)")
+
+        if [[ "$DOD_UNCHECKED" -gt 0 ]]; then
+            echo "[FAIL] (DoD 未完成：仍有未勾选项 $DOD_UNCHECKED)" >&2
+            echo "    -> 请完成验收并勾选 .dod.md 中所有条目后再提交 PR" >&2
             FAILED=1
         else
-            # 检查 .dod.md 是否在当前分支有修改
-            DOD_MODIFIED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-            DOD_NEW=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c '\.dod\.md' || echo 0)")
-
-            if [[ "$DOD_MODIFIED" -gt 0 || "$DOD_NEW" -gt 0 ]]; then
-                echo "[OK]" >&2
+            # 仅作提示：本次是否修改过（不作为门槛）
+            DOD_TOUCHED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
+            if [[ "$DOD_TOUCHED" -gt 0 ]]; then
+                echo "[OK] (本次已更新 & 全勾)" >&2
             else
-                DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-                if [[ "$DOD_IN_BRANCH" -gt 0 ]]; then
-                    echo "[OK] (本分支已提交)" >&2
-                else
-                    echo "[FAIL] (.dod.md 未更新)" >&2
-                    echo "    -> 当前 .dod.md 是旧任务的，请为本次任务更新 DoD" >&2
-                    FAILED=1
-                fi
+                echo "[OK] (全勾)" >&2
             fi
         fi
-    else
-        echo "[FAIL] (.dod.md 不存在)" >&2
-        echo "    -> 请创建 .dod.md 记录 DoD 清单" >&2
-        FAILED=1
     fi
 
     # ===== Phase 6: Skill 产物检查 =====
@@ -458,16 +549,16 @@ if [[ "$MODE" == "pr" ]]; then
     echo -n "  QA 决策文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
     if [[ -f "$QA_DECISION_FILE" ]]; then
-        # A2 fix: 不仅检查存在，还要验证内容有效
-        QA_HAS_DECISION=$(clean_number "$(grep -cE '^Decision:' "$QA_DECISION_FILE" 2>/dev/null || echo 0)")
+        # 允许：前导空格、Markdown #、Decision 大小写、冒号后空格
+        QA_HAS_DECISION=$(clean_number "$(grep -cEi '^[#[:space:]]*Decision[[:space:]]*:' "$QA_DECISION_FILE" 2>/dev/null || echo 0)")
         QA_FILE_SIZE=$(wc -c < "$QA_DECISION_FILE" 2>/dev/null || echo 0)
+
         if [[ "$QA_FILE_SIZE" -lt 10 ]]; then
             echo "[FAIL] (QA-DECISION.md 为空或内容过少)" >&2
-            echo "    -> 请调用 /qa skill 生成有效的 QA 决策" >&2
             FAILED=1
         elif [[ "$QA_HAS_DECISION" -eq 0 ]]; then
             echo "[FAIL] (缺少 Decision 字段)" >&2
-            echo "    -> QA-DECISION.md 必须包含 'Decision: ...' 字段" >&2
+            echo "    -> QA-DECISION.md 必须包含 'Decision: ...' 字段（允许空格/大小写）" >&2
             FAILED=1
         else
             echo "[OK]" >&2
@@ -483,24 +574,27 @@ if [[ "$MODE" == "pr" ]]; then
     echo -n "  审计报告文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
     if [[ -f "$AUDIT_REPORT_FILE" ]]; then
-        # 检查是否包含 Decision: PASS
-        AUDIT_PASS=$(clean_number "$(grep -cE '^Decision:.*PASS' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
-        AUDIT_FAIL=$(clean_number "$(grep -cE '^Decision:.*FAIL' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
+        # 允许：前导空格、Markdown #、Decision 大小写、PASS/FAIL 大小写、冒号后空格
+        AUDIT_PASS=$(clean_number "$(grep -cEi '^[#[:space:]]*Decision[[:space:]]*:[[:space:]]*PASS([[:space:]]|$)' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
+        AUDIT_FAIL=$(clean_number "$(grep -cEi '^[#[:space:]]*Decision[[:space:]]*:[[:space:]]*FAIL([[:space:]]|$)' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
+        AUDIT_HAS_DECISION=$(clean_number "$(grep -cEi '^[#[:space:]]*Decision[[:space:]]*:' "$AUDIT_REPORT_FILE" 2>/dev/null || echo 0)")
 
         if [[ "$AUDIT_PASS" -gt 0 ]]; then
             echo "[OK] (PASS)" >&2
         elif [[ "$AUDIT_FAIL" -gt 0 ]]; then
             echo "[FAIL] (Decision: FAIL)" >&2
-            echo "    -> 审计未通过，请修复 L1/L2 问题后重新 /audit" >&2
+            echo "    -> 必须先运行 /audit 并修复到 PASS 才能提交 PR" >&2
+            FAILED=1
+        elif [[ "$AUDIT_HAS_DECISION" -gt 0 ]]; then
+            echo "[FAIL] (Decision 不是 PASS/FAIL)" >&2
+            echo "    -> Decision 必须明确为 PASS 或 FAIL" >&2
             FAILED=1
         else
-            echo "[FAIL] (缺少 Decision 结论)" >&2
-            echo "    -> 审计报告必须包含 'Decision: PASS' 或 'Decision: FAIL'" >&2
+            echo "[FAIL] (缺少 Decision 字段)" >&2
             FAILED=1
         fi
     else
         echo "[FAIL] (docs/AUDIT-REPORT.md 不存在)" >&2
-        echo "    -> 请调用 /audit skill 生成审计报告" >&2
         FAILED=1
     fi
 fi
