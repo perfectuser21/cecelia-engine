@@ -438,7 +438,7 @@ hooks:
 
   - id: H7-004
     feature: H7
-    name: "v10.0.0 两阶段语义对齐"
+    name: "stop.sh v10.0.0 两阶段语义对齐"
     scope: hook
     priority: P1
     trigger: [PR, Release]
@@ -458,7 +458,7 @@ hooks:
   # --------------------------------------------------------------------------
   - id: H8-001
     feature: H8
-    name: "会话结束状态追踪"
+    name: "session-end.sh 会话结束状态追踪"
     scope: hook
     priority: P2
     trigger: [Release]
