@@ -16,8 +16,8 @@
 | L3 (最佳实践) | 2 | 代码风格、可读性 |
 | L4 (过度优化) | 0 | 理论边界、极端情况 |
 
-**Decision**: PASS
-**Reason**: L1/L2 问题已清零
+Decision: PASS
+Reason: L1/L2 问题已清零
 
 ---
 
