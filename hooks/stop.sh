@@ -74,9 +74,26 @@ if [[ -f "$PROJECT_ROOT/scripts/detect-phase.sh" ]]; then
     PHASE=$(bash "$PROJECT_ROOT/scripts/detect-phase.sh" 2>/dev/null | grep "^PHASE:" | awk '{print $2}' || echo "")
 fi
 
-# 如果无法检测阶段，回退到基础检查
+# 如果无法检测阶段，回退到 unknown
 if [[ -z "$PHASE" ]]; then
     PHASE="unknown"
+fi
+
+# unknown 阶段：直接退出，不动作（旁路控制）
+# 防止因 gh API 临时错误导致误判和瞎跑
+if [[ "$PHASE" == "unknown" ]]; then
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "  [Stop Hook: unknown 阶段]" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "" >&2
+    echo "  无法检测阶段（可能是 gh API 临时错误）" >&2
+    echo "  直接退出，不执行检查（避免误判）" >&2
+    echo "" >&2
+    echo "  如需强制进入 p1，使用: PHASE_OVERRIDE=p1" >&2
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    exit 0  # 安全退出
 fi
 
 # ===== Step 7 质检流程检查 =====
