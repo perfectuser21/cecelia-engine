@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.2.0] - 2026-01-24
+
+### Changed
+
+- **skills/dev/steps/01-prd.md**: 清理垃圾提示词
+  - 删除"等用户确认"、"用户确认后才能继续"
+  - 改为"生成 PRD 后直接继续 Step 2"
+
+- **skills/dev/steps/05-code.md**: 清理垃圾提示词
+  - 删除"停下来，和用户确认"
+  - 改为"更新 PRD，调整实现方案，继续"
+
+### Removed
+
+- **skills/dev/steps/02.5-parallel-detect.md**: 删除并行检测步骤
+  - 不需要询问用户选择 worktree
+  - 一次只做一个任务，自动检测即可
+
+### Added
+
+- **skills/dev/SKILL.md**: 多 Feature 支持文档
+  - 简单任务：单 PR 流程（向后兼容）
+  - 复杂任务：拆分 Features → 多个 PR
+  - 状态文件格式：`.local.md` + YAML frontmatter（官方标准）
+  - `/dev continue` 命令支持
+
+### Fixed
+
+- **skills/dev/steps/03-branch.md**: 清理过时示例
+  - 移除 parallel-detect 分支命名示例
+  - 更新 Checkpoint 示例，删除 CP-001-parallel-detect
+
 ## [10.0.2] - 2026-01-24
 
 ### Added
