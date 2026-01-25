@@ -631,11 +631,11 @@ workflow:
     owner: workflow
     steps:
       given: "进入 p0 阶段（本地开发）"
-      when: "执行 PRD → DoD → Code → Audit (PASS) → Test (L1) → PR"
+      when: "执行 PRD → DoD → Code → Audit (PASS) → Test (L1) → PR（Step 8 不调用 Step 9）"
       then: "创建 PR 后结束，不等待 CI（Stop Hook 检查 phase=p0，直接 exit 0）"
     evidence:
       type: log
-      description: "PR 创建后 Stop Hook 输出 'p0 阶段: PR 已创建 → exit 0'"
+      description: "PR 创建后 Stop Hook 输出 'p0 阶段: PR 已创建 → exit 0'；Step 8 结尾不包含 Step 9 调用"
 
   - id: W1-005
     feature: W1
@@ -670,6 +670,23 @@ workflow:
     evidence:
       type: log
       contains: "p2 阶段.*CI pass.*merge.*learning.*cleanup"
+
+  - id: W1-008
+    feature: W1
+    name: "p1 阶段轮询循环"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, p1, v2.0.0, polling-loop]
+    owner: workflow
+    steps:
+      given: "PR 已创建，CI 检测到失败（phase=p1）"
+      when: "用户问'怎么样了'触发 P1 阶段"
+      then: "进入轮询循环：检查 CI → 运行中则 sleep 30s → 失败则修复并 continue → 成功则 merge 并 break"
+    evidence:
+      type: code
+      description: "skills/dev/steps/09-ci.md 包含 while true 循环；失败后 continue 继续循环（不退出）；超时保护 1 小时"
 
   # --------------------------------------------------------------------------
   # W3: 循环回退

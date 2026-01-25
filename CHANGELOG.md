@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.4.0] - 2026-01-25
+
+### Changed
+
+- **P1 轮询循环 - 正确的两阶段分离**
+  - Step 8 (08-pr.md): PR 创建后不调用 Step 9，由 Stop Hook 触发会话结束
+  - Step 9 (09-ci.md): 改为完整的 while 轮询循环（在 P1 阶段执行）
+    - 运行中/等待中：sleep 30s 后继续
+    - 失败：修复代码 → push → continue（继续循环，不退出）
+    - 成功：自动合并 PR → break（退出循环）
+  - skills/dev/SKILL.md: 更新流程图和核心规则
+  - 两阶段分离：
+    - P0 (会话 1): 质检 → PR 创建 → 结束（不等 CI）
+    - P1 (会话 2): 轮询循环 → 持续修复直到成功
+
+### Added
+
+- **regression-contract.yaml**: W1-008 - P1 阶段轮询循环（新增 RCI）
+- **超时保护**: P1 轮询循环 1 小时超时自动退出
+
+### Updated
+
+- **regression-contract.yaml**: W1-004 - P0 阶段完整流程（Step 8 不调用 Step 9）
+- **features/feature-registry.yml**: W1 feature 描述更新
+
 ## [10.3.0] - 2026-01-25
 
 ### Changed
