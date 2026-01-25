@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.5.0"
+version: "2.6.0"
 updated: "2026-01-25"
 changelog:
+  - 2.6.0: Q4 v10.6.0 - CI 分层完善（L2B + L3-fast + Preflight + AI Review）
   - 2.5.0: W1 v10.5.1 - Ralph Loop 文档 + 运行时文件清理 + 测试修复
   - 2.4.0: H2 v10.4.4 - 真正移除 FAST_MODE（修复 PR #273 假修复）
   - 2.3.0: 术语更新 Checkpoint → Task（避免与官方 Checkpoint 混淆）
@@ -111,12 +112,13 @@ platform_features:
     name: PR Gate (Dual Mode)
     status: Committed
     priority: P0
-    version: "10.4.4"
+    version: "10.6.0"
     updated: "2026-01-25"
     description: |
       PR 创建前的质检门禁，支持双模式：
-      - PR 模式: L1 (测试) + L2A (审计)
-      - Release 模式: L1 + L2A + L2B (证据) + L3 (验收)
+      - PR 模式: L1 (测试) + L2A (审计) + L2B-min (证据)
+      - Release 模式: L1 + L2A + L2B-full (证据) + L3 (验收)
+      - v10.6.0: 新增 Part 0.5 (CI Preflight) 和 L2B-min 检查
       - v10.4.4: 真正移除 FAST_MODE，100% 强制本地 L1+L2A 检查
 
     entrypoints:
@@ -350,6 +352,62 @@ platform_features:
     rcis:
       - Q3-001  # 文档完整性
       - Q3-002  # 职责映射表清晰
+
+  # --------------------------------------------------------------------------
+  # Q4: CI Layering (L2B + L3-fast + Preflight + AI Review) - CI 分层完善
+  # --------------------------------------------------------------------------
+  - id: Q4
+    name: CI Layering (L2B + L3-fast + Preflight + AI Review)
+    status: Committed
+    priority: P1
+    version: "10.6.0"
+    updated: "2026-01-25"
+    description: |
+      完善 CI 质检分层体系，填补三个关键缺口：
+      - L2B 可复核证据：PR to develop 也需要 .layer2-evidence.md（L2B-min）
+      - L3-fast 快速检查：lint/format 检查（占位符，未来扩展）
+      - CI Preflight：本地快速预检（L1-fast + L3-fast + L2A-min，120s 内）
+      - AI Review (L2C)：语义和影响面审查（VPS API 集成）
+
+    entrypoints:
+      - type: script
+        file: scripts/devgate/l2b-check.sh
+      - type: script
+        file: scripts/devgate/l3-fast.sh
+      - type: script
+        file: scripts/devgate/ci-preflight.sh
+      - type: hook
+        event: PreToolUse:Bash (pr-gate-v2.sh Part 0.5)
+        file: hooks/pr-gate-v2.sh
+      - type: ci
+        job: l2b-check
+        file: .github/workflows/ci.yml
+      - type: ci
+        job: ai-review
+        file: .github/workflows/ci.yml
+
+    golden_path: |
+      本地 → ci:preflight (快速预检) → L2B 证据创建 → PR Gate (L2B-min) →
+      CI → l2b-check job → ai-review job → 通过/失败
+
+    minimal_paths:
+      - "L2B-min: .layer2-evidence.md 存在 + 格式有效 + 至少 1 条可复核证据"
+      - "L3-fast: npm run lint/format:check（--if-present 占位符）"
+      - "Preflight: typecheck + test + L3-fast + L2A-min（120s 内）"
+      - "AI Review: 调用 VPS Review API，L2C 专用提示词"
+
+    tests:
+      - type: manual
+        description: L2B/L3/Preflight 集成验证
+        coverage: manual:q4-l2b, manual:q4-l3, manual:q4-preflight, manual:q4-ai-review
+
+    rcis:
+      - Q4-001  # L2B-min 检查脚本
+      - Q4-002  # L2B-min CI job
+      - Q4-003  # L3-fast 脚本
+      - Q4-004  # CI Preflight 脚本
+      - Q4-005  # PR Gate Part 0.5 集成
+      - Q4-006  # AI Review CI job
 
 # ============================================================================
 # Product Core 5 - 引擎核心能力
