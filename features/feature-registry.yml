@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.1.0"
+version: "2.2.0"
 updated: "2026-01-24"
 changelog:
+  - 2.2.0: /dev Skills 清理 + 多 Feature 支持文档
   - 2.1.0: 新增 P0 质检强制三件套 (Q1/Q2/Q3)
 
 # ============================================================================
@@ -512,38 +513,35 @@ product_features:
   # --------------------------------------------------------------------------
   - id: P5
     name: Worktree Parallel Development
-    status: Committed
+    status: Deprecated
     priority: P2
     description: |
-      支持多分支并行开发：
-      - 检测活跃分支 (cp-*, feature/*)
-      - 提供 worktree 隔离选项
-      - 自动清理 worktree
+      支持多分支并行开发（已简化）：
+      - worktree-manage.sh 脚本保留但非默认流程
+      - 移除交互式并行检测步骤（02.5-parallel-detect.md）
+      - 一次只做一个任务，自动检测即可
 
     entrypoints:
       - type: script
         file: skills/dev/scripts/worktree-manage.sh
-      - type: workflow
-        step: skills/dev/steps/02.5-parallel-detect.md
 
     golden_path: |
-      /dev 启动 → 检测活跃分支 → 提示用户选择 (继续/worktree/新分支) →
-      创建 worktree (可选) → 开发 → cleanup 清理 worktree
+      /dev 启动 → 自动检测环境 → 开发（单任务）
 
     minimal_paths:
-      - "检测活跃分支: 列出 cp-*, feature/* 分支"
-      - "创建 worktree: 在独立目录开发"
-      - "清理 worktree: cleanup.sh 自动移除"
+      - "worktree 脚本存在但不默认使用"
+      - "用户可手动调用 worktree-manage.sh"
 
     tests:
       - type: manual
-        description: 手动验证 worktree 流程
-        coverage: W6-001, W6-002, W6-003
+        description: 手动验证 worktree 脚本可用性
+        coverage: W6-001
 
     rcis:
-      - W6-001  # 活跃分支检测
-      - W6-002  # worktree 创建
-      - W6-003  # worktree 清理
+      - W6-001  # worktree 脚本可执行
+
+    deprecated_since: "10.2.0"
+    deprecated_reason: "用户一次只做一个任务，不需要交互式并行检测"
 
 # ============================================================================
 # 视图生成规则

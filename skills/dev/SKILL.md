@@ -75,8 +75,6 @@ bash scripts/detect-phase.sh
 │      ↓                                                  │
 │  环境检测 (02-detect.md)                                │
 │      ↓                                                  │
-│  并行开发检测 (02.5-parallel-detect.md)                 │
-│      ↓                                                  │
 │  分支创建 (03-branch.md)                                │
 │      ↓                                                  │
 │  DoD 定稿 (04-dod.md)                                   │
@@ -208,7 +206,6 @@ skills/dev/
 ├── steps/          ← 每步详情（按需加载）
 │   ├── 01-prd.md
 │   ├── 02-detect.md
-│   ├── 02.5-parallel-detect.md  ← 并行开发检测
 │   ├── 03-branch.md
 │   ├── 04-dod.md       ← QA Decision Node
 │   ├── 05-code.md
@@ -220,7 +217,6 @@ skills/dev/
 │   └── 11-cleanup.md
 └── scripts/        ← 辅助脚本
     ├── cleanup.sh
-    ├── worktree-manage.sh  ← Worktree 管理
     ├── check.sh
     └── ...
 ```
@@ -267,6 +263,82 @@ bash skills/dev/scripts/track.sh fail "Error message"
 ```
 
 追踪文件 `.cecelia-run-id` 自动管理，Core 是主数据源，Notion 是镜像。
+
+---
+
+## 多 Feature 支持（可选）
+
+### 使用场景
+
+- **简单任务**：当前单 PR 流程（自动判断）
+- **复杂任务**：大 PRD → 拆分 N 个 Features → N 个 PR
+
+### 状态文件
+
+`.claude/multi-feature-state.local.md` 记录进度：
+
+```yaml
+---
+features:
+  - id: 1
+    title: "用户登录基础功能"
+    status: completed
+    pr: "#123"
+    branch: "cp-01240101-login-basic"
+    feedback: "登录成功，但错误提示不够友好"
+
+  - id: 2
+    title: "优化登录错误提示"
+    status: in_progress
+    branch: "cp-01240102-login-errors"
+
+  - id: 3
+    title: "添加记住我功能"
+    status: pending
+---
+
+## Feature 1: 用户登录基础功能 ✅
+
+**Branch**: cp-01240101-login-basic
+**PR**: #123
+**Status**: Merged to develop
+
+**反馈**：
+- 登录成功
+- 错误提示不够友好 → Feature 2 处理
+
+## Feature 2: 优化登录错误提示 🚧
+
+**Branch**: cp-01240102-login-errors
+**Status**: In Progress
+
+**基于 Feature 1 反馈**：
+- 改进错误消息文案
+- 添加错误类型区分
+
+## Feature 3: 添加记住我功能 ⏳
+
+**Status**: Pending
+**依赖**: Feature 2 完成
+```
+
+### 继续命令
+
+Feature N 完成后，运行：
+
+```bash
+/dev continue
+```
+
+/dev 自动：
+1. 读取状态文件找到下一个 pending feature
+2. 拉取最新 develop（包含前面 features 的代码）
+3. 创建新分支开始下一个 feature
+4. 引用上一个 feature 的反馈
+
+### 向后兼容
+
+简单任务仍走单 PR 流程，/dev 自动判断是否需要拆分。
 
 ---
 

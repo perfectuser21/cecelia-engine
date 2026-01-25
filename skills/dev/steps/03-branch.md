@@ -73,10 +73,10 @@ echo "   Base: $BASE_BRANCH"
 
 | Feature | 任务描述 | 分支名 |
 |---------|----------|--------|
-| W6 (Worktree) | 并行检测 | `W6-parallel-detect` |
 | W6 (Worktree) | 脚本管理 | `W6-worktree-manage` |
 | H1 (branch-protect) | 修复 bug | `H1-fix-checkout` |
 | C1 (version-check) | 添加验证 | `C1-add-validation` |
+| D1 (dev-workflow) | 清理提示词 | `D1-cleanup-prompts` |
 
 **规则**：
 - Feature ID 必须在 FEATURES.md 中已注册
@@ -91,9 +91,9 @@ echo "   Base: $BASE_BRANCH"
 PRD 中的子任务使用 `CP-{序号}-{任务名}` 格式：
 
 ```markdown
-- [ ] CP-001-parallel-detect | code | none
-- [ ] CP-002-worktree-manage | code | CP-001
-- [ ] CP-003-cleanup-extend | code | CP-002
+- [ ] CP-001-worktree-manage | code | none
+- [ ] CP-002-cleanup-extend | code | CP-001
+- [ ] CP-003-multi-feature-support | code | CP-002
 ```
 
 ---
