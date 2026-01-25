@@ -49,8 +49,8 @@ bash scripts/detect-phase.sh
 
 | 阶段 | 条件 | 目标 | 策略 |
 |------|------|------|------|
-| **p0** | 无 PR | 发 PR | 质检循环 → 创建 PR → 进入 P1（不退出）|
-| **p1** | PR + CI fail | 修到 CI 绿 | 轮询循环：挂着等 → 失败修复 → 成功合并 |
+| **p0** | 无 PR | 发 PR | 质检循环 → 创建 PR → 结束（不等 CI）|
+| **p1** | PR + CI fail | 修到 CI 绿 | 事件驱动循环：修复 → push → 退出 → 等唤醒 |
 | **p2** | PR + CI pass | 不介入 | 直接退出（GitHub 自动 merge）|
 | **pending** | PR + CI pending | - | 直接退出（稍后再查）|
 | **unknown** | gh API 错误 | - | 直接退出（不误判）|
@@ -89,45 +89,37 @@ bash scripts/detect-phase.sh
 │      │   失败 → 修复 → 重试（质检循环）                 │
 │      ↓                                                  │
 │  提交 PR (08-pr.md)                                     │
-│      │   PR 创建后不退出会话                           │
+│      │   Stop Hook: PR 创建后立即结束                   │
+│      │   不检查 CI（p0 不等待 CI）                      │
 │      ↓                                                  │
-│  进入 P1 阶段 ✅ （CI 轮询循环）                         │
+│  结束对话 ✅ （不等 CI）                                 │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### p1 阶段：CI 轮询 + 自动修复（无限循环）
+### p1 阶段：CI fail 修复（事件驱动循环）
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│         p1: CI 轮询 + 自动修复（无限循环）               │
+│            p1: CI fail 修复（事件驱动）                  │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│  PR 创建后直接进入 P1（不退出会话）                     │
+│  阶段检测 (scripts/detect-phase.sh)                     │
+│      → PHASE: p1                                        │
 │      ↓                                                  │
-│  CI 轮询循环 (09-ci.md) - 无限循环直到成功              │
-│      │                                                  │
-│      ├─→ 状态1: 运行中                                  │
-│      │      while true; do                             │
-│      │        检查 CI 状态（gh run list）              │
-│      │        if in_progress/queued/pending:            │
-│      │          sleep 30; continue                      │
-│      │      done                                        │
-│      │                                                  │
-│      ├─→ 状态2: 失败                                    │
-│      │      获取失败日志（gh run view --log-failed）    │
-│      │      分析失败原因                                │
-│      │      修复代码                                    │
-│      │      git push                                    │
-│      │      ──→ 重新进入状态1（继续轮询）               │
-│      │                                                  │
-│      └─→ 状态3: 成功                                    │
-│           gh pr merge --squash --delete-branch          │
-│           break（退出循环）                             │
+│  CI 修复循环 (09-ci.md) ← Stop Hook 强制                │
+│      │   1. 拉取 CI 失败详情                            │
+│      │      gh pr checks <PR> --json ...                │
+│      │   2. 分析失败原因（typecheck/test/build）        │
+│      │   3. 修复问题                                    │
+│      │   4. push 代码                                   │
+│      │   5. 尝试结束                                    │
+│      │      Stop Hook:                                  │
+│      │        CI fail → exit 2（继续修）                │
+│      │        CI pending → exit 0（退出，等唤醒）       │
+│      │        CI pass → exit 0（结束）                  │
 │      ↓                                                  │
-│  结束对话 ✅ （PR 已自动合并）                           │
-│                                                         │
-│  超时保护: 最长等待 1 小时                              │
+│  结束对话 ✅ （GitHub 自动 merge）                       │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -161,8 +153,8 @@ bash scripts/detect-phase.sh
 ### 1. 两阶段分离 ✅
 
 ```
-p0: 发 PR → 进入 P1（不退出）
-p1: 轮询循环 → 失败则修复 → 成功则合并 → 退出
+p0: 发 PR → 结束（不等 CI）
+p1: 修 CI → 结束（不等 merge）
 p2: 直接退出（GitHub 自动 merge）
 ```
 
@@ -170,16 +162,16 @@ p2: 直接退出（GitHub 自动 merge）
 
 ```
 p0: 质检未通过 OR PR 未创建 → exit 2（继续）
-p1: 在轮询循环中执行（会话内不退出）
+p1: CI fail → exit 2（继续修）
+    CI pending → exit 0（退出，等唤醒）
+    CI pass → exit 0（结束）
 ```
 
-### 3. CI 轮询循环 ✅
+### 3. 事件驱动循环 ✅
 
 ```
-✅ P1 挂着轮询: while true; do check CI; sleep 30; done
-✅ 自动修复循环: CI fail → fix → push → 继续轮询
-✅ 自动合并: CI pass → gh pr merge → 退出
-❌ 不再事件驱动: 不再 push 后退出等唤醒
+❌ 不挂着等待: while CI pending; do sleep; done
+✅ push 后退出: push → exit 0 → 等下次唤醒
 ```
 
 ### 4. 分支策略

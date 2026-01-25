@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.4.0
+version: 2.3.0
 created: 2026-01-25
 updated: 2026-01-25
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.4.0: 从 feature-registry.yml 自动生成
+  - 2.3.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -71,10 +71,10 @@ StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1:
 
 ```
 /dev → PRD → Branch → DoD (QA Node) → Code → Quality (Audit Node) →
-PR (进入 P1) → CI 轮询循环 (失败→修复→继续轮询) → 成功自动 merge
+PR (p0 结束) → CI fail (p1 唤醒) → Fix → Push → CI pass (p2 自动 merge)
 ```
 
-**RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-008,W1-006
+**RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-005,W1-006
 
 ---
 
@@ -227,5 +227,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.4.0
+**版本**: 2.3.0
 **生成时间**: 2026-01-25

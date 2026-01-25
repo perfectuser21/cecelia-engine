@@ -1,12 +1,12 @@
 ---
 id: optimal-paths
-version: 2.4.0
+version: 2.3.0
 created: 2026-01-25
 updated: 2026-01-25
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.4.0: 从 feature-registry.yml 自动生成
+  - 2.3.0: 从 feature-registry.yml 自动生成
 ---
 
 # Optimal Paths - 推荐体验路径
@@ -54,8 +54,8 @@ StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1:
 5. 写代码
 6. 写测试
 7. 质检循环 (Audit + L1, Stop Hook 强制)
-8. 提交 PR (进入 P1，不退出会话)
-9. CI 轮询 (无限循环：运行中 sleep 30s，失败修复，成功合并)
+8. 提交 PR (p0 结束)
+9. CI 修复 (p1 事件驱动)
 10. Learning
 11. Cleanup
 ```
@@ -150,5 +150,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.4.0
+**版本**: 2.3.0
 **生成时间**: 2026-01-25

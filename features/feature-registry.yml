@@ -15,10 +15,9 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.4.0"
+version: "2.3.0"
 updated: "2026-01-25"
 changelog:
-  - 2.4.0: P1 阶段改为 CI 轮询循环（v10.4.0）
   - 2.3.0: 术语更新 Checkpoint → Task（避免与官方 Checkpoint 混淆）
   - 2.2.0: /dev Skills 清理 + 多 Feature 支持文档
   - 2.1.0: 新增 P0 质检强制三件套 (Q1/Q2/Q3)
@@ -145,12 +144,10 @@ platform_features:
     name: Two-Phase Dev Workflow
     status: Committed
     priority: P0
-    version: "10.4.0"
-    updated: "2026-01-25"
     description: |
-      v10.4.0 两阶段开发工作流（P1 轮询循环）：
-      - p0 (Published): 本地质检 → 创建 PR → 进入 P1（不退出）
-      - p1 (CI polling): 挂着轮询 CI → 失败修复循环 → 成功自动合并
+      v2.0.0 两阶段开发工作流：
+      - p0 (Published): 本地质检 → 创建 PR → 结束（不等 CI）
+      - p1 (CI fail): 事件驱动修复 → push → 退出 → 等唤醒
       - p2 (CI pass): 自动合并
       - pending/unknown: 退出（不误判）
 
@@ -163,11 +160,11 @@ platform_features:
 
     golden_path: |
       /dev → PRD → Branch → DoD (QA Node) → Code → Quality (Audit Node) →
-      PR (进入 P1) → CI 轮询循环 (失败→修复→继续轮询) → 成功自动 merge
+      PR (p0 结束) → CI fail (p1 唤醒) → Fix → Push → CI pass (p2 自动 merge)
 
     minimal_paths:
-      - "p0: PRD → DoD → Code → Audit (PASS) → Test (L1) → PR → 进入 P1"
-      - "p1: while CI pending; do sleep 30; done → CI fail → 修复 → push → 继续轮询 → CI pass → 合并"
+      - "p0: PRD → DoD → Code → Audit (PASS) → Test (L1) → PR → 结束"
+      - "p1: CI fail → 修复 → push → 退出（不等 CI）"
       - "p2: CI pass → 自动 merge → Learning → Cleanup"
 
     optimal_path: |
@@ -179,22 +176,22 @@ platform_features:
       5. 写代码
       6. 写测试
       7. 质检循环 (Audit + L1, Stop Hook 强制)
-      8. 提交 PR (进入 P1，不退出会话)
-      9. CI 轮询 (无限循环：运行中 sleep 30s，失败修复，成功合并)
+      8. 提交 PR (p0 结束)
+      9. CI 修复 (p1 事件驱动)
       10. Learning
       11. Cleanup
 
     tests:
       - type: manual
         description: Golden Path 手动验证
-        coverage: W1-001, W1-002, W1-003, W1-004, W1-008
+        coverage: W1-001, W1-002, W1-003, W1-004, W1-005
 
     rcis:
       - W1-001  # /dev 入口可调用
       - W1-002  # PRD/DoD 生成
       - W1-003  # 阶段检测正确
       - W1-004  # p0 阶段完整流程
-      - W1-008  # p1 阶段 CI 轮询循环（新增）
+      - W1-005  # p1 阶段事件驱动修复
       - W1-006  # p2 阶段自动 merge
 
   # --------------------------------------------------------------------------

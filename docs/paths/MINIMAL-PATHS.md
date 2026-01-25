@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.4.0
+version: 2.3.0
 created: 2026-01-25
 updated: 2026-01-25
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.4.0: 从 feature-registry.yml 自动生成
+  - 2.3.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -49,11 +49,11 @@ changelog:
 
 ### W1: Two-Phase Dev Workflow
 
-1. ✅ **p0: PRD → DoD → Code → Audit (PASS) → Test (L1) → PR → 进入 P1**
-2. ✅ **p1: while CI pending; do sleep 30; done → CI fail → 修复 → push → 继续轮询 → CI pass → 合并**
+1. ✅ **p0: PRD → DoD → Code → Audit (PASS) → Test (L1) → PR → 结束**
+2. ✅ **p1: CI fail → 修复 → push → 退出（不等 CI）**
 3. ✅ **p2: CI pass → 自动 merge → Learning → Cleanup**
 
-**RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-008,W1-006
+**RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-005,W1-006
 
 ---
 
@@ -157,5 +157,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.4.0
+**版本**: 2.3.0
 **生成时间**: 2026-01-25

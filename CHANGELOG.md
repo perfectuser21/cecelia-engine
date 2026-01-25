@@ -7,19 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [10.4.0] - 2026-01-25
-
-### Added
-
-- **P1 阶段 CI 轮询循环**: PR 创建后挂着等待 CI，失败则修复后继续轮询，成功则自动合并
-  - 不再是"事件驱动"模式（push 后退出等用户问）
-  - 改为"轮询循环"模式（无限循环直到成功）
-  - 三状态状态机：运行中（sleep 30s）→ 失败（修复）→ 成功（合并）
-  - 超时保护：最长等待 1 小时
-  - skills/dev/steps/08-pr.md - PR 创建后进入 P1，不退出会话
-  - skills/dev/steps/09-ci.md - 完全重写为轮询循环
-  - skills/dev/SKILL.md - 更新流程图和核心规则
-
 ## [10.3.0] - 2026-01-25
 
 ### Changed

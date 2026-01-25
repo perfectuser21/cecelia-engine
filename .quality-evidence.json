@@ -1,10 +1,14 @@
 {
-  "sha": "94a66640316d073f806b7b48438d10b907676900",
-  "branch": "cp-01252146-ci-polling-loop",
+  "sha": "9956e582cef7dbc2628a711c3a5108600ed70284",
+  "branch": "cp-01250912-checkpoint-to-task",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-25T02:08:46Z",
-  "typecheck": "pass",
-  "test": "pass (185/186 - 1 pre-existing test issue)",
-  "build": "not required"
+  "timestamp": "2026-01-25T01:38:17+00:00",
+  "evidence": {
+    "typecheck": "passed",
+    "tests": "passed",
+    "build": "success",
+    "audit_l1": 0,
+    "audit_l2": 0
+  }
 }
