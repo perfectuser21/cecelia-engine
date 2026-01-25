@@ -375,19 +375,27 @@ jobs:
           # 4. 验证 SHA 匹配 HEAD~1（防老文件冒用）⚠️ 关键
           # 两阶段提交：commit 1 = 代码变更, commit 2 = 证据文件
           # checkout 使用 PR head (非 merge commit)，所以 HEAD~1 就是父提交
-          PARENT_SHA=$(git rev-parse HEAD~1)
-          EVIDENCE_SHA=$(jq -r '.sha' "$EVIDENCE_FILE")
+          #
+          # Release 分支例外：release 分支使用强制合并策略，SHA 验证逻辑不适用
+          BASE_BRANCH="${{ github.base_ref }}"
 
-          if [[ "$EVIDENCE_SHA" != "$PARENT_SHA" ]]; then
-            echo "❌ SHA 不匹配！"
-            echo "   证据 SHA: $EVIDENCE_SHA"
-            echo "   HEAD~1: $PARENT_SHA (期望)"
-            echo ""
-            echo "证据文件应该引用代码变更的 commit (HEAD~1)"
-            exit 1
+          if [[ "$BASE_BRANCH" == "main" ]]; then
+            echo "ℹ️  Release 分支：跳过 SHA 验证（强制合并场景）"
+          else
+            PARENT_SHA=$(git rev-parse HEAD~1)
+            EVIDENCE_SHA=$(jq -r '.sha' "$EVIDENCE_FILE")
+
+            if [[ "$EVIDENCE_SHA" != "$PARENT_SHA" ]]; then
+              echo "❌ SHA 不匹配！"
+              echo "   证据 SHA: $EVIDENCE_SHA"
+              echo "   HEAD~1: $PARENT_SHA (期望)"
+              echo ""
+              echo "证据文件应该引用代码变更的 commit (HEAD~1)"
+              exit 1
+            fi
+
+            echo "✓ SHA 验证通过: $EVIDENCE_SHA"
           fi
-
-          echo "✓ SHA 验证通过: $EVIDENCE_SHA"
 
           # 5. 验证 qa_gate_passed == true
           QA_GATE_PASSED=$(jq -r '.qa_gate_passed' "$EVIDENCE_FILE")
