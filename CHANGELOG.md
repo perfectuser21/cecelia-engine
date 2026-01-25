@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.4.4] - 2026-01-25
+
+### Fixed
+
+- **真正移除 FAST_MODE（修复 PR #273 假修复问题）**
+  - 删除 hooks/pr-gate-v2.sh 第 15-16 行的 `FAST_MODE=true` 配置
+  - 删除第 245-253 行的快速模式提示
+  - 删除所有测试命令中的 FAST_MODE 条件（4 处）
+  - 确保 `grep "FAST_MODE" hooks/pr-gate-v2.sh` 返回空
+  - 本地 PR 创建现在 100% 强制执行 L1 + L2A 检查（Ralph Loop 无限修复）
+
 ## [10.4.3] - 2026-01-25
 
 ### Fixed

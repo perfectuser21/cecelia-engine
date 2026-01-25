@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.3.0"
+version: "2.4.0"
 updated: "2026-01-25"
 changelog:
+  - 2.4.0: H2 v10.4.4 - 真正移除 FAST_MODE（修复 PR #273 假修复）
   - 2.3.0: 术语更新 Checkpoint → Task（避免与官方 Checkpoint 混淆）
   - 2.2.0: /dev Skills 清理 + 多 Feature 支持文档
   - 2.1.0: 新增 P0 质检强制三件套 (Q1/Q2/Q3)
@@ -109,10 +110,13 @@ platform_features:
     name: PR Gate (Dual Mode)
     status: Committed
     priority: P0
+    version: "10.4.4"
+    updated: "2026-01-25"
     description: |
       PR 创建前的质检门禁，支持双模式：
       - PR 模式: L1 (测试) + L2A (审计)
       - Release 模式: L1 + L2A + L2B (证据) + L3 (验收)
+      - v10.4.4: 真正移除 FAST_MODE，100% 强制本地 L1+L2A 检查
 
     entrypoints:
       - type: hook
