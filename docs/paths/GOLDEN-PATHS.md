@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.5.0
+version: 2.6.0
 created: 2026-01-25
 updated: 2026-01-25
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.5.0: 从 feature-registry.yml 自动生成
+  - 2.6.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -139,7 +139,23 @@ npm run qa:gate → 生成 .quality-evidence.json → CI 验证 SHA/字段 → �
 
 ---
 
-## GP-009: Regression Testing Framework (P1)
+## GP-009: CI Layering (L2B + L3-fast + Preflight + AI Review) (Q4)
+
+**Feature**: Q4 - CI Layering (L2B + L3-fast + Preflight + AI Review)
+**Priority**: P1
+
+### Golden Path
+
+```
+本地 → ci:preflight (快速预检) → L2B 证据创建 → PR Gate (L2B-min) →
+CI → l2b-check job → ai-review job → 通过/失败
+```
+
+**RCI 覆盖**: Q4-001,Q4-002,Q4-003,Q4-004,Q4-005,Q4-006
+
+---
+
+## GP-010: Regression Testing Framework (P1)
 
 **Feature**: P1 - Regression Testing Framework
 **Priority**: P0
@@ -155,7 +171,7 @@ run-regression.sh 执行 → 验证契约不被破坏
 
 ---
 
-## GP-010: DevGate (P2)
+## GP-011: DevGate (P2)
 
 **Feature**: P2 - DevGate
 **Priority**: P0
@@ -170,7 +186,7 @@ CI test job → DevGate checks → 三个检查全部通过 → CI 继续
 
 ---
 
-## GP-011: Quality Reporting (P3)
+## GP-012: Quality Reporting (P3)
 
 **Feature**: P3 - Quality Reporting
 **Priority**: P1
@@ -185,7 +201,7 @@ CI test job → DevGate checks → 三个检查全部通过 → CI 继续
 
 ---
 
-## GP-012: CI Quality Gates (P4)
+## GP-013: CI Quality Gates (P4)
 
 **Feature**: P4 - CI Quality Gates
 **Priority**: P0
@@ -200,7 +216,7 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
-## GP-013: Worktree Parallel Development (P5)
+## GP-014: Worktree Parallel Development (P5)
 
 **Feature**: P5 - Worktree Parallel Development
 **Priority**: P2
@@ -227,5 +243,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.5.0
+**版本**: 2.6.0
 **生成时间**: 2026-01-25

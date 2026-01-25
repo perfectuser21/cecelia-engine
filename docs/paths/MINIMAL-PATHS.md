@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.5.0
+version: 2.6.0
 created: 2026-01-25
 updated: 2026-01-25
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.5.0: 从 feature-registry.yml 自动生成
+  - 2.6.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -95,6 +95,17 @@ changelog:
 
 ---
 
+### Q4: CI Layering (L2B + L3-fast + Preflight + AI Review)
+
+1. ✅ **L2B-min: .layer2-evidence.md 存在 + 格式有效 + 至少 1 条可复核证据**
+2. ✅ **L3-fast: npm run lint/format:check（--if-present 占位符）**
+3. ✅ **Preflight: typecheck + test + L3-fast + L2A-min（120s 内）**
+4. ✅ **AI Review: 调用 VPS Review API，L2C 专用提示词**
+
+**RCI 覆盖**: Q4-001,Q4-002,Q4-003,Q4-004,Q4-005,Q4-006
+
+---
+
 ## Product Core 5 - 引擎核心能力
 
 ### P1: Regression Testing Framework
@@ -157,5 +168,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.5.0
+**版本**: 2.6.0
 **生成时间**: 2026-01-25
