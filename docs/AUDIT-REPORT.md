@@ -14,9 +14,7 @@ L3: 0
 L4: 0
 ```
 
-## Decision
-
-**PASS**
+Decision: PASS
 
 ## Findings
 
