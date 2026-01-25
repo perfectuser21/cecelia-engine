@@ -5,28 +5,20 @@ Priority: P2
 RepoType: Engine
 
 Tests:
-  - dod_item: "detect-phase.sh 正确描述 pending 行为"
+  - dod_item: "hooks/pr-gate-v2.sh 不再有 FAST_MODE 配置"
     method: manual
-    location: manual:grep-pending-description
+    location: manual:grep-fast-mode
 
-  - dod_item: "SKILL.md 包含 pending 等待流程图"
+  - dod_item: "本地创建 PR 时强制跑 L1 + L2A"
     method: manual
-    location: manual:grep-pending-flowchart
+    location: manual:local-pr-test
 
-  - dod_item: "创建 09.5-pending-wait.md"
+  - dod_item: "测试失败在本地就能发现"
     method: manual
-    location: manual:file-exists
-
-  - dod_item: "typecheck 通过"
-    method: auto
-    location: manual:qa-gate
-
-  - dod_item: "test 通过"
-    method: auto
-    location: manual:qa-gate
+    location: manual:verify-local-failure
 
 RCI:
   new: []
   update: []
 
-Reason: 文档修复，不改变核心逻辑，无需进回归契约。现有 W1-001（/dev 流程可启动）已覆盖工作流可用性。
+Reason: 修复现有 RCI (H2-003) 实现 bug，移除 FAST_MODE 使本地与 CI 检查一致。无需新增 RCI。
