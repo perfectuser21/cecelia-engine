@@ -172,8 +172,8 @@ function main() {
     }
   }
 
-  // 4. Git commits
-  if (!priority) {
+  // 4. Git commits（可通过 SKIP_GIT_DETECTION=1 跳过，用于测试）
+  if (!priority && !process.env.SKIP_GIT_DETECTION) {
     const p = detectFromCommits();
     if (p) {
       priority = p;

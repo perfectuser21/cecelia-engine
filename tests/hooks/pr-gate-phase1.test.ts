@@ -262,6 +262,7 @@ describe("Phase 1: DevGate Scripts", () => {
           PR_PRIORITY: "",
           PR_TITLE: "",
           PR_LABELS: "",
+          SKIP_GIT_DETECTION: "1",  // Skip git history detection in tests
         },
       });
 

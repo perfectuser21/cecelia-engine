@@ -39,9 +39,12 @@ skills/dev/VALIDATION.md
 .quality-report.json
 .test-level.json
 
-# Evidence chain files (per-branch, runtime)
+# Workflow runtime files (per-branch, runtime)
+.prd.md
 .dod.md
+.quality-gate-passed
 .layer2-evidence.md
+.l3-analysis.md
 artifacts/screenshots/*.png
 
 # P0-2: Quality Evidence (MUST be tracked)

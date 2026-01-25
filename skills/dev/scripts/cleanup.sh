@@ -229,19 +229,36 @@ else
 fi
 
 # ========================================
-# 8. 删除 .quality-report.json（防止残留影响下次）
+# 8. 删除运行时文件（防止残留影响下次）
 # ========================================
 echo ""
-echo "[8]  删除 .quality-report.json..."
-if [[ -f ".quality-report.json" ]]; then
-    if rm -f ".quality-report.json" 2>/dev/null; then
-        echo -e "   ${GREEN}[OK] 已删除 .quality-report.json${NC}"
-    else
-        echo -e "   ${YELLOW}[WARN]  删除 .quality-report.json 失败${NC}"
-        WARNINGS=$((WARNINGS + 1))
+echo "[8]  删除运行时文件..."
+RUNTIME_FILES=(
+    ".quality-report.json"
+    ".prd.md"
+    ".dod.md"
+    ".quality-gate-passed"
+    ".layer2-evidence.md"
+    ".l3-analysis.md"
+    ".quality-evidence.json"
+)
+
+DELETED_COUNT=0
+for FILE in "${RUNTIME_FILES[@]}"; do
+    if [[ -f "$FILE" ]]; then
+        if rm -f "$FILE" 2>/dev/null; then
+            DELETED_COUNT=$((DELETED_COUNT + 1))
+        else
+            echo -e "   ${YELLOW}[WARN]  删除 $FILE 失败${NC}"
+            WARNINGS=$((WARNINGS + 1))
+        fi
     fi
+done
+
+if [[ $DELETED_COUNT -gt 0 ]]; then
+    echo -e "   ${GREEN}[OK] 已删除 $DELETED_COUNT 个运行时文件${NC}"
 else
-    echo -e "   ${GREEN}[OK] .quality-report.json 已不存在${NC}"
+    echo -e "   ${GREEN}[OK] 无运行时文件需要删除${NC}"
 fi
 
 # ========================================
