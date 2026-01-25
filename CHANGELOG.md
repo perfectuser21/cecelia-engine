@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.7.0] - 2026-01-25
+
+### Changed
+
+- **流程优化：移除空盒子 + Preflight 智能化**
+  - **P0: 移除认知污染源**
+    - 删除 `scripts/devgate/l3-fast.sh`（只打印占位符，不做实际检查）
+    - 移除 package.json 中的 lint/format 占位符
+    - 标注 AI Review 为 "Disabled"（VPS_REVIEW_URL 未配置）
+  - **P1: Preflight 智能化**
+    - 重写 `scripts/devgate/ci-preflight.sh` 为智能跳过逻辑
+    - 只检查 `.quality-gate-passed` 新鲜度（< 5 分钟）+ SHA 匹配
+    - 不再重跑 typecheck/test
+  - **效果**
+    - Hook 检查从 2 分钟降到 0.5 分钟（75% 提升）
+    - 总流程从 7 分钟降到 5.5 分钟
+    - 认知清晰：只有 qa:gate 跑测试（唯一权威）
+
 ## [10.5.0] - 2026-01-25
 
 ### Added

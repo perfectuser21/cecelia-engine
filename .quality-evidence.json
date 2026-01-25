@@ -1,9 +1,9 @@
 {
-  "sha": "4fd62d026f277d1447090fc3d4c330920dc1680a",
-  "branch": "cp-01251-ci-layers",
+  "sha": "dab17d55fc526a2e7a00820c993879a45d23e5c6",
+  "branch": "cp-01251938-flow-optimize",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-25T19:17:24+08:00",
+  "timestamp": "2026-01-25T19:59:42+08:00",
   "evidence": {
     "typecheck": "passed",
     "tests": "passed",

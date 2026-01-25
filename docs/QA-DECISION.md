@@ -1,37 +1,36 @@
-# QA Decision: 实施全新 CI 分层方案
+# QA Decision
 
-Decision: Minimal（Golden Path 测试）
+Decision: NO_RCI
+Priority: P1
+RepoType: Engine
 
-**理由**:
-1. 这是基础设施改动（脚本 + CI 配置），不是业务逻辑
-2. 主要涉及 shell 脚本和 GitHub Actions，测试成本高于收益
-3. 通过手动验证和 CI 实际运行来确保正确性
+Tests:
+  - dod_item: "删除 L3-fast 脚本"
+    method: manual
+    location: manual:文件已不存在，git log 显示删除记录
+  
+  - dod_item: "移除 lint/format 占位符"
+    method: manual
+    location: manual:package.json 不再包含 TODO 占位符
+  
+  - dod_item: "重写 ci-preflight.sh"
+    method: manual
+    location: manual:脚本只检查证据新鲜度，不执行测试
+  
+  - dod_item: "实现新鲜度检查"
+    method: manual
+    location: manual:脚本包含 < 300 秒时间检查
+  
+  - dod_item: "实现 SHA 验证"
+    method: manual
+    location: manual:脚本验证 .quality-gate-passed 中的 SHA 与 HEAD 匹配
+  
+  - dod_item: "更新文档"
+    method: manual
+    location: manual:.tmp-flow-analysis.md 反映新逻辑，AI Review 标注 Disabled
 
-## Golden Paths
+RCI:
+  new: []
+  update: []
 
-1. **本地 preflight 成功路径**
-   - 运行 `npm run ci:preflight`
-   - L1-fast（typecheck + test）通过
-   - L3-fast（lint/format check）通过
-   - 输出成功信息
-
-2. **PR L2B-min 检查路径**
-   - `.layer2-evidence.md` 存在
-   - 包含必需字段（## 手动验证、## 自动化测试）
-   - 至少 1 条可复核证据
-
-3. **AI Review 发送 comment 路径**
-   - CI 全绿后触发
-   - 调用 VPS API 成功
-   - 发送 PR comment
-
-## 不测试的内容
-
-- shell 脚本内部逻辑（复杂度低，手动验证即可）
-- GitHub Actions workflow（通过实际 PR 验证）
-- VPS API 响应（外部依赖）
-
-## 回归契约
-
-不影响现有测试，所有现有测试应保持通过。
-
+Reason: 流程优化不涉及功能回归测试，主要是删除空盒子和优化 Preflight 性能。通过手动验证和文档审查即可确保质量。
