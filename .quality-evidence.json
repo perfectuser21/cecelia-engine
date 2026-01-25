@@ -1,10 +1,14 @@
 {
-  "sha": "c833f6fb40f9c42cbee660c28e766150e596c475",
-  "branch": "cp-01252525-cleanup-simple",
+  "sha": "99da84bc8ae88f19c8f21f91c0921edec5bb34c5",
+  "branch": "cp-01251311-pending-wait-fix",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-25T04:12:00Z",
-  "typecheck": "pass",
-  "test": "pass",
-  "note": "Cleanup task - no code changes"
+  "timestamp": "2026-01-25T13:25:34+08:00",
+  "evidence": {
+    "typecheck": "passed",
+    "tests": "passed",
+    "build": "success",
+    "audit_l1": 0,
+    "audit_l2": 1
+  }
 }
