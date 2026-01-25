@@ -1,0 +1,13 @@
+# Quality Gate Passed
+# Generated: 2026-01-25T09:48:00+00:00
+# Branch: cp-01242217-p0-quality-enforcement
+# Commit: 80377a2
+
+typecheck: PASS
+test: PASS (191/191)
+build: PASS
+
+# 改动内容：
+# 1. Ralph Loop 使用文档 - skills/dev/SKILL.md 新增章节
+# 2. 运行时文件清理 - .gitignore + cleanup.sh 扩展
+# 3. 测试修复 - detect-priority.cjs SKIP_GIT_DETECTION
