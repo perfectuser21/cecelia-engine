@@ -1,12 +1,12 @@
 ---
 id: optimal-paths
-version: 2.5.0
+version: 2.6.0
 created: 2026-01-25
 updated: 2026-01-25
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.5.0: 从 feature-registry.yml 自动生成
+  - 2.6.0: 从 feature-registry.yml 自动生成
 ---
 
 # Optimal Paths - 推荐体验路径
@@ -95,6 +95,15 @@ npm run qa:gate → 生成 .quality-evidence.json → CI 验证 SHA/字段 → �
 
 ---
 
+### Q4: CI Layering (L2B + L3-fast + Preflight + AI Review)
+
+```
+本地 → ci:preflight (快速预检) → L2B 证据创建 → PR Gate (L2B-min) →
+CI → l2b-check job → ai-review job → 通过/失败
+```
+
+---
+
 ## Product Core 5 - 引擎核心能力
 
 ### P1: Regression Testing Framework
@@ -150,5 +159,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.5.0
+**版本**: 2.6.0
 **生成时间**: 2026-01-25

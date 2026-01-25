@@ -539,11 +539,44 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
+  # L2B Check - 可复核证据（PR to develop 也需要）
+  l2b-check:
+    if: github.event_name == 'pull_request'
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: L2B Evidence Check
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  L2B: 可复核证据检查"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+
+          # PR to develop: L2B-min
+          # PR to main: L2B-full (在 release-check 中已检查)
+          if [ "${{ github.base_ref }}" = "main" ]; then
+            echo "ℹ️ PR to main - L2B-full 在 release-check 中检查，此处跳过"
+            exit 0
+          fi
+
+          if [ -f "scripts/devgate/l2b-check.sh" ]; then
+            bash scripts/devgate/l2b-check.sh pr || exit 1
+          else
+            echo "⚠️ l2b-check.sh not found, skipping"
+            echo "   (仓库可能还未升级到 L2B 检查)"
+          fi
+
   # CI 通过后通知（不自动合并，需要手动确认）
   # 注意：此 job 只在 pull_request 事件时运行，push 事件时跳过
   # v10.5.0: 修复条件 needs，正确处理 regression-pr 和 release-check
+  # v10.6.0: 增加 l2b-check 依赖
   ci-passed:
-    needs: [version-check, test, contract-drift-check, impact-check, evidence-gate, regression-pr, release-check]
+    needs: [version-check, test, contract-drift-check, impact-check, evidence-gate, l2b-check, regression-pr, release-check]
     # 使用 always() 确保即使某些 job 被跳过也能运行
     if: |
       always() &&
@@ -553,6 +586,7 @@ jobs:
       (needs.version-check.result == 'success' || needs.version-check.result == 'skipped') &&
       (needs.impact-check.result == 'success' || needs.impact-check.result == 'skipped') &&
       (needs.evidence-gate.result == 'success' || needs.evidence-gate.result == 'skipped') &&
+      (needs.l2b-check.result == 'success' || needs.l2b-check.result == 'skipped') &&
       (needs.regression-pr.result == 'success' || needs.regression-pr.result == 'skipped') &&
       (needs.release-check.result == 'success' || needs.release-check.result == 'skipped')
     runs-on: ubuntu-latest
@@ -567,7 +601,10 @@ jobs:
           echo "PR #${{ github.event.pull_request.number }} CI 检查通过"
           echo ""
           echo "已通过的检查："
-          echo "  ✅ test (L1 + L2A + L2B DevGate)"
+          echo "  ✅ test (L1 + L2A + DevGate)"
+          if [ "${{ needs.l2b-check.result }}" = "success" ]; then
+            echo "  ✅ l2b-check (L2B-min 证据)"
+          fi
           echo "  ✅ contract-drift-check"
           if [ "${{ needs.regression-pr.result }}" = "success" ]; then
             echo "  ✅ regression-pr (L3 子集)"
@@ -648,3 +685,91 @@ jobs:
             -H "Notion-Version: 2022-06-28" \
             -d "$JSON_PAYLOAD"
           echo "📨 Notification sent to Notion (failed: $FAILURE_REASON)"
+
+  # AI Review (L2C) - 语义/影响面审查
+  # 在 CI 全绿后运行，不阻断 PR（初期）
+  ai-review:
+    if: github.event_name == 'pull_request'
+    needs: [ci-passed]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write  # 需要写权限来发 comment
+    continue-on-error: true  # 不阻断 PR
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          # 获取 PR diff（限制大小，防止超长）
+          git diff origin/${{ github.base_ref }}...HEAD > pr.diff
+
+          # 限制 diff 大小（最多 50KB，约 1000 行代码）
+          DIFF_SIZE=$(wc -c < pr.diff)
+          if [ "$DIFF_SIZE" -gt 51200 ]; then
+            echo "⚠️ PR diff 过大 (${DIFF_SIZE} bytes)，截断到 50KB"
+            head -c 51200 pr.diff > pr.diff.truncated
+            mv pr.diff.truncated pr.diff
+            echo "truncated=true" >> $GITHUB_OUTPUT
+          else
+            echo "truncated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Call AI Review API
+        id: review
+        env:
+          VPS_REVIEW_URL: ${{ secrets.VPS_REVIEW_URL }}
+        run: |
+          if [ -z "$VPS_REVIEW_URL" ]; then
+            echo "⚠️ VPS_REVIEW_URL not configured, skipping AI review"
+            echo "review_result=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 构建 JSON payload
+          DIFF_CONTENT=$(jq -Rs . < pr.diff)
+          JSON_PAYLOAD=$(jq -n \
+            --arg pr_number "${{ github.event.pull_request.number }}" \
+            --arg repo "${{ github.repository }}" \
+            --argjson diff "$DIFF_CONTENT" \
+            '{pr_number: $pr_number, repo: $repo, diff: $diff}')
+
+          # 调用 VPS Review API
+          RESPONSE=$(curl -s -X POST "$VPS_REVIEW_URL" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD")
+
+          # 保存响应
+          echo "$RESPONSE" > review.json
+          echo "review_result=success" >> $GITHUB_OUTPUT
+
+      - name: Post comment
+        if: steps.review.outputs.review_result == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = JSON.parse(fs.readFileSync('review.json', 'utf8'));
+
+            const truncated = '${{ steps.diff.outputs.truncated }}' === 'true';
+            let comment = '## 🤖 AI Review (L2C - 语义/影响面审查)\n\n';
+
+            if (truncated) {
+              comment += '⚠️ **PR diff 已截断到 50KB**，审查可能不完整\n\n';
+            }
+
+            comment += review.content || '无审查结果';
+
+            comment += '\n\n---\n';
+            comment += '*这是 AI 自动审查，不阻断 PR 合并。仅供参考。*';
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

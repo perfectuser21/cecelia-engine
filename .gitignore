@@ -51,6 +51,10 @@ artifacts/screenshots/*.png
 # .quality-evidence.json 不能被忽略，这是 CI Evidence Gate 的验证依据
 !.quality-evidence.json
 
+# L2B: Evidence (MUST be tracked for PR to develop)
+# .layer2-evidence.md 记录可复核证据，L2B-min 检查需要
+!.layer2-evidence.md
+
 # Old Subagent files (deprecated)
 .subagent-lock
 .subagent-proof.json

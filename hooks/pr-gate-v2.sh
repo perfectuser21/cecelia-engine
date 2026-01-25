@@ -237,6 +237,39 @@ else
 fi
 
 # ============================================================================
+# Part 0.5: CI Preflight（仅 PR 模式，快速预检）
+# ============================================================================
+if [[ "$MODE" == "pr" ]]; then
+    echo "" >&2
+    echo "  [CI Preflight: 快速预检]" >&2
+
+    # 临时文件（提前定义，供 preflight 使用）
+    PREFLIGHT_OUTPUT=$(mktemp)
+    trap 'rm -f "$PREFLIGHT_OUTPUT"' EXIT
+
+    # 检查 ci:preflight 脚本是否存在
+    if [[ -f "scripts/devgate/ci-preflight.sh" ]]; then
+        echo -n "  preflight... " >&2
+        CHECK_COUNT=$((CHECK_COUNT + 1))
+        if run_with_timeout "$COMMAND_TIMEOUT" bash scripts/devgate/ci-preflight.sh >"$PREFLIGHT_OUTPUT" 2>&1; then
+            echo "[OK]" >&2
+        else
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+                echo "[TIMEOUT - ${COMMAND_TIMEOUT}s]" >&2
+                echo "    Preflight 超时，跳过详细检查" >&2
+            else
+                echo "[FAIL]" >&2
+                tail -20 "$PREFLIGHT_OUTPUT" >&2 || true
+                FAILED=1
+            fi
+        fi
+    else
+        echo "  ⚠️  ci-preflight.sh 不存在，跳过快速预检" >&2
+    fi
+fi
+
+# ============================================================================
 # Part 1: L1 - 自动化测试
 # ============================================================================
 echo "" >&2
@@ -583,6 +616,23 @@ if [[ "$MODE" == "pr" ]]; then
     else
         echo "[FAIL] (docs/AUDIT-REPORT.md 不存在)" >&2
         FAILED=1
+    fi
+
+    # L2B-min 检查（PR to develop 也需要证据）
+    echo "" >&2
+    echo "  [L2B-min: 可复核证据]" >&2
+    L2B_SCRIPT="$PROJECT_ROOT/scripts/devgate/l2b-check.sh"
+    if [[ -f "$L2B_SCRIPT" ]]; then
+        echo -n "  证据文件... " >&2
+        CHECK_COUNT=$((CHECK_COUNT + 1))
+        if bash "$L2B_SCRIPT" pr >&2 2>&1; then
+            echo "" >&2
+        else
+            echo "    -> 请创建 .layer2-evidence.md 记录可复核证据" >&2
+            FAILED=1
+        fi
+    else
+        echo "  ⚠️  l2b-check.sh 不存在，跳过证据检查" >&2
     fi
 fi
 

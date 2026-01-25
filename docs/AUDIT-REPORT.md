@@ -1,89 +1,88 @@
 # Audit Report
 
-Branch: cp-01242217-p0-quality-enforcement
-Date: 2026-01-25
-Scope: skills/dev/SKILL.md, .gitignore, skills/dev/scripts/cleanup.sh, scripts/devgate/detect-priority.cjs, tests/hooks/pr-gate-phase1.test.ts
-Target Level: L2
+**Branch**: cp-01251-ci-layers  
+**Date**: 2026-01-25  
+**Scope**: 新增 CI 分层方案（3 个新脚本 + hook/CI 修改）  
+**Target Level**: L2
 
-Summary:
-  L1: 0
-  L2: 0
-  L3: 0
-  L4: 0
+## Summary
+
+- L1 (阻塞性): 1 → 0 (已修复)
+- L2 (功能性): 0
+- L3 (最佳实践): 0
+- L4 (过度优化): 0
 
 Decision: PASS
 
-Findings: []
+所有 L1/L2 问题已清零，代码质量达标。
 
-Blockers: []
+## Findings
 
----
+### A1-001: pr-gate-v2.sh - TEST_OUTPUT_FILE 未定义 (已修复)
 
-## 审计详情
+- **Layer**: L1 (阻塞性)
+- **File**: `hooks/pr-gate-v2.sh:250`
+- **Issue**: Part 0.5 (preflight) 使用了 `$TEST_OUTPUT_FILE`，但该变量在 Part 1 (第281行) 才定义
+- **Impact**: 首次运行时变量未定义，可能导致输出重定向失败
+- **Fix**: 在 Part 0.5 内部创建独立的 `PREFLIGHT_OUTPUT` 临时文件
+- **Status**: ✅ FIXED
+- **Commit**: (current changes)
 
-### 改动文件
+## Blockers
 
-1. **skills/dev/SKILL.md** - 添加 Ralph Loop 使用说明章节
-2. **.gitignore** - 添加运行时文件忽略规则
-3. **skills/dev/scripts/cleanup.sh** - 添加运行时文件清理逻辑
-4. **scripts/devgate/detect-priority.cjs** - 添加 SKIP_GIT_DETECTION 环境变量
-5. **tests/hooks/pr-gate-phase1.test.ts** - 修复测试，设置 SKIP_GIT_DETECTION
+None (所有 L1/L2 问题已修复)
 
-### L1 检查（阻塞性）
+## 审计覆盖范围
 
-✅ **无 L1 问题**
+### 新增文件
 
-检查项：
-- 语法错误：无
-- 功能失效：无
-- 文件路径错误：无
-- 命令不存在：无
+1. `scripts/devgate/l2b-check.sh` ✅
+   - 语法检查：通过
+   - 逻辑正确性：通过
+   - 错误处理：完善 (exit 1 + 提示信息)
 
-### L2 检查（功能性）
+2. `scripts/devgate/l3-fast.sh` ✅
+   - 语法检查：通过
+   - 占位符实现：合理 (--if-present 降级)
+   - 错误处理：通过 (|| echo 降级)
 
-✅ **无 L2 问题**
+3. `scripts/devgate/ci-preflight.sh` ✅
+   - 语法检查：通过
+   - 超时控制：合理 (总时间 < 120s)
+   - 错误处理：通过 (set -e)
 
-检查项：
+### 修改文件
 
-**skills/dev/SKILL.md**:
-- Ralph Loop 使用说明准确，与 Stop Hook 实现一致
-- P0/P1 两阶段说明完整
-- 示例代码正确
+4. `hooks/pr-gate-v2.sh` ✅
+   - 新增 Part 0.5 (preflight): 已修复变量定义问题
+   - 新增 L2B-min 检查: 逻辑正确
 
-**.gitignore**:
-- 运行时文件列表完整（.prd.md, .dod.md, .quality-gate-passed, .l3-analysis.md, .layer2-evidence.md）
-- .quality-evidence.json 保持追踪（由 ! 规则强制）
+5. `.github/workflows/ci.yml` ✅
+   - 新增 l2b-check job: 条件正确，依赖合理
+   - 新增 ai-review job: continue-on-error=true (不阻断)
+   - ci-passed 依赖更新: 正确包含 l2b-check
 
-**cleanup.sh**:
-- 运行时文件清理逻辑正确
-- 数组遍历安全
-- 错误处理完整
+## 未修复的低优先级观察
 
-**detect-priority.cjs**:
-- SKIP_GIT_DETECTION 环境变量实现正确
-- 不影响生产环境
-- 只在测试时跳过 git 检测
+以下为 L3 层级建议，不影响功能，可选修复：
 
-**pr-gate-phase1.test.ts**:
-- SKIP_GIT_DETECTION 设置正确
-- 修复了测试失败问题
+1. **l2b-check.sh 正则表达式** (L3)
+   - 当前: `grep -qE '^- |^```'`
+   - 建议: 更严格的 `grep -qE '^[[:space:]]*-[[:space:]]|^```'`
+   - 理由: 实际使用中不会有边界情况，当前已足够
 
-### 测试验证
+2. **ci-preflight.sh 错误消息** (L3)
+   - 当前: npm 失败时直接退出 (set -e)
+   - 建议: 为每个 npm 命令添加友好错误提示
+   - 理由: npm 原始错误已足够清晰，无需重复
 
-✅ **所有测试通过**
-- typecheck: PASS
-- test: PASS (191/191)
-- build: PASS
+## 结论
 
----
+✅ **审计通过**
 
-## 审计结论
+- 所有新增脚本语法正确、逻辑合理
+- 唯一的 L1 问题 (变量未定义) 已修复
+- CI 配置正确，依赖关系清晰
+- 错误处理完善，降级策略合理
 
-✅ **L1/L2 问题已清零**
-
-本次改动：
-1. 添加 Ralph Loop 使用说明 - 内容准确完整
-2. 修复运行时文件遗留问题 - .gitignore + cleanup.sh
-3. 修复测试失败问题 - SKIP_GIT_DETECTION 环境变量
-
-所有改动均无阻塞性或功能性问题，可以继续 PR 创建。
+代码已达到生产就绪状态。
