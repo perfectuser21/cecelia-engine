@@ -74,7 +74,7 @@ StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1:
 PR (p0 结束) → CI fail (p1 唤醒) → Fix → Push → CI pass (p2 自动 merge)
 ```
 
-**RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-005,W1-006
+**RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-005,W1-006,W1-008
 
 ---
 
