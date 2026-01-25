@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "10.3.0"
+version: "10.4.0"
 updated: "2026-01-25"
 
 # ============================================================================
@@ -1381,6 +1381,30 @@ n8n:
     evidence:
       type: manual
       desc: "验证阶段检测逻辑"
+
+  - id: W1-008
+    feature: W1
+    name: "P1 阶段 CI 轮询循环"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [workflow, ci-polling, p1-phase, v10.4.0]
+    owner: workflow
+    steps:
+      given: "PR 创建后进入 P1 阶段"
+      when: "CI 轮询循环运行（09-ci.md）"
+      then: "状态1(运行中)→sleep 30s，状态2(失败)→修复循环，状态3(成功)→自动合并"
+    evidence:
+      type: manual
+      desc: "PR 创建后挂着轮询，失败自动修复，成功自动合并，无需用户介入"
+    verification:
+      type: code-review
+      files:
+        - "skills/dev/steps/08-pr.md"
+        - "skills/dev/steps/09-ci.md"
+        - "skills/dev/SKILL.md"
+      expected: "PR 创建后不退出会话，进入无限轮询循环直到成功或超时"
 
 # ============================================================================
 # Golden Paths (E2E 关键链路)
