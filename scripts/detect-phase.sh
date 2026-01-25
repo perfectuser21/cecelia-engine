@@ -133,8 +133,8 @@ fi
 if echo "$CI_STATUS" | grep -qi "FAILURE\|ERROR"; then
     # fail → p1 (CI 阶段 - fail)
     echo "PHASE: p1"
-    echo "DESCRIPTION: CI 阶段 - fail（修到绿）"
-    echo "ACTION: 无限循环修到绿（拉失败 → 修 → push → 查 CI）"
+    echo "DESCRIPTION: CI 阶段 - fail（事件驱动修复）"
+    echo "ACTION: 事件驱动循环（拉失败 → 修 → push → 退出 → 等唤醒）"
     echo ""
     echo "CI 状态: $CI_STATUS"
     echo ""
@@ -150,11 +150,11 @@ if echo "$CI_STATUS" | grep -qi "FAILURE\|ERROR"; then
     echo "  3. 修复 + push"
     echo "     git add . && git commit -m 'fix: CI 失败修复' && git push"
     echo ""
-    echo "  4. 查询下一轮 CI"
-    echo "     bash scripts/detect-phase.sh"
-    echo ""
-    echo "  5. 如果还是 fail → 回到步骤 2"
-    echo "     如果 pass → 结束"
+    echo "  4. 尝试结束对话"
+    echo "     Stop Hook 会检查 CI 状态："
+    echo "     - CI pending → exit 0（退出，等下次唤醒）"
+    echo "     - CI still fail → exit 2（继续修）"
+    echo "     - CI pass → exit 0（结束）"
     exit 0
 fi
 

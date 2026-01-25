@@ -1,62 +1,70 @@
 # QA Decision
 
-Decision: MUST_ADD_RCI
-Priority: P1
+Decision: NO_RCI
+Priority: P2
 RepoType: Engine
 
 ## 分析
 
-**改动类型**: feature (核心工作流改动)
-- P1 阶段从"事件驱动"改为"轮询循环"
-- Step 8 不再调用 Step 9（让 Stop Hook 触发）
-- Step 9 改为完整的 while 循环（在 P1 阶段执行）
+**改动类型**: docs (修复文档矛盾)
+- 修复 SKILL.md 中"轮询循环"与"两阶段分离"的概念矛盾
+- 修复 09-ci.md 中将"事件驱动"标记为 ❌ 的错误
+- 修复 detect-phase.sh 中的误导性描述
+- **不改变任何代码逻辑**，只修改文档说明
 
 **影响范围**:
-- 修改 skills/dev/steps/08-pr.md（P0 阶段结束逻辑）
-- 重写 skills/dev/steps/09-ci.md（P1 阶段轮询循环）
-- 更新 skills/dev/SKILL.md（流程图）
-- 两阶段分离的核心机制变更
+- skills/dev/SKILL.md（移除"轮询循环"描述）
+- skills/dev/steps/09-ci.md（恢复"事件驱动"为正确模式）
+- scripts/detect-phase.sh（更新描述）
+- Stop Hook 逻辑保持不变（已经是正确实现）
 
 **测试策略**:
-- P0 阶段：manual 验证 Step 8 不调用 Step 9
-- Stop Hook：manual 验证 PR 创建后触发 exit 0
-- P1 阶段：manual 验证轮询循环持续到成功
-- 向后兼容：auto 回归测试
+- 文档一致性检查：manual grep
+- 自动化测试：确保没有破坏现有功能
 
 ## Tests
 
-- dod_item: "Step 8 创建 PR 后不调用 Step 9"
+- dod_item: "SKILL.md 移除'P1 轮询循环'描述"
   method: manual
-  location: manual:code-review
+  location: manual:grep-check
 
-- dod_item: "Stop Hook 在 PR 创建后能够触发 exit 0"
+- dod_item: "SKILL.md 更新为'事件驱动循环'"
   method: manual
-  location: manual:hook-test
+  location: manual:grep-check
 
-- dod_item: "Step 9 包含完整的 while 轮询循环"
+- dod_item: "09-ci.md 移除 while true 循环代码"
   method: manual
-  location: manual:code-review
+  location: manual:grep-check
 
-- dod_item: "P1 阶段能够持续循环直到成功"
+- dod_item: "09-ci.md 事件驱动模式标记为 ✅"
   method: manual
-  location: manual:e2e-test
+  location: manual:grep-check
 
-- dod_item: "npm run typecheck 通过"
+- dod_item: "detect-phase.sh 描述改为'事件驱动'"
+  method: manual
+  location: manual:grep-check
+
+- dod_item: "所有文档描述一致"
+  method: manual
+  location: manual:doc-review
+
+- dod_item: "typecheck 通过"
   method: auto
   location: npm run typecheck
 
-- dod_item: "npm run test 通过"
+- dod_item: "test 通过"
   method: auto
   location: npm run test
 
+- dod_item: "build 通过"
+  method: auto
+  location: npm run build
+
 ## RCI
 
-new:
-  - W1-008  # P1 阶段轮询循环（新增）
-
-update:
-  - W1-004  # p0 阶段完整流程（Step 8 不调用 Step 9）
+new: []
+update: []
 
 ## Reason
 
-核心工作流两阶段分离机制变更，P1 从事件驱动改为轮询循环，必须纳入回归契约确保不会退化。
+纯文档修复，修正概念矛盾，不改变代码逻辑，不影响回归契约。

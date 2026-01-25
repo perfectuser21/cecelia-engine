@@ -13,18 +13,17 @@ description: |
   v2.0.0 变更：
   - 两阶段分离：p0 (发 PR) + p1 (修 CI)
   - Stop Hook 强制质检（会话结束时强制）
-  - P1 轮询循环（持续检查 CI 直到成功）
+  - 事件驱动循环（push 后退出，等下次唤醒）
 ---
 
 # /dev - 统一开发工作流（v2.0）
 
 ## 核心定位
 
-**流程编排者 + 两阶段分离 + P1 轮询循环**：
+**流程编排者 + 两阶段分离**：
 - 阶段检测 → `scripts/detect-phase.sh`
 - 质检强制 → `hooks/stop.sh` (Stop Hook)
 - 放行判断 → `hooks/pr-gate-v2.sh` (PreToolUse:Bash)
-- P1 轮询 → `skills/dev/steps/09-ci.md` (持续检查 CI)
 
 判断由专门的规范负责：
 - 测试决策 → 参考 `skills/qa/SKILL.md`
@@ -51,7 +50,7 @@ bash scripts/detect-phase.sh
 | 阶段 | 条件 | 目标 | 策略 |
 |------|------|------|------|
 | **p0** | 无 PR | 发 PR | 质检循环 → 创建 PR → 结束（不等 CI）|
-| **p1** | PR + CI fail | 修到 CI 绿 | 轮询循环：检查 CI → 失败则修复并继续 → 成功则合并 |
+| **p1** | PR + CI fail | 修到 CI 绿 | 事件驱动循环：拉失败 → 修复 → push → 退出 → 等唤醒 |
 | **p2** | PR + CI pass | 不介入 | 直接退出（GitHub 自动 merge）|
 | **pending** | PR + CI pending | - | 直接退出（稍后再查）|
 | **unknown** | gh API 错误 | - | 直接退出（不误判）|
@@ -98,38 +97,29 @@ bash scripts/detect-phase.sh
 └─────────────────────────────────────────────────────────┘
 ```
 
-### p1 阶段：CI fail 修复（轮询循环）
+### p1 阶段：CI fail 修复（事件驱动循环）
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│            p1: CI fail 修复（轮询循环）                  │
+│            p1: CI fail 修复（事件驱动循环）              │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │  阶段检测 (scripts/detect-phase.sh)                     │
 │      → PHASE: p1                                        │
 │      ↓                                                  │
-│  CI 轮询循环 (09-ci.md)                                 │
-│      │                                                  │
-│      │   while true; do                                 │
-│      │     检查 CI 状态                                 │
-│      │                                                  │
-│      │     case:                                        │
-│      │       in_progress/queued/pending:                │
-│      │         sleep 30s                                │
-│      │         continue（继续循环）                     │
-│      │                                                  │
-│      │       failure:                                   │
-│      │         分析失败原因                              │
-│      │         修复代码                                 │
-│      │         git add && commit && push                │
-│      │         continue（继续循环，不退出！）            │
-│      │                                                  │
-│      │       success:                                   │
-│      │         gh pr merge --squash --delete-branch     │
-│      │         break（退出循环）                         │
-│      │   done                                           │
+│  CI 修复循环 (09-ci.md) ← Stop Hook 强制                │
+│      │   1. 拉取 CI 失败详情                            │
+│      │      gh pr checks <PR> --json ...                │
+│      │   2. 分析失败原因（typecheck/test/build）        │
+│      │   3. 修复问题                                    │
+│      │   4. push 代码                                   │
+│      │   5. 尝试结束                                    │
+│      │      Stop Hook:                                  │
+│      │        CI fail → exit 2（继续修）                │
+│      │        CI pending → exit 0（退出，等唤醒）       │
+│      │        CI pass → exit 0（结束）                  │
 │      ↓                                                  │
-│  结束对话 ✅ （PR 已合并）                               │
+│  结束对话 ✅ （GitHub 自动 merge）                       │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -164,7 +154,7 @@ bash scripts/detect-phase.sh
 
 ```
 p0: 发 PR → 结束（不等 CI）
-p1: 轮询 CI → 失败则修复并继续 → 成功则合并并退出
+p1: 修 CI → push → 结束（不等 CI）
 p2: 直接退出（GitHub 自动 merge）
 ```
 
@@ -177,16 +167,11 @@ p1: CI fail → exit 2（继续修）
     CI pass → exit 0（结束）
 ```
 
-### 3. P1 轮询循环 ✅
+### 3. 事件驱动循环 ✅
 
 ```
-while true; do
-  检查 CI 状态
-  case:
-    running → sleep 30, continue
-    failure → 修复代码 → push → continue（不退出！）
-    success → merge → break
-done
+❌ 不挂着等待: while CI pending; do sleep; done
+✅ push 后退出: push → exit 0 → 等下次唤醒
 ```
 
 ### 4. 分支策略
