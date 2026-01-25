@@ -1,9 +1,9 @@
 {
-  "sha": "f4ef789df5b966a0c8ed63dbd3c752b8f067c5d8",
+  "sha": "87e862c8ef5077d7f737f8380dc6c828078ed2a0",
   "branch": "cp-01251938-flow-optimize",
   "qa_gate_passed": true,
-  "audit_decision": "UNKNOWN",
-  "timestamp": "2026-01-25T19:48:36+08:00",
+  "audit_decision": "PASS",
+  "timestamp": "2026-01-25T19:52:39+08:00",
   "evidence": {
     "typecheck": "passed",
     "tests": "passed",
