@@ -1,8 +1,6 @@
 # QA Decision: 实施全新 CI 分层方案
 
-## 决策
-
-**测试策略**: Minimal（Golden Path 测试）
+Decision: Minimal（Golden Path 测试）
 
 **理由**:
 1. 这是基础设施改动（脚本 + CI 配置），不是业务逻辑
