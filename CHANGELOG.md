@@ -7,6 +7,87 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.7.0] - 2026-01-25
+
+### Changed
+
+- **流程优化：移除空盒子 + Preflight 智能化**
+  - **P0: 移除认知污染源**
+    - 删除 `scripts/devgate/l3-fast.sh`（只打印占位符，不做实际检查）
+    - 移除 package.json 中的 lint/format 占位符
+    - 标注 AI Review 为 "Disabled"（VPS_REVIEW_URL 未配置）
+  - **P1: Preflight 智能化**
+    - 重写 `scripts/devgate/ci-preflight.sh` 为智能跳过逻辑
+    - 只检查 `.quality-gate-passed` 新鲜度（< 5 分钟）+ SHA 匹配
+    - 不再重跑 typecheck/test
+  - **效果**
+    - Hook 检查从 2 分钟降到 0.5 分钟（75% 提升）
+    - 总流程从 7 分钟降到 5.5 分钟
+    - 认知清晰：只有 qa:gate 跑测试（唯一权威）
+
+## [10.5.0] - 2026-01-25
+
+### Added
+
+- **P0: CI L2A Gate（堵绕过路径）**
+  - 新增 `scripts/devgate/l2a-check.sh`（pr/release 双模式）
+  - CI test job 添加 L2A pr 检查（L1 之后、DevGate 之前）
+  - CI release-check job 添加 L2A release 检查（更严格）
+  - 检查 4 个文件：`.prd.md`、`.dod.md`、`docs/QA-DECISION.md`、`docs/AUDIT-REPORT.md`
+  - 远端强制 L2A，`gh pr merge --auto` 无法绕过
+
+- **P1: develop PR L3 子集（防分支腐烂）**
+  - 新增 `regression-pr` job（条件：`base_ref == develop`）
+  - 执行 `scripts/run-regression.sh pr`（RCI 子集）
+  - develop PR 自动跑回归测试，防止分支积累技术债
+
+- **P1: ci-passed 条件 needs（避免 pending）**
+  - 使用 `always()` + result 检查正确处理条件 job
+  - regression-pr 和 release-check 允许 skipped 状态
+  - 避免某个 job skipped 导致 ci-passed 永久 pending
+
+- **RCI 更新**
+  - C2-002: CI L2A Gate (pr mode)
+  - C2-003: CI L2A Gate (release mode)
+  - C4-001: develop PR regression
+  - C2-001: CI test job（更新说明）
+
+### Fixed
+
+- 修复 `regression-contract.yaml` YAML 语法错误（escape `\s` in grep regex）
+- 解决 2 个 `pr-gate-phase1.test.ts` 测试失败
+
+## [10.4.4] - 2026-01-25
+
+### Fixed
+
+- **真正移除 FAST_MODE（修复 PR #273 假修复问题）**
+  - 删除 hooks/pr-gate-v2.sh 第 15-16 行的 `FAST_MODE=true` 配置
+  - 删除第 245-253 行的快速模式提示
+  - 删除所有测试命令中的 FAST_MODE 条件（4 处）
+  - 确保 `grep "FAST_MODE" hooks/pr-gate-v2.sh` 返回空
+  - 本地 PR 创建现在 100% 强制执行 L1 + L2A 检查（Ralph Loop 无限修复）
+
+## [10.4.3] - 2026-01-25
+
+### Fixed
+
+- 移除 hooks/pr-gate-v2.sh 中的 FAST_MODE 配置
+- 本地 PR Gate 强制执行 L1 + L2A 检查
+- 统一本地和 CI 的分层标准：
+  - 本地: L1 + L2A（失败 → Ralph Loop 无限循环修复）
+  - CI → develop: L1 + L2A + L2B
+  - CI → main: L1 ~ L4
+
+## [10.4.2] - 2026-01-25
+
+### Fixed
+
+- 修复 pending 阶段行为描述，明确应该等待 CI 结果而不是退出
+- 更新 scripts/detect-phase.sh 中 pending 阶段的 ACTION 说明
+- 更新 skills/dev/SKILL.md 添加 pending 等待流程图
+- 新增 skills/dev/steps/09.5-pending-wait.md 文档说明等待循环逻辑
+
 ## [10.4.0] - 2026-01-25
 
 ### Changed

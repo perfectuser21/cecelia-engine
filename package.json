@@ -1,6 +1,6 @@
 {
   "name": "zenithjoy-engine",
-  "version": "10.4.0",
+  "version": "10.7.0",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,7 +14,8 @@
     "qa:gate": "bash scripts/qa-with-gate.sh",
     "pr:check": "npm run qa",
     "release:check": "npm run qa && bash scripts/release-check.sh",
-    "coverage:rci": "node scripts/devgate/scan-rci-coverage.cjs"
+    "coverage:rci": "node scripts/devgate/scan-rci-coverage.cjs",
+    "ci:preflight": "bash scripts/devgate/ci-preflight.sh"
   },
   "keywords": [],
   "author": "",

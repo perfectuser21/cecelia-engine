@@ -112,10 +112,25 @@ jobs:
         run: |
           set -e
           npm ci
-          # DoD 检查项（按顺序）
+          # L1: 自动化测试（按顺序）
           npm run typecheck --if-present   # 类型检查
           npm run test --if-present        # 单元测试
           npm run build --if-present       # 构建验证
+
+      # L2A: PRD/DoD/QA/Audit 远端检查
+      - name: L2A Check
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  L2A: PRD/DoD/QA/Audit 检查"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          # L2A check 在 L1 之后、DevGate 之前
+          if [ -f "scripts/devgate/l2a-check.sh" ]; then
+            bash scripts/devgate/l2a-check.sh pr || exit 1
+          else
+            echo "⚠️ l2a-check.sh not found, skipping"
+            echo "   (仓库可能还未升级到 L2A 远端检查)"
+          fi
 
       # Python
       - name: Setup Python
@@ -360,19 +375,27 @@ jobs:
           # 4. 验证 SHA 匹配 HEAD~1（防老文件冒用）⚠️ 关键
           # 两阶段提交：commit 1 = 代码变更, commit 2 = 证据文件
           # checkout 使用 PR head (非 merge commit)，所以 HEAD~1 就是父提交
-          PARENT_SHA=$(git rev-parse HEAD~1)
-          EVIDENCE_SHA=$(jq -r '.sha' "$EVIDENCE_FILE")
+          #
+          # Release 分支例外：release 分支使用强制合并策略，SHA 验证逻辑不适用
+          BASE_BRANCH="${{ github.base_ref }}"
 
-          if [[ "$EVIDENCE_SHA" != "$PARENT_SHA" ]]; then
-            echo "❌ SHA 不匹配！"
-            echo "   证据 SHA: $EVIDENCE_SHA"
-            echo "   HEAD~1: $PARENT_SHA (期望)"
-            echo ""
-            echo "证据文件应该引用代码变更的 commit (HEAD~1)"
-            exit 1
+          if [[ "$BASE_BRANCH" == "main" ]]; then
+            echo "ℹ️  Release 分支：跳过 SHA 验证（强制合并场景）"
+          else
+            PARENT_SHA=$(git rev-parse HEAD~1)
+            EVIDENCE_SHA=$(jq -r '.sha' "$EVIDENCE_FILE")
+
+            if [[ "$EVIDENCE_SHA" != "$PARENT_SHA" ]]; then
+              echo "❌ SHA 不匹配！"
+              echo "   证据 SHA: $EVIDENCE_SHA"
+              echo "   HEAD~1: $PARENT_SHA (期望)"
+              echo ""
+              echo "证据文件应该引用代码变更的 commit (HEAD~1)"
+              exit 1
+            fi
+
+            echo "✓ SHA 验证通过: $EVIDENCE_SHA"
           fi
-
-          echo "✓ SHA 验证通过: $EVIDENCE_SHA"
 
           # 5. 验证 qa_gate_passed == true
           QA_GATE_PASSED=$(jq -r '.qa_gate_passed' "$EVIDENCE_FILE")
@@ -397,6 +420,38 @@ jobs:
           echo "  ✅ Evidence Gate 通过"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
+  # develop PR 的 L3 子集（防止 develop 分支腐烂）
+  regression-pr:
+    if: github.event_name == 'pull_request' && github.base_ref == 'develop'
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: L3 Regression Tests (PR subset)
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  L3: PR 回归测试（子集）"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "防止 develop 分支积累回归风险"
+          echo "跑 trigger 包含 PR 的 RCI 子集"
+          echo ""
+          bash scripts/run-regression.sh pr
+
   # Release 检查（仅 develop → main 的 PR）
   release-check:
     if: github.event_name == 'pull_request' && github.base_ref == 'main'
@@ -417,6 +472,18 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # L2A Release 模式（更严格）
+      - name: L2A Check (release mode)
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  L2A: Release 模式（更严格检查）"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          if [ -f "scripts/devgate/l2a-check.sh" ]; then
+            bash scripts/devgate/l2a-check.sh release || exit 1
+          else
+            echo "⚠️ l2a-check.sh not found, skipping"
+          fi
 
       - name: L3 Regression Tests
         run: |
@@ -480,17 +547,55 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
+  # L2B Check - 可复核证据（PR to develop 也需要）
+  l2b-check:
+    if: github.event_name == 'pull_request'
+    needs: [test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: L2B Evidence Check
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  L2B: 可复核证据检查"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+
+          # PR to develop: L2B-min
+          # PR to main: L2B-full (在 release-check 中已检查)
+          if [ "${{ github.base_ref }}" = "main" ]; then
+            echo "ℹ️ PR to main - L2B-full 在 release-check 中检查，此处跳过"
+            exit 0
+          fi
+
+          if [ -f "scripts/devgate/l2b-check.sh" ]; then
+            bash scripts/devgate/l2b-check.sh pr || exit 1
+          else
+            echo "⚠️ l2b-check.sh not found, skipping"
+            echo "   (仓库可能还未升级到 L2B 检查)"
+          fi
+
   # CI 通过后通知（不自动合并，需要手动确认）
   # 注意：此 job 只在 pull_request 事件时运行，push 事件时跳过
-  # A4 fix: PR to main 时必须等 release-check 完成
+  # v10.5.0: 修复条件 needs，正确处理 regression-pr 和 release-check
+  # v10.6.0: 增加 l2b-check 依赖
   ci-passed:
-    needs: [version-check, test, impact-check, evidence-gate, release-check]
+    needs: [version-check, test, contract-drift-check, impact-check, evidence-gate, l2b-check, regression-pr, release-check]
+    # 使用 always() 确保即使某些 job 被跳过也能运行
     if: |
+      always() &&
       github.event_name == 'pull_request' &&
       needs.test.result == 'success' &&
+      needs.contract-drift-check.result == 'success' &&
       (needs.version-check.result == 'success' || needs.version-check.result == 'skipped') &&
       (needs.impact-check.result == 'success' || needs.impact-check.result == 'skipped') &&
       (needs.evidence-gate.result == 'success' || needs.evidence-gate.result == 'skipped') &&
+      (needs.l2b-check.result == 'success' || needs.l2b-check.result == 'skipped') &&
+      (needs.regression-pr.result == 'success' || needs.regression-pr.result == 'skipped') &&
       (needs.release-check.result == 'success' || needs.release-check.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -502,6 +607,19 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
           echo "PR #${{ github.event.pull_request.number }} CI 检查通过"
+          echo ""
+          echo "已通过的检查："
+          echo "  ✅ test (L1 + L2A + DevGate)"
+          if [ "${{ needs.l2b-check.result }}" = "success" ]; then
+            echo "  ✅ l2b-check (L2B-min 证据)"
+          fi
+          echo "  ✅ contract-drift-check"
+          if [ "${{ needs.regression-pr.result }}" = "success" ]; then
+            echo "  ✅ regression-pr (L3 子集)"
+          fi
+          if [ "${{ needs.release-check.result }}" = "success" ]; then
+            echo "  ✅ release-check (L3 全量 + L4)"
+          fi
           echo ""
           echo "下一步："
           echo "  1. 手动 review（如有需要）"
@@ -575,3 +693,91 @@ jobs:
             -H "Notion-Version: 2022-06-28" \
             -d "$JSON_PAYLOAD"
           echo "📨 Notification sent to Notion (failed: $FAILURE_REASON)"
+
+  # AI Review (L2C) - 语义/影响面审查
+  # 在 CI 全绿后运行，不阻断 PR（初期）
+  ai-review:
+    if: github.event_name == 'pull_request'
+    needs: [ci-passed]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write  # 需要写权限来发 comment
+    continue-on-error: true  # 不阻断 PR
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff
+        id: diff
+        run: |
+          # 获取 PR diff（限制大小，防止超长）
+          git diff origin/${{ github.base_ref }}...HEAD > pr.diff
+
+          # 限制 diff 大小（最多 50KB，约 1000 行代码）
+          DIFF_SIZE=$(wc -c < pr.diff)
+          if [ "$DIFF_SIZE" -gt 51200 ]; then
+            echo "⚠️ PR diff 过大 (${DIFF_SIZE} bytes)，截断到 50KB"
+            head -c 51200 pr.diff > pr.diff.truncated
+            mv pr.diff.truncated pr.diff
+            echo "truncated=true" >> $GITHUB_OUTPUT
+          else
+            echo "truncated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Call AI Review API
+        id: review
+        env:
+          VPS_REVIEW_URL: ${{ secrets.VPS_REVIEW_URL }}
+        run: |
+          if [ -z "$VPS_REVIEW_URL" ]; then
+            echo "⚠️ VPS_REVIEW_URL not configured, skipping AI review"
+            echo "review_result=skipped" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # 构建 JSON payload
+          DIFF_CONTENT=$(jq -Rs . < pr.diff)
+          JSON_PAYLOAD=$(jq -n \
+            --arg pr_number "${{ github.event.pull_request.number }}" \
+            --arg repo "${{ github.repository }}" \
+            --argjson diff "$DIFF_CONTENT" \
+            '{pr_number: $pr_number, repo: $repo, diff: $diff}')
+
+          # 调用 VPS Review API
+          RESPONSE=$(curl -s -X POST "$VPS_REVIEW_URL" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD")
+
+          # 保存响应
+          echo "$RESPONSE" > review.json
+          echo "review_result=success" >> $GITHUB_OUTPUT
+
+      - name: Post comment
+        if: steps.review.outputs.review_result == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const review = JSON.parse(fs.readFileSync('review.json', 'utf8'));
+
+            const truncated = '${{ steps.diff.outputs.truncated }}' === 'true';
+            let comment = '## 🤖 AI Review (L2C - 语义/影响面审查)\n\n';
+
+            if (truncated) {
+              comment += '⚠️ **PR diff 已截断到 50KB**，审查可能不完整\n\n';
+            }
+
+            comment += review.content || '无审查结果';
+
+            comment += '\n\n---\n';
+            comment += '*这是 AI 自动审查，不阻断 PR 合并。仅供参考。*';
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: comment
+            });

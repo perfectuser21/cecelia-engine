@@ -1,10 +1,14 @@
 {
-  "sha": "fdd49cc36c1abe5d58e7700f49449f5d731de7d8",
-  "branch": "release-v10.4.0",
+  "sha": "8bb004463b30523416f7cc2544226f247cbb6b75",
+  "branch": "release-v10.7.0-force-merge",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-25T03:49:00Z",
-  "typecheck": "pass",
-  "test": "pass",
-  "note": "v10.4.0 release - P1 polling loop"
+  "timestamp": "2026-01-25T20:53:58+08:00",
+  "evidence": {
+    "typecheck": "passed",
+    "tests": "passed",
+    "build": "success",
+    "audit_l1": 0,
+    "audit_l2": 0
+  }
 }

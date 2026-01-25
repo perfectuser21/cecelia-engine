@@ -24,7 +24,7 @@ set -euo pipefail
 #
 # =============================================================================
 
-MODE="${1:-pr}"
+MODE="pr"  # 默认值
 DRY_RUN=false
 
 # 解析参数
@@ -32,6 +32,9 @@ for arg in "$@"; do
     case $arg in
         --dry-run)
             DRY_RUN=true
+            ;;
+        pr|release|nightly)
+            MODE="$arg"
             ;;
     esac
 done
@@ -323,20 +326,53 @@ run_evidence() {
 # 主流程
 # =============================================================================
 
-# Dry Run 模式：只显示 RCI 列表
+# Dry Run 模式：显示完整测试清单
 if [[ "$DRY_RUN" == "true" ]]; then
-    echo -e "${BLUE}[RCI 列表 - $MODE 模式]${NC}"
+    echo -e "${BLUE}[Regression Test Plan - $MODE 模式]${NC}"
     echo ""
 
-    parse_rcis | filter_by_trigger "$MODE" | while IFS="$SEP" read -r id trigger method evidence_type evidence_run evidence_contains; do
-        echo -e "  ${CYAN}$id${NC}"
-        echo "    trigger: $trigger"
-        echo "    method: $method"
-        echo "    evidence.type: $evidence_type"
-        [[ "$evidence_run" != "null" ]] && echo "    evidence.run: $evidence_run"
-        [[ "$evidence_contains" != "null" ]] && echo "    evidence.contains: $evidence_contains"
-        echo ""
-    done
+    # L1: 基础检查
+    echo -e "${CYAN}L1: 基础检查${NC}"
+    echo "  - typecheck: npm run typecheck"
+    echo "  - shell syntax: find -name '*.sh' | bash -n"
+    echo ""
+
+    # L2: 单元测试
+    echo -e "${CYAN}L2: 单元测试${NC}"
+    echo "  - tests/: npm run test (vitest)"
+    echo "  - build: npm run build"
+    echo ""
+
+    # L3: 集成测试（根据 MODE）
+    if [[ "$MODE" == "pr" ]]; then
+        echo -e "${CYAN}L3: 跳过 (PR 模式只跑 L1+L2)${NC}"
+    else
+        echo -e "${CYAN}L3: 集成测试 (RCI - $MODE 模式)${NC}"
+
+        parse_rcis | filter_by_trigger "$MODE" | while IFS="$SEP" read -r id trigger method evidence_type evidence_run evidence_contains; do
+            # 只显示 method=auto 的 RCI（可自动执行的）
+            if [[ "$method" != "auto" ]]; then
+                continue
+            fi
+
+            # 简洁格式：ID - 测试命令/路径
+            if [[ "$evidence_type" == "command" ]] && [[ "$evidence_run" != "null" ]]; then
+                echo "  $id - $evidence_run"
+            elif [[ "$evidence_type" == "file" ]]; then
+                # 文件类型，显示文件路径
+                _file_path=""
+                _safe_id=$(printf '%s' "$id" | sed 's/["\\]/\\&/g')
+                _file_path=$(yq eval ".. | select(has(\"evidence\")) | select(.id == \"$_safe_id\") | .evidence.path" "$RC_FILE" 2>/dev/null | head -1)
+                if [[ "$_file_path" != "null" ]] && [[ -n "$_file_path" ]]; then
+                    echo "  $id - $_file_path"
+                else
+                    echo "  $id - (no path)"
+                fi
+            else
+                echo "  $id - (manual: $evidence_type)"
+            fi
+        done
+    fi
 
     exit 0
 fi

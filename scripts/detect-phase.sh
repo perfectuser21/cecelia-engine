@@ -113,17 +113,24 @@ if [[ $GH_EXIT_CODE -ne 0 ]] && [[ -z "$CI_STATUS" ]]; then
 fi
 
 if [[ -z "$CI_STATUS" ]] || [[ "$CI_STATUS" == "PENDING" ]] || [[ "$CI_STATUS" == "QUEUED" ]]; then
-    # pending/queued → 不是阶段，只是中间态
+    # pending/queued → 等待 CI 结果
     echo "PHASE: pending"
-    echo "DESCRIPTION: 中间态（不是阶段）"
-    echo "ACTION: 直接退出（不挂着，稍后再查）"
+    echo "DESCRIPTION: 等待 CI 结果"
+    echo "ACTION: 等待循环（挂着等 CI 出结果）"
     echo ""
     echo "CI 状态: $CI_STATUS"
     echo ""
     echo "说明:"
     echo "  - CI 正在运行中"
-    echo "  - 不要挂着等待"
-    echo "  - 稍后再查（pending → fail/pass）"
+    echo "  - 应该挂着等待 CI 结果"
+    echo "  - 进入等待循环直到 CI 有结果（fail/pass）"
+    echo ""
+    echo "执行流程:"
+    echo "  1. 进入等待循环"
+    echo "  2. 每 30 秒检查一次 CI 状态"
+    echo "  3. pending → 继续等待"
+    echo "  4. failure → 转入 p1 修复流程"
+    echo "  5. success → 转入 p2 结束流程"
     exit 0
 fi
 

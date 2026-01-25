@@ -169,15 +169,19 @@ hooks:
     priority: P0
     trigger: [PR, Release]
     method: auto
-    tags: [pr, gate, quality]
+    tags: [pr, gate, quality, v10.4.4]
     owner: infra
     steps:
       given: "npm run qa 全绿"
       when: "执行 gh pr create"
       then: "Hook 放行（exit 0）"
+    note: "v10.4.4: 移除 FAST_MODE，100% 强制本地 L1+L2A 检查（无快速跳过）"
     evidence:
       type: log
       contains: "✅ PR Gate 通过"
+    verification:
+      - desc: "确认 hooks/pr-gate-v2.sh 中不含 FAST_MODE"
+        command: "! grep -q 'FAST_MODE' hooks/pr-gate-v2.sh"
     test: "tests/hooks/pr-gate.test.ts"
 
   - id: H2-004
@@ -931,18 +935,69 @@ ci:
     priority: P0
     trigger: [PR, Release]
     method: auto
-    tags: [ci, test, l1]
+    tags: [ci, test, l1, v10.5.0]
     owner: infra
     steps:
       given: "PR 提交"
       when: "CI 运行 test job"
-      then: "typecheck + test + build 全绿"
+      then: "typecheck + test + build 全绿 + L2A check (pr mode)"
+    note: "v10.5.0: test job 新增 L2A check (pr mode)"
     evidence:
       type: ci_job
       name: "test"
       status: success
-    # CI test job is validated by the job itself passing
     test: "tests/ci/test-job.test.ts"
+
+  - id: C2-002
+    feature: C2
+    name: "CI L2A Gate (pr mode)"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, l2a, gate, v10.5.0]
+    owner: infra
+    steps:
+      given: "PR 提交"
+      when: "CI test job 运行"
+      then: "l2a-check.sh pr 检查通过（.prd.md + .dod.md + QA-DECISION + AUDIT-REPORT）"
+    evidence:
+      type: ci_log
+      contains: "L2A_SUMMARY: passed=4 failed=0"
+    verification:
+      - desc: "确认 .prd.md 存在 + 至少 3 行"
+        command: "test -f .prd.md && [ $(grep -cv '^\\s*$' .prd.md) -ge 3 ]"
+      - desc: "确认 .dod.md 存在 + 包含 QA:"
+        command: "test -f .dod.md && grep -q 'QA:' .dod.md"
+      - desc: "确认 docs/QA-DECISION.md 存在 + 包含 Decision:"
+        command: "test -f docs/QA-DECISION.md && grep -q 'Decision:' docs/QA-DECISION.md"
+      - desc: "确认 docs/AUDIT-REPORT.md 存在 + Decision: PASS"
+        command: "test -f docs/AUDIT-REPORT.md && grep -q 'Decision: PASS' docs/AUDIT-REPORT.md"
+    test: "tests/devgate/l2a-check.test.ts"
+
+  - id: C2-003
+    feature: C2
+    name: "CI L2A Gate (release mode)"
+    scope: ci
+    priority: P0
+    trigger: [Release]
+    method: auto
+    tags: [ci, l2a, gate, release, v10.5.0]
+    owner: infra
+    steps:
+      given: "PR to main"
+      when: "CI release-check job 运行"
+      then: "l2a-check.sh release 检查通过（更严格：DoD 全勾 + QA PASS）"
+    note: "release 模式比 pr 模式更严格，要求 DoD 全勾选 + QA-DECISION 必须 PASS"
+    evidence:
+      type: ci_log
+      contains: "L2A_SUMMARY: passed=4 failed=0"
+    verification:
+      - desc: "确认 .dod.md 全勾选（无 - [ ]）"
+        command: "! grep -qE '^\\s*-\\s*\\[\\s*\\]' .dod.md"
+      - desc: "确认 docs/QA-DECISION.md Decision: PASS"
+        command: "grep -q 'Decision: PASS' docs/QA-DECISION.md"
+    test: "tests/devgate/l2a-check.test.ts"
 
   # --------------------------------------------------------------------------
   # C3: shell syntax check
@@ -1048,6 +1103,34 @@ ci:
       name: "Append to LEARNINGS"
       status: success
     test: ".github/workflows/nightly.yml"
+
+  # --------------------------------------------------------------------------
+  # C4: regression-pr (develop PR L3 subset)
+  # --------------------------------------------------------------------------
+  - id: C4-001
+    feature: C4
+    name: "develop PR 回归测试（L3 子集）"
+    scope: ci
+    priority: P1
+    trigger: [PR]
+    method: auto
+    tags: [ci, regression, pr, develop, v10.5.0]
+    owner: infra
+    steps:
+      given: "PR to develop"
+      when: "CI regression-pr job 运行"
+      then: "跑 trigger 包含 PR 的 RCI 子集，防止 develop 分支腐烂"
+    note: "v10.5.0: 新增 regression-pr job，develop PR 也跑回归测试子集"
+    evidence:
+      type: ci_job
+      name: "regression-pr"
+      status: success
+    verification:
+      - desc: "确认 regression-pr job 存在于 ci.yml"
+        command: "grep -q 'regression-pr:' .github/workflows/ci.yml"
+      - desc: "确认调用 scripts/run-regression.sh pr"
+        command: "grep -q 'run-regression.sh pr' .github/workflows/ci.yml"
+    test: ".github/workflows/ci.yml"
 
   # --------------------------------------------------------------------------
   # C5: release-check
@@ -1317,7 +1400,7 @@ n8n:
     evidence:
       type: command
       run: "bash scripts/run-regression.sh --dry-run"
-      contains: "RCI 列表"
+      contains: "tests/"
     test: "bash scripts/run-regression.sh --dry-run"
 
   - id: P1-003

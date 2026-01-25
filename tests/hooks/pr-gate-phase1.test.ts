@@ -29,6 +29,14 @@ describe("Phase 1: DevGate Scripts", () => {
     if (!existsSync(TEST_DIR)) {
       mkdirSync(TEST_DIR, { recursive: true });
     }
+    // 初始化独立的 git repo 以隔离 priority 检测
+    try {
+      execSync("git init", { cwd: TEST_DIR, stdio: "ignore" });
+      execSync('git config user.email "test@example.com"', { cwd: TEST_DIR, stdio: "ignore" });
+      execSync('git config user.name "Test User"', { cwd: TEST_DIR, stdio: "ignore" });
+    } catch {
+      // 忽略错误（可能已经是 git repo）
+    }
   });
 
   afterAll(() => {
@@ -254,6 +262,7 @@ describe("Phase 1: DevGate Scripts", () => {
           PR_PRIORITY: "",
           PR_TITLE: "",
           PR_LABELS: "",
+          SKIP_GIT_DETECTION: "1",  // Skip git history detection in tests
         },
       });
 

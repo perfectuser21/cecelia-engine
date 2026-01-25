@@ -39,14 +39,21 @@ skills/dev/VALIDATION.md
 .quality-report.json
 .test-level.json
 
-# Evidence chain files (per-branch, runtime)
+# Workflow runtime files (per-branch, runtime)
+.prd.md
 .dod.md
+.quality-gate-passed
 .layer2-evidence.md
+.l3-analysis.md
 artifacts/screenshots/*.png
 
 # P0-2: Quality Evidence (MUST be tracked)
 # .quality-evidence.json 不能被忽略，这是 CI Evidence Gate 的验证依据
 !.quality-evidence.json
+
+# L2B: Evidence (MUST be tracked for PR to develop)
+# .layer2-evidence.md 记录可复核证据，L2B-min 检查需要
+!.layer2-evidence.md
 
 # Old Subagent files (deprecated)
 .subagent-lock
