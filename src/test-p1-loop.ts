@@ -1,11 +1,11 @@
 /**
  * P1 轮询循环压力测试
- * 故意包含类型错误以触发 CI 失败
+ * 修复后的正确版本
  */
 
-// 故意的类型错误：将 string 赋值给 number
-export const testValue: number = "this will fail typecheck";
+// 修复：正确的类型
+export const testValue: number = 42;
 
-export function testFunction(): string {
-  return testValue; // 类型不匹配
+export function testFunction(): number {
+  return testValue; // 类型匹配 ✅
 }
