@@ -1,11 +1,14 @@
 {
-  "sha": "bb68bdf26c5f8a885203b180b67c8329b892bce5",
+  "sha": "1600b8eef0656de4fe48b9b550d97cd468d6cd78",
   "branch": "cp-01251504-ci-l2a-gate",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-25T07:38:28Z",
-  "typecheck": "passed",
-  "test": "189/191 passed (2 pre-existing failures)",
-  "build": "passed",
-  "l2a_check": "implemented and tested (5/5 tests passed)"
+  "timestamp": "2026-01-25T15:44:57+08:00",
+  "evidence": {
+    "typecheck": "passed",
+    "tests": "passed",
+    "build": "success",
+    "audit_l1": 0,
+    "audit_l2": 0
+  }
 }

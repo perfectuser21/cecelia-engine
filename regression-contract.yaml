@@ -966,7 +966,7 @@ ci:
       contains: "L2A_SUMMARY: passed=4 failed=0"
     verification:
       - desc: "确认 .prd.md 存在 + 至少 3 行"
-        command: "test -f .prd.md && [ $(grep -cv '^\s*$' .prd.md) -ge 3 ]"
+        command: "test -f .prd.md && [ $(grep -cv '^\\s*$' .prd.md) -ge 3 ]"
       - desc: "确认 .dod.md 存在 + 包含 QA:"
         command: "test -f .dod.md && grep -q 'QA:' .dod.md"
       - desc: "确认 docs/QA-DECISION.md 存在 + 包含 Decision:"
