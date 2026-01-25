@@ -1,48 +1,63 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# CI Preflight Check
-# 本地快速预检：L1-fast + L3-fast + L2A-min
-# 目标：推之前尽量发现会挂 CI 的问题，但必须快（< 120s）
+# CI Preflight Check (Smart)
+# 只检查 qa:gate 证据是否新鲜，不重跑测试
+# 认知原则：只有 qa:gate 跑测试，preflight 只判断"是否需要跑 qa:gate"
 
 echo "======================================"
 echo "CI Preflight Check"
 echo "======================================"
-
-START_TIME=$(date +%s)
-
-# L1-fast: typecheck + test（不 build）
 echo ""
-echo "==> L1 Fast: typecheck + test"
-npm run typecheck
-npm run test
 
-# L3-fast: lint/format
-echo ""
-bash scripts/devgate/l3-fast.sh
+# 检查 .quality-gate-passed 是否存在且新鲜（5 分钟内）
+if [[ -f ".quality-gate-passed" ]]; then
+  # 获取文件修改时间
+  if [[ "$(uname)" == "Darwin" ]]; then
+    # macOS
+    GATE_TIME=$(stat -f %m .quality-gate-passed)
+  else
+    # Linux
+    GATE_TIME=$(stat -c %Y .quality-gate-passed)
+  fi
 
-# L2A-min（可选，快速检查）
-echo ""
-echo "==> L2A-min: 快速产物检查"
-if [[ -f ".prd.md" ]]; then
-  echo "✅ .prd.md 存在"
+  NOW=$(date +%s)
+  AGE=$((NOW - GATE_TIME))
+
+  if [ $AGE -lt 300 ]; then
+    echo "✅ .quality-gate-passed 是新鲜的（${AGE}s 前）"
+
+    # 验证 SHA 是否匹配当前 HEAD
+    GATE_SHA=$(grep "^# Commit:" .quality-gate-passed | awk '{print $3}' 2>/dev/null || echo "")
+    CURRENT_SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "")
+
+    if [[ -n "$GATE_SHA" && "$GATE_SHA" == "$CURRENT_SHA" ]]; then
+      echo "✅ SHA 匹配当前 HEAD ($CURRENT_SHA)"
+      echo ""
+      echo "======================================"
+      echo "✅ Preflight 通过（证据新鲜且 SHA 匹配）"
+      echo "⏱️ 耗时: < 1s"
+      echo "======================================"
+      exit 0
+    else
+      echo "⚠️ SHA 不匹配（证据: $GATE_SHA, HEAD: $CURRENT_SHA）"
+      echo "   需要重新运行 qa:gate"
+    fi
+  else
+    echo "⚠️ .quality-gate-passed 已过期（${AGE}s 前 > 5min）"
+    echo "   需要重新运行 qa:gate"
+  fi
 else
-  echo "⚠️  .prd.md 不存在（开发分支需要）"
+  echo "⚠️ .quality-gate-passed 不存在"
+  echo "   需要运行 qa:gate"
 fi
-
-if [[ -f ".dod.md" ]]; then
-  echo "✅ .dod.md 存在"
-else
-  echo "⚠️  .dod.md 不存在（开发分支需要）"
-fi
-
-END_TIME=$(date +%s)
-DURATION=$((END_TIME - START_TIME))
 
 echo ""
 echo "======================================"
-echo "✅ Preflight 检查通过"
-echo "⏱️  耗时: ${DURATION}s"
+echo "❌ Preflight 失败"
 echo "======================================"
+echo ""
+echo "请运行: npm run qa:gate"
+echo ""
 
-exit 0
+exit 1

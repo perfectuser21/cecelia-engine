@@ -15,9 +15,7 @@
     "pr:check": "npm run qa",
     "release:check": "npm run qa && bash scripts/release-check.sh",
     "coverage:rci": "node scripts/devgate/scan-rci-coverage.cjs",
-    "ci:preflight": "bash scripts/devgate/ci-preflight.sh",
-    "lint": "echo 'TODO: add eslint'",
-    "format:check": "echo 'TODO: add prettier check'"
+    "ci:preflight": "bash scripts/devgate/ci-preflight.sh"
   },
   "keywords": [],
   "author": "",
