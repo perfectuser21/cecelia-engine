@@ -1,0 +1,14 @@
+{
+  "sha": "900dc56221f6a6a5a73049542eecd6b045fc9804",
+  "branch": "cp-01252525-cleanup-simple",
+  "qa_gate_passed": true,
+  "audit_decision": "PASS",
+  "timestamp": "2026-01-25T12:05:12+08:00",
+  "evidence": {
+    "typecheck": "passed",
+    "tests": "passed",
+    "build": "success",
+    "audit_l1": 0,
+    "audit_l2": 0
+  }
+}
