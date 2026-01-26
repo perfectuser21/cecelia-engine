@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.8.1] - 2026-01-26
+
+### Changed
+
+- **文档更新：添加 Evidence 引用**
+  - 更新 .dod.md - 为每个 DoD 项添加 Evidence 引用
+  - 更新 .layer2-evidence.md - v10.8.0 证据（包含手动验证 + 自动化测试章节）
+  - 满足 Release PR (develop → main) 的 L3 要求
+
 ## [10.8.0] - 2026-01-26
 
 ### Fixed
