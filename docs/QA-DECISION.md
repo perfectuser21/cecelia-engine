@@ -5,29 +5,17 @@ Priority: P1
 RepoType: Engine
 
 Tests:
-  - dod_item: "QA Node 完成后立即进入 DoD 定稿"
+  - dod_item: "09.5-pending-wait.md 恢复 while 循环（持续运行到合并）"
     method: manual
-    location: manual:step4-qa-node-continue
+    location: manual:pending-loop-restored
 
-  - dod_item: "Audit Node 完成后立即运行 qa:gate"
+  - dod_item: "Stop hook 阻止 p1/pending 阶段结束"
     method: manual
-    location: manual:step7-audit-node-continue
+    location: manual:stop-hook-p1-block
 
-  - dod_item: "/qa Skill 完成后立即返回调用方"
+  - dod_item: "Session-start hook 识别并提示阶段"
     method: manual
-    location: manual:qa-skill-return
-
-  - dod_item: "/audit Skill 完成后立即返回调用方"
-    method: manual
-    location: manual:audit-skill-return
-
-  - dod_item: "Stop Hook 输出改为命令性且说明 Ralph Loop"
-    method: manual
-    location: manual:stop-hook-semantic
-
-  - dod_item: "Pending 状态立即退出不循环"
-    method: manual
-    location: manual:pending-no-loop
+    location: manual:session-start-prompt
 
   - dod_item: "文档更新：feature-registry.yml 版本号"
     method: manual
@@ -41,4 +29,4 @@ RCI:
   new: []
   update: []
 
-Reason: 纯文档类修改（强化 Skill 指令措辞），无核心逻辑变更，无需 RCI
+Reason: 纯流程修复（恢复 while 循环 + 增强 hook），无核心功能变更，无需 RCI
