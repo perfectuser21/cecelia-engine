@@ -1,9 +1,9 @@
 {
-  "sha": "6b61fb34f579095896bae911e12ca5ab03a66ab4",
-  "branch": "cp-fix-qa-decision",
+  "sha": "40eb28de4728a4c7c4de4d60b142e2356a26847f",
+  "branch": "cp-01261145-fix-auto-execution",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-26T10:16:56+08:00",
+  "timestamp": "2026-01-26T16:39:18+08:00",
   "evidence": {
     "typecheck": "passed",
     "tests": "passed",
