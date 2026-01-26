@@ -1,7 +1,7 @@
 # QA Decision
 
 Decision: NO_RCI
-Priority: P1
+Priority: P2
 RepoType: Engine
 
 Tests:
@@ -29,4 +29,4 @@ RCI:
   new: []
   update: []
 
-Reason: 纯流程修复（恢复 while 循环 + 增强 hook），无核心功能变更，无需 RCI
+Reason: 纯流程修复（恢复 while 循环 + 增强 hook），无核心功能变更，无需 RCI。虽然阻塞无头模式，但不是用户面向的核心功能，设为 P2。
