@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.9.2] - 2026-01-27
+
+### Fixed
+
+- **CI: Release PR L2A 检查修复**
+  - 修复 release PR (base=main) 在 test job 中 L2A pr-mode 检查失败问题
+  - L2A Check 条件增加 `&& github.base_ref != 'main'`
+  - release PR 跳过 test job L2A 检查，只运行 release-check job
+
 ## [10.9.1] - 2026-01-27
 
 ### Fixed

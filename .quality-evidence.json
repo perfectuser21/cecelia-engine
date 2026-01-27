@@ -1,9 +1,9 @@
 {
-  "sha": "2881e37130c54ef37a2233a89e30e773954bce0a",
-  "branch": "cp-01270800-fix-self-evolution",
+  "sha": "aa59a2c5634e4dfe662bd5415d68ab1e77dd5939",
+  "branch": "cp-01271037-fix-release-ci",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-27T09:20:46+08:00",
+  "timestamp": "2026-01-27T10:57:09+08:00",
   "evidence": {
     "typecheck": "passed",
     "tests": "passed",
