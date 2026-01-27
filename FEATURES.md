@@ -1,9 +1,10 @@
 ---
 id: features-registry
-version: 1.13.0
+version: 1.14.0
 created: 2026-01-20
 updated: 2026-01-27
 changelog:
+  - 1.14.0: 新增 C6 Evidence CI (SSOT)
   - 1.13.0: 新增 W7 Ralph Loop 自动化
   - 1.12.0: 新增 W6 Worktree 并行开发
   - 1.11.0: 新增 N1 Cecilia (无头模式 + N8N 集成)
@@ -100,6 +101,7 @@ Full Regression（全量测试）
 | C3 | shell syntax check | **Committed** | CI 运行 | Shell 脚本语法 |
 | ~~C4~~ | ~~notify-failure~~ | **Deprecated** | - | v8.0.21 删除，改用 n8n/飞书通知 |
 | C5 | release-check | **Committed** | `scripts/release-check.sh` | Release 前 DoD 完成度检查 |
+| C6 | Evidence CI (SSOT) | **Experiment** | CI 运行 | Evidence 只在 CI 生成/校验，本地 Fast Fail，Ralph Loop 自愈 |
 
 ---
 

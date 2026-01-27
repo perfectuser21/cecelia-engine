@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "10.10.0"
+version: "10.11.0"
 updated: "2026-01-27"
 
 # ============================================================================
@@ -1158,6 +1158,67 @@ ci:
       name: "Append to LEARNINGS"
       status: success
     test: ".github/workflows/nightly.yml"
+
+  # --------------------------------------------------------------------------
+  # C8: Evidence CI (SSOT)
+  # --------------------------------------------------------------------------
+  - id: C8-001
+    feature: C8
+    name: "CI Evidence 生成脚本正常工作"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, ssot, quality-gate]
+    owner: infra
+    steps:
+      given: "CI test job 运行"
+      when: "执行 Generate Evidence step"
+      then: "生成 .quality-evidence.<SHA>.json 文件，包含所需字段"
+    evidence:
+      type: file
+      path: ".quality-evidence.*.json"
+      contains: ["sha", "ci_run_id", "timestamp", "qa_gate_passed", "audit_decision"]
+      run: "bash ci/scripts/generate-evidence.sh"
+    test: "ci/scripts/generate-evidence.sh"
+
+  - id: C8-002
+    feature: C8
+    name: "Evidence Gate 校验通过"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, gate, validation]
+    owner: infra
+    steps:
+      given: "Evidence 文件已生成"
+      when: "执行 Evidence Gate step"
+      then: "校验 JSON 格式、SHA 匹配、必需字段存在"
+    evidence:
+      type: ci_job
+      name: "Evidence Gate"
+      status: success
+      run: "bash ci/scripts/evidence-gate.sh"
+    test: "ci/scripts/evidence-gate.sh"
+
+  - id: C8-003
+    feature: C8
+    name: "本地 qa:local 只跑 typecheck"
+    scope: dev
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [local, fast-fail, typecheck]
+    owner: dev
+    steps:
+      given: "开发者在本地运行 qa:local"
+      when: "npm run qa:local"
+      then: "只执行 typecheck，不跑 test/build（快速反馈）"
+    evidence:
+      type: script
+      contains: "npm run typecheck"
+    test: "package.json"
 
   # --------------------------------------------------------------------------
   # C4: regression-pr (develop PR L3 subset)

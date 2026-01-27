@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.11.0] - 2026-01-27
+
+### Added
+
+- **Evidence CI 化（SSOT - Single Source of Truth）**
+  - CI 生成脚本：`ci/scripts/generate-evidence.sh`
+  - CI 校验脚本：`ci/scripts/evidence-gate.sh`
+  - Evidence 只在 CI 生成，永不 commit（避免 SHA 漂移）
+  - 文件命名：`.quality-evidence.<SHA>.json`
+  - .gitignore 更新：忽略 `.quality-evidence.*.json`
+  - 本地 Fast Fail：新增 `npm run qa:local`（只跑 typecheck）
+  - CI workflow 集成：在 test job 中添加 Evidence 生成和校验步骤
+
+### Fixed
+
+- **detect-priority.cjs L1 修复**
+  - 修复 P0wer 被误识别为 P0 的问题
+  - 直接输入模式跳过文件检测，只测试 extractPriority 逻辑
+  - 改进正则匹配：确保 P[0-3] 后不跟字母
+
 ## [10.10.1] - 2026-01-27
 
 ### Changed

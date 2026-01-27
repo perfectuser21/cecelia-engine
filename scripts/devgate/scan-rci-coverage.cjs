@@ -41,6 +41,8 @@ const ENTRY_PATTERNS = [
 const EXCLUDE_PATTERNS = [
   /^hook-core\//,              // 部署产物目录
   /^skills\/[^/]+\/scripts\//, // Skill 内部脚本
+  /^skills\/assurance\//,      // Assurance Skill（实验性，未启用）
+  /^skills\/audit\//,          // Audit Skill（内部质检工具）
   /^scripts\/devgate\//,       // DevGate 内部工具（Gate 范畴）
   /^scripts\/deploy\.sh$/,     // 部署脚本
   /^scripts\/setup-/,          // 配置脚本
@@ -48,6 +50,9 @@ const EXCLUDE_PATTERNS = [
   /^scripts\/rc-filter/,       // 内部过滤工具
   /^scripts\/auto-/,           // Ralph Loop 内部自动化工具
   /^scripts\/update-/,         // Ralph Loop 内部更新工具
+  /^scripts\/cleanup-/,        // 清理工具（内部维护）
+  /^scripts\/squash-/,         // 合并工具（内部维护）
+  /^scripts\/post-pr-/,        // PR 后工具（内部流程）
   /^hooks\/session-start/,     // 内部 Hook
   /^hooks\/pr-gate/,           // Gate Hook（在 GCI）
   /^hooks\/branch-protect/,    // Gate Hook（在 GCI）

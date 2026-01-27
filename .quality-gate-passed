@@ -1,8 +1,0 @@
-# Quality Gate Passed
-# Generated: 2026-01-27T15:33:20+08:00
-# Branch: cp-260127-ralph-loop-auto
-# Commit: 7250afa
-
-typecheck: PASS
-test: PASS
-build: PASS
