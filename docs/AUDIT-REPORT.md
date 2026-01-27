@@ -1,59 +1,56 @@
 # Audit Report
 
-Branch: cp-evidence-ci-ssot
+Branch: cp-ralph-loop-wrapper
 Date: 2026-01-27
-Scope: ci/scripts/generate-evidence.sh, ci/scripts/evidence-gate.sh, .github/workflows/ci.yml, package.json, .gitignore
+Scope: skills/dev/SKILL.md, /home/xx/bin/dev-with-loop, CHANGELOG.md, docs/QA-DECISION.md, .dod.md
 Target Level: L2
 
 Summary:
-  L1: 1 (fixed)
+  L1: 0
   L2: 0
   L3: 0
   L4: 0
 
 Decision: PASS
 
-Findings:
-  - id: A1-001
-    layer: L1
-    file: scripts/devgate/detect-priority.cjs
-    line: 195-205
-    issue: P0wer 被误识别为 P0（测试失败）
-    fix: 修改直接输入模式，跳过 QA-DECISION.md 读取；改进正则匹配，确保 P[0-3] 后不跟字母
-    status: fixed
+Findings: []
 
 Blockers: []
 
 ## 审计说明
 
-本次变更主要涉及 CI 脚本和配置文件：
+本次变更主要涉及工作流改进和文档更新：
 
 ### 审计范围
 
-1. **ci/scripts/generate-evidence.sh**
+1. **skills/dev/SKILL.md**
+   - 版本更新：✅ 2.0.0 → 2.1.0
+   - 使用警告：✅ 明确说明不要直接调用 /dev
+   - 职责简化：✅ 只负责流程编排，循环由 Ralph Loop 控制
+   - 完成条件：✅ p0/p1 阶段完成条件检查清晰
+   - 文档一致性：✅ 与新的调用方式对齐
+
+2. **/home/xx/bin/dev-with-loop**
    - Shell 脚本规范：✅ 使用 `set -euo pipefail`
-   - 路径安全：✅ 使用 git rev-parse 获取 SHA
-   - 环境变量：✅ 使用 `${VAR:-default}` 提供默认值
-   - JSON 生成：✅ 使用 heredoc，避免转义问题
+   - 阶段检测：✅ 调用 scripts/detect-phase.sh
+   - 参数处理：✅ 支持可选 PRD 文件参数
+   - 错误处理：✅ 各阶段都有明确的处理逻辑
+   - 帮助信息：✅ 提供 --help 参数
 
-2. **ci/scripts/evidence-gate.sh**
-   - 错误处理：✅ 每个校验步骤都有明确的错误信息
-   - JSON 校验：✅ 使用 `jq empty` 验证格式
-   - 字段检查：✅ 遍历所有必需字段
-   - 静默处理：✅ 使用 `2>/dev/null` 避免干扰输出
+3. **CHANGELOG.md**
+   - 格式规范：✅ 遵循 Keep a Changelog 格式
+   - 版本信息：✅ 添加到 Unreleased 区域
+   - 变更描述：✅ 清晰说明改动内容
 
-3. **.github/workflows/ci.yml**
-   - 条件执行：✅ 使用 `if: steps.detect.outputs.type == 'npm'`
-   - 脚本路径：✅ 使用相对路径 `bash ci/scripts/...`
-   - 失败处理：✅ CI step 失败会阻止后续执行
+4. **docs/QA-DECISION.md**
+   - Schema 完整：✅ 包含所有必需字段
+   - RCI 映射：✅ 正确标识需要更新的 RCI
+   - 测试方式：✅ 标记为 manual（符合实际）
 
-4. **package.json**
-   - 新增 script：✅ `qa:local` 简化为 typecheck only
-   - 向后兼容：✅ 保留原有 `qa` script
-
-5. **.gitignore**
-   - 模式匹配：✅ `.quality-evidence.*.json` 覆盖所有 SHA 后缀
-   - 注释说明：✅ 清晰说明为何忽略
+5. **.dod.md**
+   - QA 引用：✅ 正确引用 docs/QA-DECISION.md
+   - 验收条目：✅ 与 PRD 对齐
+   - Test 字段：✅ 标记为 manual（符合实际）
 
 ### 审计结论
 
