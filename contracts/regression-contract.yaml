@@ -1708,3 +1708,42 @@ scripts:
       type: log
       contains: "未 push 的 commit"
     test: "tests/scripts/post-pr-checklist.test.ts"
+
+  # --------------------------------------------------------------------------
+  # S4: cleanup-prd-dod.sh
+  # --------------------------------------------------------------------------
+  - id: S4-001
+    feature: S4
+    name: "cleanup-prd-dod.sh 自动清理 develop/main PRD/DoD"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, cleanup, prd-dod]
+    owner: infra
+    steps:
+      given: "当前在 develop 或 main 分支"
+      when: "运行 scripts/cleanup-prd-dod.sh"
+      then: "自动删除 .prd.md 和 .dod.md 文件（如果存在）"
+    evidence:
+      type: log
+      contains: "清理完成"
+    test: "tests/scripts/cleanup-prd-dod.test.ts"
+
+  - id: S4-002
+    feature: S4
+    name: "cleanup-prd-dod.sh 跳过功能分支"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, cleanup, prd-dod]
+    owner: infra
+    steps:
+      given: "当前在 cp-* 或 feature/* 分支"
+      when: "运行 scripts/cleanup-prd-dod.sh"
+      then: "跳过清理，保留 PRD/DoD 文件"
+    evidence:
+      type: log
+      contains: "跳过"
+    test: "tests/scripts/cleanup-prd-dod.test.ts"
