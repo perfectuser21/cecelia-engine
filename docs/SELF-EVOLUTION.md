@@ -4,6 +4,60 @@
 
 ---
 
+## 工作流程（v2.0 - 异步队列模式）
+
+```
+问题发现 → 记录到队列 → 定时/手动处理 → 自动化固化
+```
+
+### 新模式 vs 旧模式
+
+| 阶段 | 旧模式（立即执行）| 新模式（异步队列）|
+|------|------------------|------------------|
+| **发现** | post-pr-checklist报错 | 记录到SELF-EVOLUTION-QUEUE |
+| **响应** | AI 立即创建 PR 修复 | 不阻塞，继续流程 |
+| **处理** | 同步修复（可能循环）| 异步处理（积累后批量）|
+| **固化** | 每次修复后添加检查 | 处理完后更新自动化 |
+
+### 队列处理
+
+**队列文件**：`docs/SELF-EVOLUTION-QUEUE.md`
+
+**自动处理**（auto_fix: true）：
+```bash
+# 定时任务或 CI 后执行
+bash scripts/cleanup-prd-dod.sh  # 清理 PRD/DoD 残留
+```
+
+**手动处理**（auto_fix: false）：
+1. 从队列选择任务
+2. 创建 PRD（基于任务描述）
+3. 运行 `/dev` 修复
+4. 标记为 completed
+
+### 避免无限循环
+
+**旧问题**：
+```
+cleanup PR #293 合并
+  → develop 有 .prd.md/.dod.md (来自 PR #293)
+  → post-pr-checklist 报错
+  → AI 立即创建 PR #294
+  → develop 又有 .prd.md/.dod.md (来自 PR #294)
+  → 无限循环... ❌
+```
+
+**新解决方案**：
+```
+cleanup PR #296 合并
+  → develop 有 .prd.md/.dod.md
+  → post-pr-checklist 记录到队列（不报错）
+  → CI 后自动运行 cleanup-prd-dod.sh
+  → 自动删除残留 ✅
+```
+
+---
+
 ## 问题 → 检查项 → 自动化
 
 ### 2026-01-26: PRD/DoD 残留

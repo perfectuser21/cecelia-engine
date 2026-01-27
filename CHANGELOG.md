@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.9.1] - 2026-01-27
+
+### Fixed
+
+- **Self-Evolution 异步队列机制**
+  - 修复 PRD/DoD 残留导致的无限循环问题
+  - post-pr-checklist.sh 从报错模式改为记录到队列模式
+  - 新增 scripts/cleanup-prd-dod.sh 自动清理脚本
+  - 新增 docs/SELF-EVOLUTION-QUEUE.md 队列定义
+  - CI 集成自动清理流程（develop/main 分支 push 后自动执行）
+  - 更新 docs/SELF-EVOLUTION.md 工作流程说明（v2.0 异步模式）
+
 ## [10.8.3] - 2026-01-26
 
 ### Fixed

@@ -631,6 +631,34 @@ jobs:
   # 注意：此 job 只在 pull_request 事件时运行，push 事件时跳过
   # v10.5.0: 修复条件 needs，正确处理 regression-pr 和 release-check
   # v10.6.0: 增加 l2b-check 依赖
+  cleanup-prd-dod:
+    # 在 develop/main 分支的 push 事件后自动清理 PRD/DoD
+    if: |
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run cleanup script
+        run: bash scripts/cleanup-prd-dod.sh
+
+      - name: Commit cleanup if needed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add -A
+            git commit -m "chore: auto-cleanup PRD/DoD residue [skip ci]"
+            git push origin ${{ github.ref_name }}
+            echo "✅ Cleanup committed and pushed"
+          else
+            echo "✅ No cleanup needed"
+          fi
+
   ci-passed:
     needs: [version-check, test, contract-drift-check, impact-check, evidence-gate, l2b-check, regression-pr, release-check]
     # 使用 always() 确保即使某些 job 被跳过也能运行
