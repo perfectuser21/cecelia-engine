@@ -1,9 +1,11 @@
 ---
 id: features-registry
-version: 1.12.0
+version: 1.14.0
 created: 2026-01-20
-updated: 2026-01-23
+updated: 2026-01-27
 changelog:
+  - 1.14.0: 新增 C6 Evidence CI (SSOT)
+  - 1.13.0: 新增 W7 Ralph Loop 自动化
   - 1.12.0: 新增 W6 Worktree 并行开发
   - 1.11.0: 新增 N1 Cecilia (无头模式 + N8N 集成)
   - 1.10.0: 同步 regression-contract.yaml 版本，GP-005 补 E2-003
@@ -78,6 +80,7 @@ Full Regression（全量测试）
 | W5 | Phase Detection | **Committed** | `scripts/detect-phase.sh` | **v2.0.0 更新** - 阶段检测（p0/p1/p2/pending/unknown） |
 | ~~W4~~ | ~~测试任务模式~~ | **Deprecated** | - | v8.0.21 删除，功能不需要 |
 | W6 | Worktree 并行开发 | **Committed** | `skills/dev/scripts/worktree-manage.sh` | 检测活跃分支，支持 worktree 隔离 |
+| W7 | Ralph Loop 自动化 | **Experiment** | 手动验证 | Ralph Loop 自动启用 + SHA 一次性提交 + 版本号自动更新 |
 
 ---
 
@@ -98,6 +101,7 @@ Full Regression（全量测试）
 | C3 | shell syntax check | **Committed** | CI 运行 | Shell 脚本语法 |
 | ~~C4~~ | ~~notify-failure~~ | **Deprecated** | - | v8.0.21 删除，改用 n8n/飞书通知 |
 | C5 | release-check | **Committed** | `scripts/release-check.sh` | Release 前 DoD 完成度检查 |
+| C6 | Evidence CI (SSOT) | **Experiment** | CI 运行 | Evidence 只在 CI 生成/校验，本地 Fast Fail，Ralph Loop 自愈 |
 
 ---
 
@@ -158,6 +162,7 @@ Trigger 规则:
 > 使用 `bash scripts/rc-filter.sh stats` 获取实时统计
 
 - **Committed Features**: 13（H1-H2, W1/W3/W5/W6, C1-C3/C5, E1-E2, N1）
+- **Experiment Features**: 1（W7）
 
 ---
 

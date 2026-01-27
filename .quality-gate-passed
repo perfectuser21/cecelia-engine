@@ -1,8 +1,0 @@
-# Quality Gate Passed
-# Generated: 2026-01-27T10:57:09+08:00
-# Branch: cp-01271037-fix-release-ci
-# Commit: aa59a2c
-
-typecheck: PASS
-test: PASS
-build: PASS

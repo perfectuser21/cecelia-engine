@@ -47,9 +47,9 @@ skills/dev/VALIDATION.md
 .l3-analysis.md
 artifacts/screenshots/*.png
 
-# P0-2: Quality Evidence (MUST be tracked)
-# .quality-evidence.json 不能被忽略，这是 CI Evidence Gate 的验证依据
-!.quality-evidence.json
+# P0-2: Quality Evidence (CI-only, never commit)
+# Evidence 只在 CI 生成，永不提交到 git（避免 SHA 漂移）
+.quality-evidence*.json
 
 # L2B: Evidence (MUST be tracked for PR to develop)
 # .layer2-evidence.md 记录可复核证据，L2B-min 检查需要

@@ -248,8 +248,12 @@ describe("Phase 1: DevGate Scripts", () => {
     it("should detect P2 from labels", () => {
       const result = execSync(`node "${DETECT_PRIORITY_SCRIPT}"`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, PR_LABELS: "bug,priority:P2,urgent" },
+        cwd: TEST_DIR,  // Use clean test directory to avoid reading QA-DECISION.md from project root
+        env: {
+          ...process.env,
+          PR_LABELS: "bug,priority:P2,urgent",
+          SKIP_GIT_DETECTION: "1",  // Skip git history detection in tests
+        },
       });
 
       expect(result.trim()).toBe("P2");
@@ -307,8 +311,12 @@ describe("Phase 1: DevGate Scripts", () => {
     it("should pass for non-P0/P1 priorities", () => {
       const result = execSync(`bash "${REQUIRE_RCI_SCRIPT}"`, {
         encoding: "utf-8",
-        cwd: PROJECT_ROOT,
-        env: { ...process.env, PR_PRIORITY: "P2" },
+        cwd: PROJECT_ROOT,  // Run from project root to access scripts/
+        env: {
+          ...process.env,
+          PR_PRIORITY: "P2",
+          SKIP_GIT_DETECTION: "1",  // Skip QA-DECISION.md and git history detection in tests
+        },
       });
 
       expect(result).toContain("非 P0/P1");

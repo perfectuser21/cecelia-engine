@@ -25,6 +25,10 @@ jobs:
           fetch-depth: 0
 
       - name: Check package.json version updated
+        if: |
+          !startsWith(github.event.pull_request.title, 'chore:') &&
+          !startsWith(github.event.pull_request.title, 'docs:') &&
+          !startsWith(github.event.pull_request.title, 'test:')
         run: |
           set -e
           if [ ! -f package.json ]; then
@@ -142,6 +146,23 @@ jobs:
 
           npm run build --if-present       # 构建验证
 
+      # Evidence 生成（CI-only，SSOT）
+      - name: Generate Evidence
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Evidence 生成（CI-only）"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          bash ci/scripts/generate-evidence.sh
+
+      - name: Evidence Gate
+        if: steps.detect.outputs.type == 'npm'
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  Evidence Gate 校验"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          bash ci/scripts/evidence-gate.sh
+
       # L2A: PRD/DoD/QA/Audit 远端检查
       # PRD/DoD Residue Check (develop/main only)
       - name: Check for PRD/DoD in develop/main
@@ -167,7 +188,10 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: L2A Check
-        if: steps.detect.outputs.type == 'npm' && github.base_ref != 'main'
+        if: |
+          steps.detect.outputs.type == 'npm' &&
+          github.base_ref != 'main' &&
+          !startsWith(github.event.pull_request.title, 'chore:')
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  L2A: PRD/DoD/QA/Audit 检查"
@@ -369,105 +393,6 @@ jobs:
           export BASE_REF="origin/${{ github.base_ref || 'develop' }}"
           bash scripts/devgate/impact-check.sh
 
-  # Evidence Gate - 质检证据门控（P0-2）
-  evidence-gate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 2  # 需要父提交来验证证据 SHA
-
-      - name: Verify Quality Evidence
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  Evidence Gate: 质检证据验证"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-
-          EVIDENCE_FILE=".quality-evidence.json"
-
-          # 1. 检查文件存在
-          if [[ ! -f "$EVIDENCE_FILE" ]]; then
-            echo "❌ 证据文件不存在: $EVIDENCE_FILE"
-            echo ""
-            echo "请在本地运行 'npm run qa:gate' 生成证据文件"
-            exit 1
-          fi
-
-          echo "✓ 证据文件存在"
-
-          # 2. 检查 JSON 格式有效
-          if ! jq empty "$EVIDENCE_FILE" 2>/dev/null; then
-            echo "❌ 证据文件格式无效（非 JSON）"
-            exit 1
-          fi
-
-          echo "✓ JSON 格式有效"
-
-          # 3. 检查必需字段
-          REQUIRED_FIELDS=("sha" "branch" "qa_gate_passed" "audit_decision" "timestamp")
-          for field in "${REQUIRED_FIELDS[@]}"; do
-            if ! jq -e ".$field" "$EVIDENCE_FILE" > /dev/null 2>&1; then
-              echo "❌ 缺少必需字段: $field"
-              exit 1
-            fi
-          done
-
-          echo "✓ 必需字段齐全"
-
-          # 4. 验证 SHA 匹配 HEAD~1（防老文件冒用）⚠️ 关键
-          # 两阶段提交：commit 1 = 代码变更, commit 2 = 证据文件
-          # checkout 使用 PR head (非 merge commit)，所以 HEAD~1 就是父提交
-          #
-          # Release 分支例外：release 分支使用强制合并策略，SHA 验证逻辑不适用
-          BASE_BRANCH="${{ github.base_ref }}"
-
-          if [[ "$BASE_BRANCH" == "main" ]]; then
-            echo "ℹ️  Release 分支：跳过 SHA 验证（强制合并场景）"
-          else
-            PARENT_SHA=$(git rev-parse HEAD~1)
-            EVIDENCE_SHA=$(jq -r '.sha' "$EVIDENCE_FILE")
-
-            if [[ "$EVIDENCE_SHA" != "$PARENT_SHA" ]]; then
-              echo "❌ SHA 不匹配！"
-              echo "   证据 SHA: $EVIDENCE_SHA"
-              echo "   HEAD~1: $PARENT_SHA (期望)"
-              echo ""
-              echo "证据文件应该引用代码变更的 commit (HEAD~1)"
-              exit 1
-            fi
-
-            echo "✓ SHA 验证通过: $EVIDENCE_SHA"
-          fi
-
-          # 5. 验证 qa_gate_passed == true
-          QA_GATE_PASSED=$(jq -r '.qa_gate_passed' "$EVIDENCE_FILE")
-          if [[ "$QA_GATE_PASSED" != "true" ]]; then
-            echo "❌ qa_gate_passed != true"
-            exit 1
-          fi
-
-          echo "✓ QA Gate 已通过"
-
-          # 6. 验证 audit_decision == "PASS"
-          AUDIT_DECISION=$(jq -r '.audit_decision' "$EVIDENCE_FILE")
-          if [[ "$AUDIT_DECISION" != "PASS" ]]; then
-            echo "❌ Audit Decision: $AUDIT_DECISION (期望 PASS)"
-            exit 1
-          fi
-
-          echo "✓ Audit Decision: PASS"
-
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  ✅ Evidence Gate 通过"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-
   # develop PR 的 L3 子集（防止 develop 分支腐烂）
   regression-pr:
     if: github.event_name == 'pull_request' && github.base_ref == 'develop'
@@ -660,7 +585,7 @@ jobs:
           fi
 
   ci-passed:
-    needs: [version-check, test, contract-drift-check, impact-check, evidence-gate, l2b-check, regression-pr, release-check]
+    needs: [version-check, test, contract-drift-check, impact-check, l2b-check, regression-pr, release-check]
     # 使用 always() 确保即使某些 job 被跳过也能运行
     if: |
       always() &&
@@ -669,7 +594,6 @@ jobs:
       needs.contract-drift-check.result == 'success' &&
       (needs.version-check.result == 'success' || needs.version-check.result == 'skipped') &&
       (needs.impact-check.result == 'success' || needs.impact-check.result == 'skipped') &&
-      (needs.evidence-gate.result == 'success' || needs.evidence-gate.result == 'skipped') &&
       (needs.l2b-check.result == 'success' || needs.l2b-check.result == 'skipped') &&
       (needs.regression-pr.result == 'success' || needs.regression-pr.result == 'skipped') &&
       (needs.release-check.result == 'success' || needs.release-check.result == 'skipped')

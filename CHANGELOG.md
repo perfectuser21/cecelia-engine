@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.11.0] - 2026-01-27
+
+### Added
+
+- **Evidence CI 化（SSOT - Single Source of Truth）**
+  - CI 生成脚本：`ci/scripts/generate-evidence.sh`
+  - CI 校验脚本：`ci/scripts/evidence-gate.sh`
+  - Evidence 只在 CI 生成，永不 commit（避免 SHA 漂移）
+  - 文件命名：`.quality-evidence.<SHA>.json`
+  - .gitignore 更新：忽略 `.quality-evidence.*.json`
+  - 本地 Fast Fail：新增 `npm run qa:local`（只跑 typecheck）
+  - CI workflow 集成：在 test job 中添加 Evidence 生成和校验步骤
+
+### Fixed
+
+- **detect-priority.cjs L1 修复**
+  - 修复 P0wer 被误识别为 P0 的问题
+  - 直接输入模式跳过文件检测，只测试 extractPriority 逻辑
+  - 改进正则匹配：确保 P[0-3] 后不跟字母
+
+## [10.10.1] - 2026-01-27
+
+### Changed
+
+- **Ralph Loop 自动调用修复（统一循环机制）**
+  - SKILL.md 开头添加 Ralph Loop 强制调用规则（最高优先级）
+  - 删除所有"结束对话"、"允许结束"等误导性描述
+  - 修改 p0/p1 流程图为 Ralph Loop 完成条件检查
+  - Step 7 添加 Ralph Loop 循环提示
+  - Step 8 修改为 Ralph Loop 完成条件检查说明
+  - Step 9 完全重写为 Ralph Loop 启动指令，删除所有 while true 循环示例
+  - 归档 09.5-pending-wait.md 到 .archive/
+  - hooks/stop.sh 修复注释和 p0 阶段输出信息
+  - ~/.claude/CLAUDE.md 添加 Ralph Loop 全局调用规则
+
+## [10.9.5] - 2026-01-27
+
+### Changed
+
+- **Ralph Loop 文档修正**
+  - 删除 docs/RALPH-LOOP-INTERCEPTION.md 中关于项目 Stop Hook 的错误描述
+  - 明确说明 Ralph Loop 插件自己实现循环机制，通过 AI 检查条件并输出 promise 来控制
+  - 删除 skills/dev/SKILL.md 中的 "Stop Hook 配合" 章节
+  - 简化 Ralph Loop 工作原理描述，移除与 Stop Hook 的混淆
+  - 禁用 .claude/settings.json 中的 Stop Hook 配置
+
+## [10.9.4] - 2026-01-27
+
+### Fixed
+
+- **CI 规则检测逻辑修复**
+  - Version Check 和 L2A Check 改用 `github.event.pull_request.title` 检测 PR 标题类型
+  - 修复 PR #300 使用的 `github.event.head_commit.message` 在 PR context 中无效的问题
+  - chore:/docs:/test: 类型的 PR 现在能正确跳过 L2A/Version 检查
+
+## [10.9.3] - 2026-01-27
+
+### Fixed
+
+- **CI 规则优化**
+  - L2A Check 跳过 chore: commits（清理类任务不强制要求 PRD/DoD）
+  - Version Check 跳过 chore:/docs:/test: commits（非功能性改动不要求版本更新）
+  - 修复每次 PR 都遇到的三个系统性问题：PRD/DoD missing、Version not updated、Evidence SHA mismatch
+
 ## [10.9.2] - 2026-01-27
 
 ### Fixed

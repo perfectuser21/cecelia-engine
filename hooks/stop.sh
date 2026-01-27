@@ -7,15 +7,12 @@
 # p0 (Published 阶段):
 #   - 检查质检（Step 7）
 #   - 检查 PR 创建（Step 8）
-#   - 不检查 CI（创建 PR 后立即结束，不等 CI）
+#   - 不检查 CI（创建 PR 后 Ralph Loop 检查完成条件）
 #
 # p1 (CI fail 阶段):
 #   - 检查质检（Step 7）
 #   - 检查 PR 存在（Step 8）
-#   - 检查 CI 状态（Step 9）
-#     - CI fail → exit 2（继续修）
-#     - CI pending → exit 0（退出，等下次唤醒）
-#     - CI pass → exit 0（结束）
+#   - 阻止会话结束，强制调用 /dev（Ralph Loop 会处理 CI）
 #
 # p2/pending:
 #   - 直接允许结束（exit 0）
@@ -265,23 +262,23 @@ if command -v gh &>/dev/null; then
     if [[ "$PHASE" == "p0" ]]; then
         # p0 阶段：PR 创建后立即结束，不检查 CI
         echo "  📌 当前阶段: p0 (Published)" >&2
-        echo "  ✅ PR 创建完成，p0 阶段结束" >&2
+        echo "  ✅ PR 创建完成，检查 Ralph Loop 完成条件" >&2
         echo "" >&2
-        echo "  不检查 CI（p0 不等待 CI，直接结束）" >&2
+        echo "  不检查 CI（p0 阶段到此为止）" >&2
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  ✅ p0 任务完成" >&2
+        echo "  ✅ p0 检查完成（Ralph Loop 会检查完成条件）" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "  完成步骤:" >&2
         echo "    ✅ Step 7: 质检通过（Audit + 测试）" >&2
         echo "    ✅ Step 8: PR 创建完成 (#$PR_NUMBER)" >&2
         echo "" >&2
-        echo "  后续: CI 自动运行，下次启动检测 CI 结果（p1/p2）" >&2
+        echo "  Ralph Loop: 检查所有条件是否满足" >&2
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
-        # exit 0: p0 阶段结束，允许会话结束
+        # exit 0: p0 检查完成，Ralph Loop 会检查完成条件并决定是否结束
         exit 0
 
     elif [[ "$PHASE" == "p1" ]] || [[ "$PHASE" == "pending" ]] || [[ "$PHASE" == "unknown" ]]; then

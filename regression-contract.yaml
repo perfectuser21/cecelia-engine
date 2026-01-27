@@ -18,8 +18,8 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "10.3.0"
-updated: "2026-01-25"
+version: "10.11.0"
+updated: "2026-01-27"
 
 # ============================================================================
 # Hooks 回归契约
@@ -855,6 +855,61 @@ workflow:
       type: log
       contains: "已移除 worktree"
 
+  # --------------------------------------------------------------------------
+  # W7: Ralph Loop 自动化
+  # --------------------------------------------------------------------------
+  - id: W7-001
+    feature: W7
+    name: "Ralph Loop 自动启动"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, ralph-loop, automation]
+    owner: workflow
+    steps:
+      given: "/dev 工作流执行到 Step 7 或 Step 9"
+      when: "AI 需要循环处理质检或 CI 修复"
+      then: "自动启动 Ralph Loop (max-iterations=20 for p0, 10 for p1)"
+    evidence:
+      type: log
+      description: "日志显示 /ralph-loop 命令被自动调用，包含 --max-iterations 和 --completion-promise 参数"
+
+  - id: W7-002
+    feature: W7
+    name: "一次性提交避免 SHA 死循环"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, commit, sha-check]
+    owner: workflow
+    steps:
+      given: "Step 7 质检完成，需要提交代码"
+      when: "执行自动化检查并提交"
+      then: "所有改动（代码+版本号+registry+视图+evidence）在一个 commit，evidence SHA 匹配 commit SHA"
+    evidence:
+      type: command
+      run: "git log --oneline -1"
+      description: "单个 commit 包含所有改动，CI SHA 检查通过"
+
+  - id: W7-003
+    feature: W7
+    name: "版本号自动更新"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, version, automation]
+    owner: workflow
+    steps:
+      given: "Step 7.4 自动化检查阶段"
+      when: "运行 scripts/auto-update-version.sh"
+      then: "根据第一个 commit 类型（feat/fix/feat!）自动更新 package.json、CHANGELOG.md、hook-core/VERSION"
+    evidence:
+      type: file-diff
+      description: "package.json 版本号已更新，CHANGELOG.md 有新条目，hook-core/VERSION 同步"
+
 # ============================================================================
 # CI/Release 回归契约
 # ============================================================================
@@ -1103,6 +1158,66 @@ ci:
       name: "Append to LEARNINGS"
       status: success
     test: ".github/workflows/nightly.yml"
+
+  # --------------------------------------------------------------------------
+  # C8: Evidence CI (SSOT)
+  # --------------------------------------------------------------------------
+  - id: C8-001
+    feature: C8
+    name: "CI Evidence 生成脚本正常工作"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [ci, evidence, ssot, quality-gate]
+    owner: infra
+    steps:
+      given: "CI test job 运行"
+      when: "执行 Generate Evidence step"
+      then: "生成 .quality-evidence.<SHA>.json 文件，包含所需字段"
+    evidence:
+      type: ci_job
+      name: "Generate Evidence"
+      run: "bash ci/scripts/generate-evidence.sh"
+    test: "ci/scripts/generate-evidence.sh"
+
+  - id: C8-002
+    feature: C8
+    name: "Evidence Gate 校验通过"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, gate, validation]
+    owner: infra
+    steps:
+      given: "Evidence 文件已生成"
+      when: "执行 Evidence Gate step"
+      then: "校验 JSON 格式、SHA 匹配、必需字段存在"
+    evidence:
+      type: ci_job
+      name: "Evidence Gate"
+      status: success
+      run: "bash ci/scripts/evidence-gate.sh"
+    test: "ci/scripts/evidence-gate.sh"
+
+  - id: C8-003
+    feature: C8
+    name: "本地 qa:local 只跑 typecheck"
+    scope: dev
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [local, fast-fail, typecheck]
+    owner: dev
+    steps:
+      given: "开发者在本地运行 qa:local"
+      when: "npm run qa:local"
+      then: "只执行 typecheck，不跑 test/build（快速反馈）"
+    evidence:
+      type: script
+      contains: "npm run typecheck"
+    test: "package.json"
 
   # --------------------------------------------------------------------------
   # C4: regression-pr (develop PR L3 subset)

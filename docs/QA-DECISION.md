@@ -1,41 +1,39 @@
 # QA Decision
 
 Decision: PASS
-Priority: P2
+Priority: P0
 RepoType: Engine
 
 Tests:
-  - dod_item: "docs/SELF-EVOLUTION-QUEUE.md 已创建，包含队列格式说明"
-    method: manual
-    location: manual:检查文件存在且格式正确
-
-  - dod_item: "scripts/cleanup-prd-dod.sh 已创建，可在 develop/main 分支删除 PRD/DoD"
+  - dod_item: "CI 生成 .quality-evidence.<sha>.json"
     method: auto
-    location: tests/scripts/cleanup-prd-dod.test.ts
+    location: ci/scripts/generate-evidence.sh
 
-  - dod_item: "scripts/post-pr-checklist.sh 修改为记录模式（发现问题 → 写入队列 → exit 0）"
+  - dod_item: "Evidence 不写入 git"
     method: auto
-    location: tests/scripts/post-pr-checklist.test.ts
+    location: .gitignore check
 
-  - dod_item: "docs/SELF-EVOLUTION.md 更新，说明新的异步处理流程"
-    method: manual
-    location: manual:检查文档内容更新
+  - dod_item: "Gate 校验 SHA = HEAD_SHA"
+    method: auto
+    location: ci/scripts/evidence-gate.sh
 
-  - dod_item: ".github/workflows/ci.yml 集成 cleanup 脚本（develop/main 分支自动清理）"
-    method: manual
-    location: manual:检查CI配置
+  - dod_item: "本地只保留 typecheck/lint"
+    method: auto
+    location: package.json qa:local script
 
-  - dod_item: "手动测试：在 develop 分支运行 cleanup 脚本，确认可删除 PRD/DoD"
-    method: manual
-    location: manual:develop-cleanup-test
+  - dod_item: "CI 完整检查（qa + evidence + version + rci）"
+    method: auto
+    location: .github/workflows/test.yml
 
-  - dod_item: "手动测试：post-pr-checklist 发现问题后写入队列，不报错退出"
+  - dod_item: "Ralph Loop 自动修复 CI 失败"
     method: manual
-    location: manual:queue-recording-test
+    location: manual:skills/dev/steps/09-ci.md 重写验证
 
 RCI:
-  new: []
-  update:
-    - S3-001  # post-pr-checklist.sh 的行为变更
+  new:
+    - C6-001  # Evidence 生成脚本正常工作
+    - C6-002  # Evidence Gate 校验通过
+    - C6-003  # 本地 qa:local 只跑 typecheck/lint
+  update: []
 
-Reason: 修改 post-pr-checklist.sh 行为（记录而非报错），需更新现有 S3-001 RCI；cleanup 脚本为新增工具类脚本，但属于 self-evolution 机制扩展，优先级 P2
+Reason: Evidence CI 化是核心质量契约变更，必须纳入回归契约确保永不漂移

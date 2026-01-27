@@ -18,8 +18,8 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "10.0.0"
-updated: "2026-01-24"
+version: "10.11.0"
+updated: "2026-01-27"
 
 # ============================================================================
 # Hooks 回归契约
@@ -169,15 +169,19 @@ hooks:
     priority: P0
     trigger: [PR, Release]
     method: auto
-    tags: [pr, gate, quality]
+    tags: [pr, gate, quality, v10.4.4]
     owner: infra
     steps:
       given: "npm run qa 全绿"
       when: "执行 gh pr create"
       then: "Hook 放行（exit 0）"
+    note: "v10.4.4: 移除 FAST_MODE，100% 强制本地 L1+L2A 检查（无快速跳过）"
     evidence:
       type: log
       contains: "✅ PR Gate 通过"
+    verification:
+      - desc: "确认 hooks/pr-gate-v2.sh 中不含 FAST_MODE"
+        command: "! grep -q 'FAST_MODE' hooks/pr-gate-v2.sh"
     test: "tests/hooks/pr-gate.test.ts"
 
   - id: H2-004
@@ -631,11 +635,11 @@ workflow:
     owner: workflow
     steps:
       given: "进入 p0 阶段（本地开发）"
-      when: "执行 PRD → DoD → Code → Audit (PASS) → Test (L1) → PR"
+      when: "执行 PRD → DoD → Code → Audit (PASS) → Test (L1) → PR（Step 8 不调用 Step 9）"
       then: "创建 PR 后结束，不等待 CI（Stop Hook 检查 phase=p0，直接 exit 0）"
     evidence:
       type: log
-      description: "PR 创建后 Stop Hook 输出 'p0 阶段: PR 已创建 → exit 0'"
+      description: "PR 创建后 Stop Hook 输出 'p0 阶段: PR 已创建 → exit 0'；Step 8 结尾不包含 Step 9 调用"
 
   - id: W1-005
     feature: W1
@@ -670,6 +674,23 @@ workflow:
     evidence:
       type: log
       contains: "p2 阶段.*CI pass.*merge.*learning.*cleanup"
+
+  - id: W1-008
+    feature: W1
+    name: "p1 阶段轮询循环"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, p1, v2.0.0, polling-loop]
+    owner: workflow
+    steps:
+      given: "PR 已创建，CI 检测到失败（phase=p1）"
+      when: "用户问'怎么样了'触发 P1 阶段"
+      then: "进入轮询循环：检查 CI → 运行中则 sleep 30s → 失败则修复并 continue → 成功则 merge 并 break"
+    evidence:
+      type: code
+      description: "skills/dev/steps/09-ci.md 包含 while true 循环；失败后 continue 继续循环（不退出）；超时保护 1 小时"
 
   # --------------------------------------------------------------------------
   # W3: 循环回退
@@ -834,6 +855,61 @@ workflow:
       type: log
       contains: "已移除 worktree"
 
+  # --------------------------------------------------------------------------
+  # W7: Ralph Loop 自动化
+  # --------------------------------------------------------------------------
+  - id: W7-001
+    feature: W7
+    name: "Ralph Loop 自动启动"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, ralph-loop, automation]
+    owner: workflow
+    steps:
+      given: "/dev 工作流执行到 Step 7 或 Step 9"
+      when: "AI 需要循环处理质检或 CI 修复"
+      then: "自动启动 Ralph Loop (max-iterations=20 for p0, 10 for p1)"
+    evidence:
+      type: log
+      description: "日志显示 /ralph-loop 命令被自动调用，包含 --max-iterations 和 --completion-promise 参数"
+
+  - id: W7-002
+    feature: W7
+    name: "一次性提交避免 SHA 死循环"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, commit, sha-check]
+    owner: workflow
+    steps:
+      given: "Step 7 质检完成，需要提交代码"
+      when: "执行自动化检查并提交"
+      then: "所有改动（代码+版本号+registry+视图+evidence）在一个 commit，evidence SHA 匹配 commit SHA"
+    evidence:
+      type: command
+      run: "git log --oneline -1"
+      description: "单个 commit 包含所有改动，CI SHA 检查通过"
+
+  - id: W7-003
+    feature: W7
+    name: "版本号自动更新"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [dev, version, automation]
+    owner: workflow
+    steps:
+      given: "Step 7.4 自动化检查阶段"
+      when: "运行 scripts/auto-update-version.sh"
+      then: "根据第一个 commit 类型（feat/fix/feat!）自动更新 package.json、CHANGELOG.md、hook-core/VERSION"
+    evidence:
+      type: file-diff
+      description: "package.json 版本号已更新，CHANGELOG.md 有新条目，hook-core/VERSION 同步"
+
 # ============================================================================
 # CI/Release 回归契约
 # ============================================================================
@@ -914,18 +990,69 @@ ci:
     priority: P0
     trigger: [PR, Release]
     method: auto
-    tags: [ci, test, l1]
+    tags: [ci, test, l1, v10.5.0]
     owner: infra
     steps:
       given: "PR 提交"
       when: "CI 运行 test job"
-      then: "typecheck + test + build 全绿"
+      then: "typecheck + test + build 全绿 + L2A check (pr mode)"
+    note: "v10.5.0: test job 新增 L2A check (pr mode)"
     evidence:
       type: ci_job
       name: "test"
       status: success
-    # CI test job is validated by the job itself passing
     test: "tests/ci/test-job.test.ts"
+
+  - id: C2-002
+    feature: C2
+    name: "CI L2A Gate (pr mode)"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, l2a, gate, v10.5.0]
+    owner: infra
+    steps:
+      given: "PR 提交"
+      when: "CI test job 运行"
+      then: "l2a-check.sh pr 检查通过（.prd.md + .dod.md + QA-DECISION + AUDIT-REPORT）"
+    evidence:
+      type: ci_log
+      contains: "L2A_SUMMARY: passed=4 failed=0"
+    verification:
+      - desc: "确认 .prd.md 存在 + 至少 3 行"
+        command: "test -f .prd.md && [ $(grep -cv '^\\s*$' .prd.md) -ge 3 ]"
+      - desc: "确认 .dod.md 存在 + 包含 QA:"
+        command: "test -f .dod.md && grep -q 'QA:' .dod.md"
+      - desc: "确认 docs/QA-DECISION.md 存在 + 包含 Decision:"
+        command: "test -f docs/QA-DECISION.md && grep -q 'Decision:' docs/QA-DECISION.md"
+      - desc: "确认 docs/AUDIT-REPORT.md 存在 + Decision: PASS"
+        command: "test -f docs/AUDIT-REPORT.md && grep -q 'Decision: PASS' docs/AUDIT-REPORT.md"
+    test: "tests/devgate/l2a-check.test.ts"
+
+  - id: C2-003
+    feature: C2
+    name: "CI L2A Gate (release mode)"
+    scope: ci
+    priority: P0
+    trigger: [Release]
+    method: auto
+    tags: [ci, l2a, gate, release, v10.5.0]
+    owner: infra
+    steps:
+      given: "PR to main"
+      when: "CI release-check job 运行"
+      then: "l2a-check.sh release 检查通过（更严格：DoD 全勾 + QA PASS）"
+    note: "release 模式比 pr 模式更严格，要求 DoD 全勾选 + QA-DECISION 必须 PASS"
+    evidence:
+      type: ci_log
+      contains: "L2A_SUMMARY: passed=4 failed=0"
+    verification:
+      - desc: "确认 .dod.md 全勾选（无 - [ ]）"
+        command: "! grep -qE '^\\s*-\\s*\\[\\s*\\]' .dod.md"
+      - desc: "确认 docs/QA-DECISION.md Decision: PASS"
+        command: "grep -q 'Decision: PASS' docs/QA-DECISION.md"
+    test: "tests/devgate/l2a-check.test.ts"
 
   # --------------------------------------------------------------------------
   # C3: shell syntax check
@@ -1031,6 +1158,94 @@ ci:
       name: "Append to LEARNINGS"
       status: success
     test: ".github/workflows/nightly.yml"
+
+  # --------------------------------------------------------------------------
+  # C8: Evidence CI (SSOT)
+  # --------------------------------------------------------------------------
+  - id: C8-001
+    feature: C8
+    name: "CI Evidence 生成脚本正常工作"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [ci, evidence, ssot, quality-gate]
+    owner: infra
+    steps:
+      given: "CI test job 运行"
+      when: "执行 Generate Evidence step"
+      then: "生成 .quality-evidence.<SHA>.json 文件，包含所需字段"
+    evidence:
+      type: ci_job
+      name: "Generate Evidence"
+      run: "bash ci/scripts/generate-evidence.sh"
+    test: "ci/scripts/generate-evidence.sh"
+
+  - id: C8-002
+    feature: C8
+    name: "Evidence Gate 校验通过"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, gate, validation]
+    owner: infra
+    steps:
+      given: "Evidence 文件已生成"
+      when: "执行 Evidence Gate step"
+      then: "校验 JSON 格式、SHA 匹配、必需字段存在"
+    evidence:
+      type: ci_job
+      name: "Evidence Gate"
+      status: success
+      run: "bash ci/scripts/evidence-gate.sh"
+    test: "ci/scripts/evidence-gate.sh"
+
+  - id: C8-003
+    feature: C8
+    name: "本地 qa:local 只跑 typecheck"
+    scope: dev
+    priority: P1
+    trigger: [PR, Release]
+    method: auto
+    tags: [local, fast-fail, typecheck]
+    owner: dev
+    steps:
+      given: "开发者在本地运行 qa:local"
+      when: "npm run qa:local"
+      then: "只执行 typecheck，不跑 test/build（快速反馈）"
+    evidence:
+      type: script
+      contains: "npm run typecheck"
+    test: "package.json"
+
+  # --------------------------------------------------------------------------
+  # C4: regression-pr (develop PR L3 subset)
+  # --------------------------------------------------------------------------
+  - id: C4-001
+    feature: C4
+    name: "develop PR 回归测试（L3 子集）"
+    scope: ci
+    priority: P1
+    trigger: [PR]
+    method: auto
+    tags: [ci, regression, pr, develop, v10.5.0]
+    owner: infra
+    steps:
+      given: "PR to develop"
+      when: "CI regression-pr job 运行"
+      then: "跑 trigger 包含 PR 的 RCI 子集，防止 develop 分支腐烂"
+    note: "v10.5.0: 新增 regression-pr job，develop PR 也跑回归测试子集"
+    evidence:
+      type: ci_job
+      name: "regression-pr"
+      status: success
+    verification:
+      - desc: "确认 regression-pr job 存在于 ci.yml"
+        command: "grep -q 'regression-pr:' .github/workflows/ci.yml"
+      - desc: "确认调用 scripts/run-regression.sh pr"
+        command: "grep -q 'run-regression.sh pr' .github/workflows/ci.yml"
+    test: ".github/workflows/ci.yml"
 
   # --------------------------------------------------------------------------
   # C5: release-check
@@ -1181,46 +1396,6 @@ export:
       description: "返回 L1/L2/L3 状态对象"
     test: "skills/dev/scripts/generate-report.sh"
 
-  # --------------------------------------------------------------------------
-  # E3: Assurance Skill
-  # --------------------------------------------------------------------------
-  - id: E3-001
-    feature: E3
-    name: "/assurance 保证级别评估"
-    scope: skill
-    priority: P2
-    trigger: [Release]
-    method: manual
-    tags: [skill, assurance, quality]
-    owner: qa
-    steps:
-      given: "需要评估系统保证级别"
-      when: "运行 /assurance skill"
-      then: "提供 L1/L2/L3/L4 分层保证评估"
-    evidence:
-      type: manual
-      desc: "验证 assurance 评估流程"
-
-  # --------------------------------------------------------------------------
-  # E4: Audit Skill
-  # --------------------------------------------------------------------------
-  - id: E4-001
-    feature: E4
-    name: "/audit 代码审计与修复"
-    scope: skill
-    priority: P2
-    trigger: [Release]
-    method: manual
-    tags: [skill, audit, quality]
-    owner: qa
-    steps:
-      given: "需要审计代码质量"
-      when: "运行 /audit skill"
-      then: "执行 L1-L4 分层审计，修复到目标层级"
-    evidence:
-      type: manual
-      desc: "验证 audit 流程和边界控制"
-
 # ============================================================================
 # N8N Integration 回归契约
 # ============================================================================
@@ -1249,7 +1424,7 @@ n8n:
 
   - id: N1-002
     feature: N1
-    name: "Cecilia 执行 PRD Checkpoint"
+    name: "Cecilia 执行 PRD Task"
     scope: n8n
     priority: P0
     trigger: [Release]
@@ -1258,11 +1433,11 @@ n8n:
     owner: infra
     steps:
       given: "存在合法的 PRD JSON 文件"
-      when: "运行 cecilia -p prd.json -c CP-001"
+      when: "运行 cecilia -p prd.json -t T-001"
       then: "返回包含 success 字段的 JSON 结果"
     evidence:
       type: command
-      run: "cecilia -p n8n/test-prd.json -c CP-001 --output /tmp/test.json && cat /tmp/test.json"
+      run: "cecilia -p n8n/test-prd.json -t T-001 --output /tmp/test.json && cat /tmp/test.json"
       contains: "success"
     test: "n8n/test-prd.json"
 
@@ -1558,192 +1733,191 @@ golden_paths:
     method: auto
     rcis:
       - N1-001  # Cecilia CLI 健康检查
-      - N1-002  # Cecilia 执行 PRD Checkpoint
+      - N1-002  # Cecilia 执行 PRD Task
       - N1-003  # N8N Workflow 定义存在
       - E2-002  # 报告包含 mode 字段 (headless)
     verification:
       type: end-to-end
       steps:
         - "运行 cecilia --health，确认返回 healthy: true"
-        - "运行 cecilia -p test-prd.json -c CP-001，确认执行成功"
+        - "运行 cecelia -p test-prd.json -t T-001，确认执行成功"
         - "检查输出 JSON 包含 success 字段"
         - "确认 N8N workflow JSON 文件存在"
     test: "cecilia --health"
 
 # ============================================================================
-# Scripts 回归契约
+# P0 质检强制三件套（Q1/Q2/Q3）
 # ============================================================================
-scripts:
+quality_enforcement:
   # --------------------------------------------------------------------------
-  # S1: squash-evidence.sh
+  # Q1: Impact Check - 能力变更强制登记
   # --------------------------------------------------------------------------
-  - id: S1-001
-    feature: S1
-    name: "squash-evidence.sh 自动合并 evidence commit"
-    scope: script
-    priority: P2
+  - id: Q1-001
+    feature: Q1
+    name: "Impact Check 检测核心文件改动"
+    scope: ci
+    priority: P0
     trigger: [PR, Release]
-    method: auto
-    tags: [automation, evidence, git]
+    method: manual
+    tags: [devgate, feature-registry, capability]
     owner: infra
     steps:
-      given: "最后一个 commit 是 evidence commit（chore: update quality evidence）"
-      when: "运行 scripts/squash-evidence.sh"
-      then: "自动 soft reset + amend，将 evidence 合并到代码 commit"
+      given: "PR 改动了 hooks/, skills/, scripts/detect-phase.sh, scripts/qa-with-gate.sh"
+      when: "CI 运行 impact-check job"
+      then: "检测到核心文件改动，验证 feature-registry.yml 同时更新"
     evidence:
-      type: git
-      contains: "已合并到代码 commit"
-    test: "tests/scripts/squash-evidence.test.ts"
+      type: ci-log
+      contains: "检测到核心能力文件改动"
+    verification:
+      type: manual
+      description: "创建 PR 改动 hooks/，观察 CI impact-check job 是否检测到"
+
+  - id: Q1-002
+    feature: Q1
+    name: "Impact Check 验证 registry 同时更新"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [devgate, feature-registry]
+    owner: infra
+    steps:
+      given: "核心文件已改动"
+      when: "impact-check.sh 检查 feature-registry.yml"
+      then: "如果 registry 未更新，CI 失败；如果已更新，CI 通过"
+    evidence:
+      type: ci-status
+      expected: "改动核心文件不改 registry → FAIL；同时改动 → PASS"
+    verification:
+      type: manual
+      description: "本 PR 会验证（改了 scripts/qa-with-gate.sh + registry）"
+
+  - id: Q1-003
+    feature: Q1
+    name: "Impact Check 前向一致性"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: manual
+    tags: [devgate, forward-consistency]
+    owner: infra
+    steps:
+      given: "PR 只改动 feature-registry.yml（未改核心文件）"
+      when: "impact-check.sh 检查"
+      then: "允许通过（文档更新场景）"
+    evidence:
+      type: ci-status
+      expected: "只改 registry → PASS（不要求改能力）"
+    verification:
+      type: manual
+      description: "创建只改 registry 的 PR，确认 CI 通过"
 
   # --------------------------------------------------------------------------
-  # S2: auto-generate-views.sh
+  # Q2: Evidence Gate - 质检证据门控
   # --------------------------------------------------------------------------
-  - id: S2-001
-    feature: S2
-    name: "auto-generate-views.sh 检测 feature-registry.yml 变更"
+  - id: Q2-001
+    feature: Q2
+    name: "Evidence 文件自动生成"
     scope: script
-    priority: P2
+    priority: P0
     trigger: [PR, Release]
-    method: auto
-    tags: [automation, derived-views]
+    method: manual
+    tags: [qa-gate, evidence, json]
     owner: infra
     steps:
-      given: "feature-registry.yml 有 staged 或 unstaged 变更"
-      when: "运行 scripts/auto-generate-views.sh"
-      then: "自动运行 generate-path-views.sh 并暂存生成的文件"
+      given: "npm run qa:gate 成功"
+      when: "qa-with-gate.sh 执行完成"
+      then: "自动生成 .quality-evidence.json，包含 SHA/Decision/timestamp"
     evidence:
-      type: log
-      contains: "派生视图已生成"
-    test: "tests/scripts/auto-generate-views.test.ts"
+      type: file
+      path: ".quality-evidence.json"
+      schema: '{"sha": "string", "audit_decision": "PASS", "qa_gate_passed": true}'
+    verification:
+      type: manual
+      description: "本 PR 已验证（.quality-evidence.json 已提交）"
 
-  - id: S2-002
-    feature: S2
-    name: "auto-generate-views.sh 无变更时跳过"
-    scope: script
-    priority: P2
+  - id: Q2-002
+    feature: Q2
+    name: "Evidence SHA 验证防冒用"
+    scope: ci
+    priority: P0
     trigger: [PR, Release]
-    method: auto
-    tags: [automation, derived-views]
+    method: manual
+    tags: [evidence-gate, sha-validation, security]
     owner: infra
     steps:
-      given: "feature-registry.yml 无变更"
-      when: "运行 scripts/auto-generate-views.sh"
-      then: "输出'无变更，跳过'并 exit 0"
+      given: "PR 包含 .quality-evidence.json"
+      when: "CI evidence-gate job 验证"
+      then: "检查 json.sha == HEAD，如果不匹配则 CI 失败"
     evidence:
-      type: log
-      contains: "无变更，跳过"
-    test: "tests/scripts/auto-generate-views.test.ts"
+      type: ci-log
+      contains: "SHA 验证通过"
+    verification:
+      type: manual
+      description: "本 PR 会验证（CI 检查 SHA 匹配 HEAD）"
 
-  # --------------------------------------------------------------------------
-  # S3: post-pr-checklist.sh
-  # --------------------------------------------------------------------------
-  - id: S3-001
-    feature: S3
-    name: "post-pr-checklist.sh develop/main 分支 PRD/DoD 检查"
-    scope: script
-    priority: P2
+  - id: Q2-003
+    feature: Q2
+    name: "Evidence 字段完整性验证"
+    scope: ci
+    priority: P0
     trigger: [PR, Release]
-    method: auto
-    tags: [automation, post-pr, quality]
+    method: manual
+    tags: [evidence-gate, validation]
     owner: infra
     steps:
-      given: "当前在 develop 或 main 分支"
-      when: "运行 scripts/post-pr-checklist.sh"
-      then: "检查是否有 .prd.md 或 .dod.md 文件，有则报错"
+      given: ".quality-evidence.json 存在"
+      when: "evidence-gate job 验证"
+      then: "检查所有必需字段存在且格式正确"
     evidence:
-      type: log
-      contains: "PRD/DoD 文件不应存在于 develop/main"
-    test: "tests/scripts/post-pr-checklist.test.ts"
-
-  - id: S3-002
-    feature: S3
-    name: "post-pr-checklist.sh 派生视图版本同步检查"
-    scope: script
-    priority: P2
-    trigger: [PR, Release]
-    method: auto
-    tags: [automation, post-pr, quality]
-    owner: infra
-    steps:
-      given: "feature-registry.yml 和 OPTIMAL-PATHS.md 都存在"
-      when: "运行 scripts/post-pr-checklist.sh"
-      then: "检查两者版本号是否匹配"
-    evidence:
-      type: log
-      contains: "派生视图版本"
-    test: "tests/scripts/post-pr-checklist.test.ts"
-
-  - id: S3-003
-    feature: S3
-    name: "post-pr-checklist.sh 临时文件残留检查"
-    scope: script
-    priority: P2
-    trigger: [PR, Release]
-    method: auto
-    tags: [automation, post-pr, quality]
-    owner: infra
-    steps:
-      given: "工作区可能有临时文件"
-      when: "运行 scripts/post-pr-checklist.sh"
-      then: "检查并列出 *Old.*, *New.*, *Backup.* 等临时文件"
-    evidence:
-      type: log
-      contains: "临时文件"
-    test: "tests/scripts/post-pr-checklist.test.ts"
-
-  - id: S3-004
-    feature: S3
-    name: "post-pr-checklist.sh 未 push 的 commit 检查"
-    scope: script
-    priority: P2
-    trigger: [PR, Release]
-    method: auto
-    tags: [automation, post-pr, quality]
-    owner: infra
-    steps:
-      given: "可能有本地 commit 未 push"
-      when: "运行 scripts/post-pr-checklist.sh"
-      then: "检查并提示未 push 的 commit 数量"
-    evidence:
-      type: log
-      contains: "未 push 的 commit"
-    test: "tests/scripts/post-pr-checklist.test.ts"
+      type: ci-log
+      contains: "必需字段齐全"
+    verification:
+      type: manual
+      description: "本 PR 会验证（CI 检查字段完整性）"
 
   # --------------------------------------------------------------------------
-  # S4: cleanup-prd-dod.sh
+  # Q3: Anti-Bypass Contract - 远端强制兜底
   # --------------------------------------------------------------------------
-  - id: S4-001
-    feature: S4
-    name: "cleanup-prd-dod.sh 自动清理 develop/main PRD/DoD"
-    scope: script
-    priority: P2
+  - id: Q3-001
+    feature: Q3
+    name: "Quality Contract 文档完整性"
+    scope: doc
+    priority: P0
     trigger: [PR, Release]
-    method: auto
-    tags: [automation, cleanup, prd-dod]
+    method: manual
+    tags: [documentation, contract]
     owner: infra
     steps:
-      given: "当前在 develop 或 main 分支"
-      when: "运行 scripts/cleanup-prd-dod.sh"
-      then: "自动删除 .prd.md 和 .dod.md 文件（如果存在）"
+      given: "docs/contracts/QUALITY-CONTRACT.md 存在"
+      when: "人工审查文档"
+      then: "包含本地 vs 远端职责映射表、P0 三件套说明、Branch Protection 要求"
     evidence:
-      type: log
-      contains: "清理完成"
-    test: "tests/scripts/cleanup-prd-dod.test.ts"
+      type: doc-review
+      checklist:
+        - "本地 vs 远端职责映射表清晰"
+        - "P0-1/P0-2/P0-3 说明完整"
+        - "Branch Protection 配置要求明确"
+    verification:
+      type: manual
+      description: "本 PR 已验证（文档已审查）"
 
-  - id: S4-002
-    feature: S4
-    name: "cleanup-prd-dod.sh 跳过功能分支"
-    scope: script
-    priority: P2
+  - id: Q3-002
+    feature: Q3
+    name: "职责边界清晰定义"
+    scope: doc
+    priority: P0
     trigger: [PR, Release]
-    method: auto
-    tags: [automation, cleanup, prd-dod]
+    method: manual
+    tags: [contract, boundary]
     owner: infra
     steps:
-      given: "当前在 cp-* 或 feature/* 分支"
-      when: "运行 scripts/cleanup-prd-dod.sh"
-      then: "跳过清理，保留 PRD/DoD 文件"
+      given: "QUALITY-CONTRACT.md 定义职责边界"
+      when: "团队成员阅读文档"
+      then: "理解本地=加速失败，远端=最终强制"
     evidence:
-      type: log
-      contains: "跳过"
-    test: "tests/scripts/cleanup-prd-dod.test.ts"
+      type: doc-content
+      contains: "本地 Hooks = 加速失败 / 远端 CI + Branch Protection = 最终强制"
+    verification:
+      type: manual
+      description: "文档审查确认原则清晰"

@@ -32,6 +32,95 @@ description: |
 
 ---
 
+## ⚡⚡⚡ Ralph Loop 强制调用（CRITICAL - 最高优先级）
+
+**进入 /dev 后，必须立即调用 Ralph Loop 启动自动循环。**
+
+### 调用时机
+
+```bash
+# 1. 检测当前阶段
+PHASE=$(bash scripts/detect-phase.sh | grep "^PHASE:" | awk '{print $2}')
+
+# 2. p0 阶段：质检循环
+if [[ "$PHASE" == "p0" ]]; then
+    /ralph-loop "实现 <PRD 描述的功能>，完成质检并创建 PR 后输出 <promise>QUALITY_GATE_PASSED</promise>" \
+        --completion-promise "QUALITY_GATE_PASSED"
+fi
+
+# 3. p1 阶段：CI 修复循环
+if [[ "$PHASE" == "p1" ]]; then
+    PR_NUMBER=$(gh pr list --head $(git rev-parse --abbrev-ref HEAD) --json number -q '.[0].number')
+    /ralph-loop "修复 PR #$PR_NUMBER 的 CI 失败，CI 通过并合并后输出 <promise>CI_PASSED</promise>" \
+        --completion-promise "CI_PASSED"
+fi
+
+# 4. p2/pending/unknown：直接退出（已完成）
+```
+
+### Ralph Loop 工作机制
+
+**AI 的职责**：
+- ✅ 循环检查完成条件（质检通过？PR 创建？CI 通过？）
+- ✅ 条件未满足 → 执行修复步骤 → **不输出 promise** → Ralph Loop 自动继续
+- ✅ 条件全部满足 → **输出 `<promise>SIGNAL</promise>`** → Ralph Loop 结束
+
+**禁止行为**：
+- ❌ 手动循环检查 CI 状态（手动查 `gh run list`）
+- ❌ 自己写 while 循环
+- ❌ 修复一次就停下来
+- ❌ 等待用户确认
+- ❌ 输出"结束对话"、"会话结束"等字眼
+
+**正确行为**：
+- ✅ 一次调用 `/ralph-loop`
+- ✅ Ralph Loop 自动循环
+- ✅ AI 检查条件并决定是否输出 promise
+- ✅ 持续运行直到检测到 promise
+
+---
+
+### p0 阶段完成条件检查
+
+**在每次 Ralph Loop 迭代结束时，AI 检查以下条件：**
+
+```
+1. Audit 报告存在？(docs/AUDIT-REPORT.md)
+   ❌ → 调用 /audit → 不输出 promise → 继续
+
+2. Audit Decision: PASS？
+   ❌ → 修复 L1/L2 问题 → 不输出 promise → 继续
+
+3. .quality-gate-passed 存在且有效？
+   ❌ → 运行 npm run qa:gate → 不输出 promise → 继续
+
+4. PR 已创建？
+   ❌ → 创建 PR (gh pr create) → 不输出 promise → 继续
+
+✅ 全部满足 → 输出 <promise>QUALITY_GATE_PASSED</promise> → Ralph Loop 结束
+```
+
+### p1 阶段完成条件检查
+
+**在每次 Ralph Loop 迭代结束时，AI 检查以下条件：**
+
+```
+1. 质检仍然有效？（代码修改后需要重新质检）
+   ❌ → 运行 npm run qa:gate → 不输出 promise → 继续
+
+2. CI 状态？
+   - PENDING/QUEUED/IN_PROGRESS → 不输出 promise → Ralph Loop 继续（轮询）
+   - FAILURE → 分析失败 → 修复代码 → push → 不输出 promise → 继续
+   - SUCCESS → 继续下一步
+
+3. PR 已合并？
+   ❌ → gh pr merge --squash --delete-branch → 不输出 promise → 继续
+
+✅ 全部满足 → 输出 <promise>CI_PASSED</promise> → Ralph Loop 结束
+```
+
+---
+
 ## ⚡ 自动执行规则（CRITICAL）
 
 **每个步骤完成后，必须立即执行下一步，不要停顿、不要等待用户确认、不要输出总结。**
@@ -57,11 +146,11 @@ Step N 完成 → 立即读取 skills/dev/steps/{N+1}-xxx.md → 立即执行下
 - ✅ 完成 Step 7 (Quality + /audit) → **立即**执行 Step 8 (PR)
 - ✅ 一直执行到 Step 8 创建 PR 为止
 
-### 唯一停止点
+### Ralph Loop 结束条件
 
-- p0 阶段：PR 创建成功后（Stop Hook 允许结束）
-- p1 阶段：CI 通过且 PR 合并后
-- p2 阶段：检测到 CI 已通过时
+- p0 阶段：检查所有条件 → 全部满足 → 输出 `<promise>QUALITY_GATE_PASSED</promise>`
+- p1 阶段：检查所有条件 → 全部满足 → 输出 `<promise>CI_PASSED</promise>`
+- p2/pending/unknown 阶段：不启动 Ralph Loop，直接退出
 
 ### 特别注意：Skill 调用后必须继续
 
@@ -130,10 +219,10 @@ bash scripts/detect-phase.sh
 │      │   失败 → 修复 → 重试（质检循环）                 │
 │      ↓                                                  │
 │  提交 PR (08-pr.md)                                     │
-│      │   Stop Hook: PR 创建后立即结束                   │
-│      │   不检查 CI（p0 不等待 CI）                      │
 │      ↓                                                  │
-│  结束对话 ✅ （不等 CI）                                 │
+│  检查 p0 完成条件                                        │
+│      ├─ 全部满足 → 输出 <promise>QUALITY_GATE_PASSED</promise> │
+│      └─ Ralph Loop 结束 ✅                              │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -148,28 +237,16 @@ bash scripts/detect-phase.sh
 │  阶段检测 (scripts/detect-phase.sh)                     │
 │      → PHASE: p1                                        │
 │      ↓                                                  │
-│  CI 轮询循环 (09-ci.md)                                 │
+│  Ralph Loop 循环检查 (09-ci.md)                         │
 │      │                                                  │
-│      │   while true; do                                 │
-│      │     检查 CI 状态                                 │
+│      │   检查 p1 完成条件：                             │
+│      │   1. 质检有效？                                  │
+│      │   2. CI 状态？(pending→等待/fail→修复/success→下一步) │
+│      │   3. PR 已合并？                                 │
 │      │                                                  │
-│      │     case:                                        │
-│      │       in_progress/queued/pending:                │
-│      │         sleep 30s                                │
-│      │         continue（继续循环）                     │
-│      │                                                  │
-│      │       failure:                                   │
-│      │         分析失败原因                              │
-│      │         修复代码                                 │
-│      │         git add && commit && push                │
-│      │         continue（继续循环，不退出！）            │
-│      │                                                  │
-│      │       success:                                   │
-│      │         gh pr merge --squash --delete-branch     │
-│      │         break（退出循环）                         │
-│      │   done                                           │
-│      ↓                                                  │
-│  结束对话 ✅ （PR 已合并）                               │
+│      │   条件未满足 → 不输出 promise → Ralph Loop 继续  │
+│      │   全部满足 → 输出 <promise>CI_PASSED</promise>   │
+│      └─ Ralph Loop 结束 ✅                              │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -181,7 +258,7 @@ bash scripts/detect-phase.sh
 │                    p2: CI pass                          │
 ├─────────────────────────────────────────────────────────┤
 │  阶段检测 → PHASE: p2                                   │
-│  直接退出 ✅ （GitHub 自动 merge）                       │
+│  任务已完成，直接退出 ✅                                 │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -195,26 +272,14 @@ bash scripts/detect-phase.sh
 │  阶段检测 (scripts/detect-phase.sh)                     │
 │      → PHASE: pending                                   │
 │      ↓                                                  │
-│  等待循环（挂着等）                                      │
+│  Ralph Loop 等待 CI 完成                                 │
 │      │                                                  │
-│      │   while true; do                                 │
-│      │     检查 CI 状态                                 │
-│      │                                                  │
-│      │     case:                                        │
-│      │       pending/queued:                            │
-│      │         sleep 30s                                │
-│      │         continue（继续循环）                     │
-│      │                                                  │
-│      │       failure:                                   │
-│      │         转入 p1 修复流程                          │
-│      │         break（退出等待循环）                    │
-│      │                                                  │
-│      │       success:                                   │
-│      │         转入 p2 结束流程                          │
-│      │         break（退出等待循环）                    │
-│      │   done                                           │
+│      │   检查 CI 状态：                                 │
+│      │   - pending/queued → 不输出 promise → 继续等待   │
+│      │   - failure → 转入 p1 修复                       │
+│      │   - success → 转入 p2 完成                       │
 │      ↓                                                  │
-│  转入 p1 或 p2 阶段                                      │
+│  根据 CI 结果转入对应阶段                                │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -233,165 +298,33 @@ bash scripts/detect-phase.sh
 
 ## 核心规则（v2.0）
 
-### 1. 两阶段分离 ✅
+### 1. 两阶段分离 + Ralph Loop ✅
 
 ```
-p0: 发 PR → 结束（不等 CI）
-p1: 轮询 CI → 失败则修复并继续 → 成功则合并并退出
-p2: 直接退出（GitHub 自动 merge）
+p0: 发 PR → Ralph Loop 检查条件 → 输出 promise → 结束
+p1: Ralph Loop 循环 → 修复 CI → 合并 PR → 输出 promise → 结束
+p2: 任务已完成，直接退出
 ```
 
-### 2. Stop Hook 强制质检 ✅
+### 2. Stop Hook 配合 Ralph Loop ✅
 
 ```
-p0: 质检未通过 OR PR 未创建 → exit 2（继续）
-p1: CI fail → exit 2（继续修）
-    CI pending → exit 0（退出，等唤醒）
-    CI pass → exit 0（结束）
+p0: 条件未满足 → 不输出 promise → Ralph Loop 继续
+p1: CI fail/pending → 不输出 promise → Ralph Loop 继续
+    CI success + 合并完成 → 输出 promise → Ralph Loop 结束
 ```
 
-### 3. P1 轮询循环 ✅
-
-```
-while true; do
-  检查 CI 状态
-  case:
-    running → sleep 30, continue
-    failure → 修复代码 → push → continue（不退出！）
-    success → merge → break
-done
-```
-
-### 4. 分支策略
+### 3. 分支策略
 
 1. **只在 cp-* 或 feature/* 分支写代码** - Hook 强制
 2. **develop 是主开发线** - PR 合并回 develop
 3. **main 始终稳定** - 只在里程碑时从 develop 合并
 
-### 5. 产物门控
+### 4. 产物门控
 
 - QA-DECISION.md（Step 4 生成）
 - AUDIT-REPORT.md（Step 7 生成，Decision: PASS）
 - .quality-gate-passed（Step 7 生成，测试通过）
-
----
-
-## Ralph Loop 使用（自动循环机制）
-
-**Ralph Loop 是 Claude Code 官方插件**，与 Stop Hook 自动配合实现循环重试。
-
-### 工作原理
-
-```
-Ralph Loop (外层循环框架)
-    ↓
-AI 执行任务
-    ↓
-AI 尝试结束会话
-    ↓
-Stop Hook 检查状态
-    ├─ exit 2（未完成）→ Ralph Loop 自动重新注入任务
-    └─ exit 0（已完成）→ AI 输出 <promise>SIGNAL</promise> → Ralph Loop 结束
-```
-
-**关键点**：
-- Ralph Loop 插件已在 `~/.claude/settings.json` 中启用
-- Stop Hook 返回 `exit 2` → Ralph Loop 自动重试
-- AI 输出 `<promise>SIGNAL</promise>` → Ralph Loop 检测到后结束循环
-- 每次迭代 AI 都能看到之前的工作和错误信息
-
-### P0 阶段使用（质检循环）
-
-**启动命令**：
-```bash
-/ralph-loop "实现 <功能描述>，完成质检后输出 <promise>QUALITY_GATE_PASSED</promise>" \
-    --max-iterations 20 \
-    --completion-promise "QUALITY_GATE_PASSED"
-```
-
-**循环机制**：
-```
-Ralph Loop 启动
-    ↓
-AI 执行 Step 1-6（PRD → 分支 → DoD → 代码 → 测试）
-    ↓
-AI 执行 Step 7（质检）
-    ├─ Audit Node → AUDIT-REPORT.md
-    ├─ npm run qa (L1)
-    ↓
-AI 尝试结束会话
-    ↓
-Stop Hook 检查（hooks/stop.sh p0 部分）
-    ├─ Decision: FAIL → exit 2 → Ralph 继续
-    ├─ .quality-gate-passed 不存在 → exit 2 → Ralph 继续
-    └─ 全部通过 → exit 0 → AI 输出 <promise>QUALITY_GATE_PASSED</promise>
-        ↓
-    AI 继续 Step 8（创建 PR）
-        ↓
-    Stop Hook: PR 已创建 → exit 0 → 会话结束 ✅
-```
-
-### P1 阶段使用（CI 修复循环）
-
-**启动命令**：
-```bash
-/ralph-loop "修复 CI 失败，CI 通过后输出 <promise>CI_PASSED</promise>" \
-    --max-iterations 10 \
-    --completion-promise "CI_PASSED"
-```
-
-**循环机制**：
-```
-Ralph Loop 启动
-    ↓
-AI 检查 CI 状态（gh pr checks）
-    ↓
-Case CI_STATUS:
-    ├─ PENDING/QUEUED → AI 等待 → Stop Hook exit 0 → Ralph 继续（未输出 promise）
-    ├─ FAILURE → AI 修复 → push → Stop Hook exit 2 → Ralph 继续
-    └─ SUCCESS → AI 合并 PR → 输出 <promise>CI_PASSED</promise>
-        ↓
-Ralph Loop 检测到 completion-promise → 结束循环 ✅
-```
-
-### Stop Hook 配合
-
-**P0 阶段**（`hooks/stop.sh`）：
-```bash
-if [ 质检未通过 ]; then
-    exit 2  # Ralph Loop 继续
-elif [ PR 未创建 ]; then
-    exit 2  # Ralph Loop 继续
-else
-    exit 0  # 允许结束
-fi
-```
-
-**P1 阶段**（`hooks/stop.sh`）：
-```bash
-if [ CI == FAILURE ]; then
-    exit 2  # Ralph Loop 继续修复
-elif [ CI == PENDING ]; then
-    exit 0  # 允许结束（AI 未输出 promise，Ralph 会继续）
-elif [ CI == SUCCESS ]; then
-    exit 0  # AI 输出 promise，Ralph 结束
-fi
-```
-
-### 优势
-
-1. **自动重试**：Stop Hook 返回 exit 2 时无需手动催促，Ralph 自动继续
-2. **上下文保持**：每次迭代都能看到之前的代码、报告、错误信息
-3. **明确完成**：通过 `<promise>` 标记明确告知完成，避免过早退出
-4. **防止无限循环**：`--max-iterations` 参数限制最大迭代次数
-
-### 典型使用场景
-
-| 场景 | 命令 | Promise 标记 |
-|------|------|-------------|
-| 新功能开发 | `/ralph-loop "实现功能X..." --completion-promise "QUALITY_GATE_PASSED"` | `<promise>QUALITY_GATE_PASSED</promise>` |
-| CI 修复 | `/ralph-loop "修复CI..." --completion-promise "CI_PASSED"` | `<promise>CI_PASSED</promise>` |
-| Bug 修复 | `/ralph-loop "修复Bug#123..." --completion-promise "DONE"` | `<promise>DONE</promise>` |
 
 ---
 

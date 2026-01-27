@@ -68,10 +68,23 @@ function extractPriority(text) {
   }
 
   // 匹配 P0, P1, P2, P3（不区分大小写）
-  // A3 fix: 使用负向前向查找，确保 P0 后面不是字母数字（防止 P0wer 误匹配）
-  const match = text.match(/(?<![a-zA-Z0-9])[Pp]([0-3])(?![a-zA-Z0-9])/);
-  if (match) {
-    return `P${match[1]}`;
+  // A3 fix: 精确匹配，避免 P0wer 误匹配
+  // 策略：
+  //   1. 使用全局匹配查找所有 P[0-3]
+  //   2. 验证前面不是字母数字（空格、标点OK）
+  //   3. 验证后面不是字母（数字、空格、标点OK，但不能是字母如 P0wer）
+  const priorityPattern = /[Pp]([0-3])/g;
+  let match;
+  while ((match = priorityPattern.exec(text)) !== null) {
+    const before = match.index > 0 ? text[match.index - 1] : ' ';
+    const after = match.index + match[0].length < text.length
+      ? text[match.index + match[0].length]
+      : ' ';
+
+    // 前面不能是字母或数字，后面不能是字母
+    if (!/[a-zA-Z0-9]/.test(before) && !/[a-zA-Z]/.test(after)) {
+      return `P${match[1]}`;
+    }
   }
   return null;
 }
@@ -193,16 +206,23 @@ function main() {
   let source = null;
 
   // 0. 直接命令行参数（用于测试）
+  // 当提供直接输入时，只测试 extractPriority 逻辑，跳过文件/环境变量检测
   if (directInput) {
     const p = extractPriority(directInput);
-    if (p) {
-      priority = p;
-      source = "direct";
+    priority = p || "unknown";
+    source = p ? "direct" : "default";
+
+    if (jsonOutput) {
+      console.log(JSON.stringify({ priority, source }));
+    } else {
+      console.log(priority);
     }
+    return;
   }
 
   // 1. docs/QA-DECISION.md（最高优先级，明确来源）
-  if (!priority) {
+  // 跳过条件：SKIP_GIT_DETECTION=1（测试环境）
+  if (!priority && !process.env.SKIP_GIT_DETECTION) {
     const p = detectFromQADecision();
     if (p) {
       priority = p;

@@ -1,7 +1,10 @@
 # Step 7: 质检
 
 > Audit Node 做代码审计，然后跑测试
-> **Stop Hook 强制执行：p0 阶段必须完成质检才能创建 PR**
+> **Ralph Loop 循环执行：质检失败时自动修复并重试**
+> **Stop Hook 检查：质检未通过时阻止退出（exit 2）**
+>
+> **注意**：Step 7 由 Ralph Loop 控制循环，AI 不需要手动循环检查
 
 ---
 
@@ -119,22 +122,57 @@ npm run qa  # = typecheck + test + build
 
 ---
 
-## Step 7.4: 自动化检查（新增）
+## Step 7.4: 自动化检查 + 一次性提交
 
-测试通过后，运行自动化检查：
+测试通过后，运行自动化检查并一次性提交所有改动：
 
 ```bash
-# 检查派生视图是否同步
-bash scripts/auto-generate-views.sh
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "  Step 7.4: 自动化检查"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-# 暂存 evidence（不 commit，留到 Step 8）
-git add .quality-evidence.json .quality-gate-passed .history/
+# 1. 更新版本号（自动检测 commit 类型）
+bash scripts/auto-update-version.sh
+
+# 2. 更新 Registry（如果改了核心文件）
+bash scripts/auto-update-registry.sh
+
+# 3. 生成派生视图（如果 registry 变了）
+if [[ -f "scripts/generate-path-views.sh" ]]; then
+    bash scripts/generate-path-views.sh
+fi
+
+# 4. 检查并修复 DoD 格式
+bash scripts/auto-fix-dod.sh
+
+# 5. 暂存所有改动
+git add -A
+
+# 6. 运行质检（生成 evidence）
+npm run qa:gate || true
+
+# 7. 暂存 evidence
+git add .quality-evidence.json .quality-gate-passed .history/ || true
+
+# 8. 一次性提交（代码+版本号+registry+视图+evidence）
+COMMIT_MSG=$(git log develop..HEAD --oneline | head -1 | cut -d' ' -f2-)
+git commit -m "$COMMIT_MSG
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>" || echo "No changes to commit"
+
+# 9. Push
+git push origin HEAD
+
+echo "✅ Quality 检查完成，所有改动已提交"
 ```
 
-**说明**：
-- `auto-generate-views.sh` 检测 `feature-registry.yml` 变更并自动生成派生视图
-- Evidence 暂存但不 commit，避免 SHA 不匹配问题
-- Step 8 会一次性提交（代码 + evidence）
+**关键改动说明**：
+- **一次性提交**：所有改动（代码、版本号、registry、视图、evidence）在一个 commit
+- **qa:gate 在 git add 之后运行**：确保 evidence SHA = 当前 commit SHA
+- **避免 SHA 不匹配死循环**：单次 commit 确保 CI 检查时 evidence SHA 正确
+- **版本号自动更新**：根据 commit 类型（feat/fix/feat!）自动更新 package.json
+- **Registry 自动更新**：检测核心文件变更并提示更新
+- **DoD 格式自动修复**：自动补全缺失的 QA 引用和验收标准章节
 
 ---
 

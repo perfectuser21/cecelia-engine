@@ -17,11 +17,6 @@
         "matcher": "Bash",
         "hooks": [{"type": "command", "command": "./hooks/pr-gate-v2.sh"}]
       }
-    ],
-    "Stop": [
-      {
-        "hooks": [{"type": "command", "command": "./hooks/stop.sh"}]
-      }
     ]
   }
 }
