@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.7.0
+version: 2.11.0
 created: 2026-01-26
-updated: 2026-01-26
+updated: 2026-01-27
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.7.0: 从 feature-registry.yml 自动生成
+  - 2.11.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -156,6 +156,18 @@ changelog:
 
 ---
 
+### P6: Self-Evolution Automation
+
+1. ✅ **Step 8: squash-evidence.sh 自动合并 evidence commit**
+2. ✅ **Step 7: auto-generate-views.sh 自动生成派生视图**
+3. ✅ **Step 11: post-pr-checklist.sh 自动运行 4 项检查**
+4. ✅ **detect-priority.cjs 优先读取 QA-DECISION.md（不解析文本）**
+5. ✅ **CI: 检测 .quality-evidence.json 中的 'known failures' 标记**
+
+**RCI 覆盖**: S1-001,S2-001,S2-002,S3-001,S3-002,S3-003,S3-004
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -168,5 +180,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.7.0
-**生成时间**: 2026-01-26
+**版本**: 2.11.0
+**生成时间**: 2026-01-27

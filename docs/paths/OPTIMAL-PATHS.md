@@ -1,12 +1,12 @@
 ---
 id: optimal-paths
-version: 2.7.0
-created: 2026-01-26
-updated: 2026-01-26
+version: 2.11.0
+created: 2026-01-27
+updated: 2026-01-27
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.7.0: 从 feature-registry.yml 自动生成
+  - 2.11.0: 从 feature-registry.yml 自动生成
 ---
 
 # Optimal Paths - 推荐体验路径
@@ -147,6 +147,14 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
+### P6: Self-Evolution Automation
+
+```
+问题发现 → 记录到 docs/SELF-EVOLUTION.md → 创建检查项 → 自动化脚本 → 集成到流程
+```
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -159,5 +167,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.7.0
-**生成时间**: 2026-01-26
+**版本**: 2.11.0
+**生成时间**: 2026-01-27

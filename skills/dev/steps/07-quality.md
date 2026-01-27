@@ -86,6 +86,14 @@ Findings:
 Blockers: []  # L1 + L2 问题列表
 ```
 
+### ⚡ Audit Node 完成后的强制指令
+
+**生成 AUDIT-REPORT.md 后，立即继续质检循环**：
+
+1. **不要**输出"审计报告已生成！"
+2. **不要**停顿或等待确认
+3. **立即**继续 Step 7.2：检查 Blocker
+
 ---
 
 ## Step 7.2: Blocker 检查
@@ -108,6 +116,25 @@ blocker 清零后，跑自动化测试：
 ```bash
 npm run qa  # = typecheck + test + build
 ```
+
+---
+
+## Step 7.4: 自动化检查（新增）
+
+测试通过后，运行自动化检查：
+
+```bash
+# 检查派生视图是否同步
+bash scripts/auto-generate-views.sh
+
+# 暂存 evidence（不 commit，留到 Step 8）
+git add .quality-evidence.json .quality-gate-passed .history/
+```
+
+**说明**：
+- `auto-generate-views.sh` 检测 `feature-registry.yml` 变更并自动生成派生视图
+- Evidence 暂存但不 commit，避免 SHA 不匹配问题
+- Step 8 会一次性提交（代码 + evidence）
 
 ---
 
@@ -170,3 +197,18 @@ Release Check 额外检查：
 3. **分层检查** - PR 跑 L1+L2A，Release 加 L2B+L3
 4. **L4 不修** - 过度优化只标记不修复
 5. **产物留痕** - 审计报告必须存在
+
+---
+
+## 完成后
+
+**立即执行下一步**：
+
+1. 读取 `skills/dev/steps/08-pr.md`
+2. 立即创建 PR
+3. **不要**输出总结或等待确认
+4. **不要**停顿
+
+---
+
+**Step 8：创建 PR**

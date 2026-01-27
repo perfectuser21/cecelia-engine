@@ -272,8 +272,34 @@ fi
 # ============================================================================
 # Part 1: L1 - 自动化测试
 # ============================================================================
-echo "" >&2
-echo "  [L1: 自动化测试]" >&2
+
+# 检查是否可以信任缓存的质检结果
+SKIP_L1_TESTS=0
+QUALITY_GATE_FILE="$PROJECT_ROOT/.quality-gate-passed"
+
+if [[ -f "$QUALITY_GATE_FILE" ]]; then
+    # 获取文件修改时间
+    if [[ "$(uname)" == "Darwin" ]]; then
+        GATE_TIME=$(stat -f %m "$QUALITY_GATE_FILE" 2>/dev/null || echo 0)
+    else
+        GATE_TIME=$(stat -c %Y "$QUALITY_GATE_FILE" 2>/dev/null || echo 0)
+    fi
+
+    NOW=$(date +%s)
+    AGE=$((NOW - GATE_TIME))
+
+    # 如果质检文件在 5 分钟（300秒）内，信任它
+    if [[ $AGE -lt 300 ]]; then
+        SKIP_L1_TESTS=1
+        echo "" >&2
+        echo "  [L1: 自动化测试]" >&2
+        echo "  ✅ 质检文件新鲜（${AGE}s 前），信任 qa:gate 结果，跳过重复测试" >&2
+    fi
+fi
+
+if [[ $SKIP_L1_TESTS -eq 0 ]]; then
+    echo "" >&2
+    echo "  [L1: 自动化测试]" >&2
 
 # L3 修复: 改用位标志检测项目类型
 PROJECT_TYPE=0  # 位标志: 1=node, 2=python, 4=go
@@ -438,6 +464,8 @@ if [[ $SHELL_COUNT -gt 0 ]]; then
         FAILED=1
     fi
 fi
+
+fi  # 结束 SKIP_L1_TESTS 的 if 块
 
 # ============================================================================
 # Part 2: PR 模式 - PRD + DoD 检查

@@ -5,17 +5,21 @@
  * 检测 PR 优先级（P0/P1/P2/P3）。
  *
  * 检测来源（按优先级）：
- *   1. 环境变量 PR_PRIORITY
- *   2. PR title 前缀（如 "P0: xxx" 或 "fix(P0): xxx"）
+ *   1. docs/QA-DECISION.md 的 Priority 字段（最高优先级，明确来源）
+ *   2. 环境变量 PR_PRIORITY
  *   3. PR labels（如 "priority:P0"）
- *   4. Git commit 消息前缀
+ *   4. Git config branch.*.priority
+ *
+ * 移除的检测来源（容易误识别）：
+ *   ✗ PR title（"p1 阶段" 会被误识别为 P1）
+ *   ✗ Commit messages（"修复 p1 问题" 会被误识别为 P1）
  *
  * 用法：
  *   node scripts/devgate/detect-priority.cjs [--json]
  *
  * 环境变量：
  *   PR_PRIORITY - 直接指定优先级
- *   PR_TITLE    - PR 标题
+ *   PR_TITLE    - PR 标题（已禁用检测）
  *   PR_LABELS   - PR labels（逗号分隔）
  *
  * 输出：
@@ -122,6 +126,63 @@ function detectFromCommits() {
   return null;
 }
 
+/**
+ * 从 docs/QA-DECISION.md 读取 Priority
+ * @returns {string|null}
+ */
+function detectFromQADecision() {
+  const fs = require("fs");
+  const path = require("path");
+
+  const qaPath = path.join(process.cwd(), "docs/QA-DECISION.md");
+
+  if (!fs.existsSync(qaPath)) {
+    return null;
+  }
+
+  try {
+    const content = fs.readFileSync(qaPath, "utf-8");
+    // 匹配 "Priority: P0" 或 "Priority: P1" 等
+    const match = content.match(/^Priority:\s*(P[0-3])/m);
+    if (match) {
+      return match[1];
+    }
+  } catch {
+    // 忽略错误
+  }
+
+  return null;
+}
+
+/**
+ * 从 git config 读取 Priority
+ * @returns {string|null}
+ */
+function detectFromGitConfig() {
+  try {
+    const currentBranch = execSync("git rev-parse --abbrev-ref HEAD 2>/dev/null", {
+      encoding: "utf-8",
+    }).trim();
+
+    if (!/^[a-zA-Z0-9._\/-]+$/.test(currentBranch)) {
+      return null;
+    }
+
+    const priority = execSync(
+      `git config branch.${currentBranch}.priority 2>/dev/null || echo ""`,
+      { encoding: "utf-8" }
+    ).trim();
+
+    if (priority && /^P[0-3]$/i.test(priority)) {
+      return priority.toUpperCase();
+    }
+  } catch {
+    // 忽略错误
+  }
+
+  return null;
+}
+
 function main() {
   const args = process.argv.slice(2);
   const jsonOutput = args.includes("--json");
@@ -140,21 +201,21 @@ function main() {
     }
   }
 
-  // 1. 环境变量
+  // 1. docs/QA-DECISION.md（最高优先级，明确来源）
+  if (!priority) {
+    const p = detectFromQADecision();
+    if (p) {
+      priority = p;
+      source = "qa-decision";
+    }
+  }
+
+  // 2. 环境变量
   if (!priority && process.env.PR_PRIORITY) {
     const p = extractPriority(process.env.PR_PRIORITY);
     if (p) {
       priority = p;
       source = "env";
-    }
-  }
-
-  // 2. PR title
-  if (!priority && process.env.PR_TITLE) {
-    const p = extractPriority(process.env.PR_TITLE);
-    if (p) {
-      priority = p;
-      source = "title";
     }
   }
 
@@ -172,14 +233,17 @@ function main() {
     }
   }
 
-  // 4. Git commits（可通过 SKIP_GIT_DETECTION=1 跳过，用于测试）
-  if (!priority && !process.env.SKIP_GIT_DETECTION) {
-    const p = detectFromCommits();
+  // 4. Git config branch.*.priority
+  if (!priority) {
+    const p = detectFromGitConfig();
     if (p) {
       priority = p;
-      source = "commit";
+      source = "git-config";
     }
   }
+
+  // 移除：从 PR title 和 commit messages 检测（容易误识别）
+  // 例如 "修复 p1 阶段问题" 会被误识别为 Priority P1
 
   // 默认值
   if (!priority) {

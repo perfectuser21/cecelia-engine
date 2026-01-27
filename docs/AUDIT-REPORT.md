@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-quality-fix-detect-phase
-Date: 2026-01-25
-Scope: scripts/detect-phase.sh, docs/PHASE-DETECTION.md, docs/QA-DECISION.md, .prd.md, .dod.md
+Branch: cp-01270800-fix-self-evolution
+Date: 2026-01-27
+Scope: scripts/cleanup-prd-dod.sh, scripts/post-pr-checklist.sh, .github/workflows/ci.yml, docs/SELF-EVOLUTION.md, docs/SELF-EVOLUTION-QUEUE.md, tests/scripts/cleanup-prd-dod.test.ts, tests/scripts/post-pr-checklist.test.ts
 Target Level: L2
 
 Summary:
@@ -17,47 +17,66 @@ Findings: []
 
 Blockers: []
 
-## Audit Details
+## 审计详情
 
-### L1 Audit (阻塞性问题)
+### 审计范围
 
-检查项目:
-- ✅ Shebang 正确 (`#!/usr/bin/env bash`)
-- ✅ 错误处理完善 (`set -euo pipefail`)
-- ✅ Git 命令失败处理正确
-- ✅ gh 命令存在性检查
-- ✅ 退出码正确
-- ✅ 输出格式一致
-- ✅ 变量引用正确
+1. **scripts/cleanup-prd-dod.sh** (新建)
+   - 用途：清理 develop/main 分支的 PRD/DoD 残留
+   - Bash strict mode: ✅ `set -euo pipefail`
+   - 分支检测：✅ 正确判断当前分支
+   - 文件删除：✅ 使用 `rm -f` 安全删除
+   - 错误处理：✅ 适当的退出码
 
-结果: **0 个 L1 问题**
+2. **scripts/post-pr-checklist.sh** (修改)
+   - 变更：错误改为警告，记录到队列
+   - record_issue 函数：✅ 参数验证正确
+   - QUEUE_FILE 引用：✅ 正确定义
+   - exit 0 行为：✅ 改为警告而非错误
 
-### L2 Audit (功能性问题)
+3. **.github/workflows/ci.yml** (修改)
+   - 新增 cleanup-prd-dod job
+   - 触发条件：✅ 正确检测 develop/main 分支
+   - [skip ci] 标记：✅ 避免无限循环
+   - permissions：✅ contents: write 正确设置
 
-检查项目:
-- ✅ PR 状态检测完整（open state）
-- ✅ CI 状态覆盖所有标准值（SUCCESS/FAILURE/PENDING/QUEUED/IN_PROGRESS/WAITING/ERROR）
-- ✅ 未知状态有 catch-all 处理（`*` case）
-- ✅ 错误输出正确重定向（`2>/dev/null`）
-- ✅ 边界情况处理（空值、API 错误）
-- ✅ 输出格式符合 Stop Hook 要求
+4. **docs/SELF-EVOLUTION.md** (修改)
+   - 新增工作流程说明（v2.0）
+   - 文档内容：✅ 清晰说明新旧模式对比
 
-结果: **0 个 L2 问题**
+5. **docs/SELF-EVOLUTION-QUEUE.md** (新建)
+   - 队列格式定义
+   - 示例数据：✅ 格式正确
 
-### L3 Observations (最佳实践 - 可选)
+6. **tests/scripts/cleanup-prd-dod.test.ts** (新建)
+   - 测试覆盖：✅ 5个测试用例
+   - 边界条件：✅ 覆盖 feature/develop/main 分支
+   - 清理逻辑：✅ 验证文件删除行为
 
-观察:
-- ✅ 代码注释清晰完整
-- ✅ 分段标记明确
-- ✅ 用户友好的错误信息
-- ✅ 与 Stop Hook 集成设计合理
+7. **tests/scripts/post-pr-checklist.test.ts** (新建)
+   - 测试覆盖：✅ 4个测试用例
+   - 队列模式：✅ 验证记录而非报错
+   - 版本检查：✅ 验证版本漂移检测
 
-无需修复。
+### L1 阻塞性问题
 
-## 审计结论
+无
 
-**所有 L1 和 L2 问题已清零。**
+### L2 功能性问题
 
-代码质量良好，功能完整，错误处理健全。`detect-phase.sh` 脚本符合生产环境要求，可以安全部署到全局配置。
+无
 
-**Decision: PASS** - 可以继续 PR 创建流程。
+### L3 最佳实践建议
+
+无（本次审计目标为 L2，L3 建议已忽略）
+
+## 结论
+
+**Decision: PASS**
+
+- ✅ L1 问题：0 个
+- ✅ L2 问题：0 个
+- ✅ 代码质量：符合项目规范
+- ✅ 测试覆盖：新功能均有测试
+
+可以继续质检流程（L1 自动化测试）。

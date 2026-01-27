@@ -87,6 +87,31 @@ fi
 
 ---
 
+## Post-PR Checklist（新增 - 自我进化机制）
+
+**在清理前，运行自动化检查**：
+
+```bash
+bash scripts/post-pr-checklist.sh
+```
+
+**检查项**：
+1. develop/main 无 PRD/DoD 残留
+2. 派生视图版本同步
+3. 无临时文件残留
+4. 所有 commit 已 push
+
+**如果发现问题**：
+- Error → 立即修复并提交
+- Warning → 记录但不阻塞
+
+**Self-Evolution**：
+- 发现的问题记录到 `docs/SELF-EVOLUTION.md`
+- 新问题固化为检查项
+- 检查项自动化
+
+---
+
 ## 使用 cleanup 脚本（推荐）
 
 ```bash
@@ -94,14 +119,15 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$BASE_BRANCH"
 ```
 
 **脚本会**：
-1. 切换到 base 分支
-2. 拉取最新代码
-3. 删除本地 cp-* 分支
-4. 删除远程 cp-* 分支
-5. 清理 git config
-6. 清理 stale remote refs
-7. 检查未提交文件
-8. 检查其他遗留 cp-* 分支
+1. **运行 Post-PR Checklist**（新增）
+2. 切换到 base 分支
+3. 拉取最新代码
+4. 删除本地 cp-* 分支
+5. 删除远程 cp-* 分支
+6. 清理 git config
+7. 清理 stale remote refs
+8. 检查未提交文件
+9. 检查其他遗留 cp-* 分支
 
 ---
 

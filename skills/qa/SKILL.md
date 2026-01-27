@@ -362,3 +362,16 @@ Artifacts: 涉及的文件列表
 - `regression-contract.yaml` - 全量宪法
 - `FEATURES.md` - 能力地图
 - `scripts/rc-filter.sh` - RCI 过滤脚本
+
+---
+
+## ⚡ 完成后行为（CRITICAL）
+
+**生成 QA-DECISION.md 后，立即返回调用方**：
+
+1. **不要**输出"QA 决策已生成！现在返回 /dev 流程..."
+2. **不要**停顿或输出总结
+3. **立即**返回，让调用方（/dev）继续执行下一步
+4. **绝对不要**等待用户确认
+
+这个 Skill 的职责是"生成决策文件"，不是"等待确认"。

@@ -1,44 +1,41 @@
 # QA Decision
 
 Decision: PASS
-Priority: P0
+Priority: P2
 RepoType: Engine
 
 Tests:
-  - dod_item: "detect-phase.sh 脚本创建完成"
+  - dod_item: "docs/SELF-EVOLUTION-QUEUE.md 已创建，包含队列格式说明"
     method: manual
-    location: "manual: 验证文件存在且可执行"
+    location: manual:检查文件存在且格式正确
 
-  - dod_item: "脚本能正确检测 p0 阶段（无 PR）"
-    method: manual
-    location: "manual: 在无 PR 分支执行脚本，验证输出 PHASE: p0"
+  - dod_item: "scripts/cleanup-prd-dod.sh 已创建，可在 develop/main 分支删除 PRD/DoD"
+    method: auto
+    location: tests/scripts/cleanup-prd-dod.test.ts
 
-  - dod_item: "脚本能正确检测 p1 阶段（PR + CI fail）"
-    method: manual
-    location: "manual: 模拟 CI fail 场景，验证输出 PHASE: p1"
+  - dod_item: "scripts/post-pr-checklist.sh 修改为记录模式（发现问题 → 写入队列 → exit 0）"
+    method: auto
+    location: tests/scripts/post-pr-checklist.test.ts
 
-  - dod_item: "脚本能正确检测 p2 阶段（PR + CI pass）"
+  - dod_item: "docs/SELF-EVOLUTION.md 更新，说明新的异步处理流程"
     method: manual
-    location: "manual: 模拟 CI pass 场景，验证输出 PHASE: p2"
+    location: manual:检查文档内容更新
 
-  - dod_item: "脚本能正确检测 pending 阶段（PR + CI pending）"
+  - dod_item: ".github/workflows/ci.yml 集成 cleanup 脚本（develop/main 分支自动清理）"
     method: manual
-    location: "manual: 模拟 CI pending 场景，验证输出 PHASE: pending"
+    location: manual:检查CI配置
 
-  - dod_item: "脚本能正确处理 gh API 错误返回 unknown"
+  - dod_item: "手动测试：在 develop 分支运行 cleanup 脚本，确认可删除 PRD/DoD"
     method: manual
-    location: "manual: 模拟 gh 命令失败场景，验证输出 PHASE: unknown"
+    location: manual:develop-cleanup-test
 
-  - dod_item: "Stop Hook 能成功调用脚本不再报错"
+  - dod_item: "手动测试：post-pr-checklist 发现问题后写入队列，不报错退出"
     method: manual
-    location: "manual: 在功能分支执行，验证 Stop Hook 不再报 detect-phase.sh 缺失错误"
-
-  - dod_item: "输出格式符合规范（PHASE: xxx / DESCRIPTION: xxx / ACTION: xxx）"
-    method: manual
-    location: "manual: 验证所有输出格式符合规范"
+    location: manual:queue-recording-test
 
 RCI:
-  new: ["W1-004"]
-  update: []
+  new: []
+  update:
+    - S3-001  # post-pr-checklist.sh 的行为变更
 
-Reason: detect-phase.sh 是质检系统核心组件，Stop Hook 依赖它判断阶段。缺失导致质检门控失效（P0 blocker）。必须纳入回归契约确保该脚本存在且功能正确。
+Reason: 修改 post-pr-checklist.sh 行为（记录而非报错），需更新现有 S3-001 RCI；cleanup 脚本为新增工具类脚本，但属于 self-evolution 机制扩展，优先级 P2

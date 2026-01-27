@@ -1569,3 +1569,181 @@ golden_paths:
         - "检查输出 JSON 包含 success 字段"
         - "确认 N8N workflow JSON 文件存在"
     test: "cecilia --health"
+
+# ============================================================================
+# Scripts 回归契约
+# ============================================================================
+scripts:
+  # --------------------------------------------------------------------------
+  # S1: squash-evidence.sh
+  # --------------------------------------------------------------------------
+  - id: S1-001
+    feature: S1
+    name: "squash-evidence.sh 自动合并 evidence commit"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, evidence, git]
+    owner: infra
+    steps:
+      given: "最后一个 commit 是 evidence commit（chore: update quality evidence）"
+      when: "运行 scripts/squash-evidence.sh"
+      then: "自动 soft reset + amend，将 evidence 合并到代码 commit"
+    evidence:
+      type: git
+      contains: "已合并到代码 commit"
+    test: "tests/scripts/squash-evidence.test.ts"
+
+  # --------------------------------------------------------------------------
+  # S2: auto-generate-views.sh
+  # --------------------------------------------------------------------------
+  - id: S2-001
+    feature: S2
+    name: "auto-generate-views.sh 检测 feature-registry.yml 变更"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, derived-views]
+    owner: infra
+    steps:
+      given: "feature-registry.yml 有 staged 或 unstaged 变更"
+      when: "运行 scripts/auto-generate-views.sh"
+      then: "自动运行 generate-path-views.sh 并暂存生成的文件"
+    evidence:
+      type: log
+      contains: "派生视图已生成"
+    test: "tests/scripts/auto-generate-views.test.ts"
+
+  - id: S2-002
+    feature: S2
+    name: "auto-generate-views.sh 无变更时跳过"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, derived-views]
+    owner: infra
+    steps:
+      given: "feature-registry.yml 无变更"
+      when: "运行 scripts/auto-generate-views.sh"
+      then: "输出'无变更，跳过'并 exit 0"
+    evidence:
+      type: log
+      contains: "无变更，跳过"
+    test: "tests/scripts/auto-generate-views.test.ts"
+
+  # --------------------------------------------------------------------------
+  # S3: post-pr-checklist.sh
+  # --------------------------------------------------------------------------
+  - id: S3-001
+    feature: S3
+    name: "post-pr-checklist.sh develop/main 分支 PRD/DoD 检查"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, post-pr, quality]
+    owner: infra
+    steps:
+      given: "当前在 develop 或 main 分支"
+      when: "运行 scripts/post-pr-checklist.sh"
+      then: "检查是否有 .prd.md 或 .dod.md 文件，有则报错"
+    evidence:
+      type: log
+      contains: "PRD/DoD 文件不应存在于 develop/main"
+    test: "tests/scripts/post-pr-checklist.test.ts"
+
+  - id: S3-002
+    feature: S3
+    name: "post-pr-checklist.sh 派生视图版本同步检查"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, post-pr, quality]
+    owner: infra
+    steps:
+      given: "feature-registry.yml 和 OPTIMAL-PATHS.md 都存在"
+      when: "运行 scripts/post-pr-checklist.sh"
+      then: "检查两者版本号是否匹配"
+    evidence:
+      type: log
+      contains: "派生视图版本"
+    test: "tests/scripts/post-pr-checklist.test.ts"
+
+  - id: S3-003
+    feature: S3
+    name: "post-pr-checklist.sh 临时文件残留检查"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, post-pr, quality]
+    owner: infra
+    steps:
+      given: "工作区可能有临时文件"
+      when: "运行 scripts/post-pr-checklist.sh"
+      then: "检查并列出 *Old.*, *New.*, *Backup.* 等临时文件"
+    evidence:
+      type: log
+      contains: "临时文件"
+    test: "tests/scripts/post-pr-checklist.test.ts"
+
+  - id: S3-004
+    feature: S3
+    name: "post-pr-checklist.sh 未 push 的 commit 检查"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, post-pr, quality]
+    owner: infra
+    steps:
+      given: "可能有本地 commit 未 push"
+      when: "运行 scripts/post-pr-checklist.sh"
+      then: "检查并提示未 push 的 commit 数量"
+    evidence:
+      type: log
+      contains: "未 push 的 commit"
+    test: "tests/scripts/post-pr-checklist.test.ts"
+
+  # --------------------------------------------------------------------------
+  # S4: cleanup-prd-dod.sh
+  # --------------------------------------------------------------------------
+  - id: S4-001
+    feature: S4
+    name: "cleanup-prd-dod.sh 自动清理 develop/main PRD/DoD"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, cleanup, prd-dod]
+    owner: infra
+    steps:
+      given: "当前在 develop 或 main 分支"
+      when: "运行 scripts/cleanup-prd-dod.sh"
+      then: "自动删除 .prd.md 和 .dod.md 文件（如果存在）"
+    evidence:
+      type: log
+      contains: "清理完成"
+    test: "tests/scripts/cleanup-prd-dod.test.ts"
+
+  - id: S4-002
+    feature: S4
+    name: "cleanup-prd-dod.sh 跳过功能分支"
+    scope: script
+    priority: P2
+    trigger: [PR, Release]
+    method: auto
+    tags: [automation, cleanup, prd-dod]
+    owner: infra
+    steps:
+      given: "当前在 cp-* 或 feature/* 分支"
+      when: "运行 scripts/cleanup-prd-dod.sh"
+      then: "跳过清理，保留 PRD/DoD 文件"
+    evidence:
+      type: log
+      contains: "跳过"
+    test: "tests/scripts/cleanup-prd-dod.test.ts"
