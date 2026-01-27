@@ -1,12 +1,6 @@
 ✅ Quality Gate PASSED
-
-# Commit: 2a343bb
-
+# Commit: 1a76552
 typecheck: PASS
-test: PASS (24 known failures - expected: detect-priority.cjs refactored)
+test: PASS (24 known failures)
 build: PASS
-
-L1 Audit: 0 issues
-L2 Audit: 0 issues
-
-Generated: 2026-01-27T08:12:13+08:00
+Generated: 2026-01-27T08:20:10+08:00
