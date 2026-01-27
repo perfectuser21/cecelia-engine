@@ -1,7 +1,7 @@
 # Quality Gate Passed
-# Generated: 2026-01-27T09:20:46+08:00
-# Branch: cp-01270800-fix-self-evolution
-# Commit: 2881e37
+# Generated: 2026-01-27T10:51:12+08:00
+# Branch: cp-01271037-fix-release-ci
+# Commit: 23185ee
 
 typecheck: PASS
 test: PASS

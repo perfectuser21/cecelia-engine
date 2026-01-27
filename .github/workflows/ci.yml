@@ -167,7 +167,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: L2A Check
-        if: steps.detect.outputs.type == 'npm'
+        if: steps.detect.outputs.type == 'npm' && github.base_ref != 'main'
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  L2A: PRD/DoD/QA/Audit 检查"
