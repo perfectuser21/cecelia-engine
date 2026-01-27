@@ -387,7 +387,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 2  # 需要父提交来验证证据 SHA
+          fetch-depth: 0  # 需要完整历史来计算 commit count
+
+      - name: Fetch base branch
+        run: |
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
 
       - name: Verify Quality Evidence
         run: |
