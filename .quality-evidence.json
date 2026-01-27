@@ -1,12 +1,12 @@
 {
-  "sha": "5345107362a9d7c5800e9c22168bdde506cde446",
+  "sha": "7250afa0bc10574d34122a024552f7a13c9d07cb",
   "branch": "cp-260127-ralph-loop-auto",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-27T15:09:55+08:00",
+  "timestamp": "2026-01-27T15:33:20+08:00",
   "evidence": {
     "typecheck": "passed",
-    "tests": "passed_with_pre_existing_failures",
+    "tests": "passed",
     "build": "success",
     "audit_l1": 0,
     "audit_l2": 0
