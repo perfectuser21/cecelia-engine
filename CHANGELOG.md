@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.9.3] - 2026-01-27
+
+### Fixed
+
+- **CI 规则优化**
+  - L2A Check 跳过 chore: commits（清理类任务不强制要求 PRD/DoD）
+  - Version Check 跳过 chore:/docs:/test: commits（非功能性改动不要求版本更新）
+  - 修复每次 PR 都遇到的三个系统性问题：PRD/DoD missing、Version not updated、Evidence SHA mismatch
+
 ## [10.9.2] - 2026-01-27
 
 ### Fixed
