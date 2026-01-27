@@ -1,9 +1,9 @@
 {
-  "sha": "d03b39c1bb6e2294663c215b6a59928f331384ce",
+  "sha": "75984167dfae7c638cb4ad0eea28eeacc29b6c8c",
   "branch": "cp-cleanup-prd-dod",
   "qa_gate_passed": true,
   "audit_decision": "PASS",
-  "timestamp": "2026-01-27T07:57:03+08:00",
+  "timestamp": "2026-01-27T08:03:03+08:00",
   "evidence": {
     "typecheck": "passed",
     "tests": "passed (24 known failures - expected: detect-priority.cjs logic refactored)",
