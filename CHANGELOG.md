@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.13.1] - 2026-01-27
+
+### Changed
+
+- **修复 /dev 文档中的循环机制说明**
+  - 删除 Stop Hook 相关说明（已过时）
+  - 统一为"循环机制"概念
+  - 明确两种实现：有头（/ralph-loop plugin）、无头（cecelia-run while 循环）
+  - skills/dev/SKILL.md description 更新
+  - 核心定位章节更新
+- **pr-gate 降级为提示型 Gate**
+  - 检查失败仅警告，exit 0（不阻断流程）
+  - CI + branch protection 是唯一门槛
+  - pr-gate 提供快速反馈，不是决定性检查
+
 ## [10.13.0] - 2026-01-27
 
 ### Changed

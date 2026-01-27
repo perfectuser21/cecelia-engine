@@ -3,14 +3,16 @@ name: dev
 version: 2.2.0
 updated: 2026-01-27
 description: |
-  统一开发工作流入口（必须在 Ralph Loop 内调用）。
+  统一开发工作流入口（必须在循环机制内调用）。
 
-  ⚠️  不要直接调用 /dev，使用 dev-with-loop 或手动包装。
+  循环机制有两种实现：
+  - 有头模式: dev-with-loop（使用 /ralph-loop plugin）
+  - 无头模式: cecelia-run（使用 while 循环）
 
-  触发条件：
-  - 用户调用: dev-with-loop .prd.md
-  - 或手动: /ralph-loop "/dev .prd.md" --completion-promise "DONE"
-  - Hook 输出 [SKILL_REQUIRED: dev]
+  触发方式：
+  - 有头: dev-with-loop .prd.md
+  - 无头: cecelia-run task123 cp001 prompt.txt（prompt 内容：/dev .prd.md）
+  - 手动: /ralph-loop "/dev .prd.md" --completion-promise "DONE"
 
   v2.2.0 变更：
   - 删除阶段检测（不再分 p0/p1/p2）
@@ -22,19 +24,18 @@ description: |
 
 ## ⚠️  使用警告（CRITICAL）
 
-**不要直接调用 /dev**，因为缺少自动循环机制会导致Step 4/7 停顿。
+**不要在普通会话直接调用 /dev**，必须配合循环机制。
 
-### 正确用法
+### 循环机制
 
-```bash
-# 方式 1：使用便捷命令（推荐）
-dev-with-loop .prd-xxx.md
+/dev 需要外层循环机制驱动，有两种实现：
 
-# 方式 2：手动包装 Ralph Loop
-/ralph-loop "/dev .prd-xxx.md" --completion-promise "DONE" --max-iterations 20
-```
+| 模式 | 循环实现 | 使用方式 |
+|------|---------|---------|
+| **有头模式** | /ralph-loop plugin | `dev-with-loop .prd.md` |
+| **无头模式** | cecelia-run while 循环 | `cecelia-run task123 cp001 prompt.txt` |
 
-### 为什么需要 Ralph Loop？
+### 为什么需要循环？
 
 ```
 /dev 执行步骤：
@@ -46,8 +47,8 @@ dev-with-loop .prd-xxx.md
   AI 自然停下来，需要外层循环驱动继续
 
 解决：
-  Ralph Loop 提供外层循环
-  检测到没有 <promise> → 自动继续
+  - 有头：/ralph-loop plugin 检测无 <promise> → 自动继续
+  - 无头：cecelia-run while 循环检测无 DONE → 再次调用 claude
 ```
 
 ---
@@ -55,9 +56,8 @@ dev-with-loop .prd-xxx.md
 ## 核心定位
 
 **流程编排者**（不负责循环重试）：
-- 质检强制 → `hooks/stop.sh` (Stop Hook)
 - 放行判断 → `hooks/pr-gate-v2.sh` (PreToolUse:Bash)
-- 循环驱动 → Ralph Loop（外部调用）
+- 循环驱动 → 外部循环机制（有头：/ralph-loop plugin / 无头：cecelia-run while）
 - 进度追踪 → Task Checkpoint（TaskCreate/TaskUpdate）
 
 判断由专门的规范负责：
@@ -66,11 +66,11 @@ dev-with-loop .prd-xxx.md
 
 **职责分离**：
 ```
-用户 → Ralph Loop（循环框架）
+用户 → 循环机制（有头：/ralph-loop / 无头：cecelia-run）
          ↓
        /dev（流程编排）
          ↓
-       Step 1-11（具体步骤）
+       Step 1-15（具体步骤）
          ↓
        Task Checkpoint（进度追踪）
 ```
