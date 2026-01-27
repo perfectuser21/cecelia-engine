@@ -860,20 +860,21 @@ workflow:
   # --------------------------------------------------------------------------
   - id: W7-001
     feature: W7
-    name: "Ralph Loop 自动启动"
+    name: "Ralph Loop 用户直接调用（v2.1.0）"
     scope: workflow
     priority: P1
     trigger: [PR, Release]
     method: manual
-    tags: [dev, ralph-loop, automation]
+    tags: [dev, ralph-loop, automation, v2.1.0]
     owner: workflow
     steps:
-      given: "/dev 工作流执行到 Step 7 或 Step 9"
-      when: "AI 需要循环处理质检或 CI 修复"
-      then: "自动启动 Ralph Loop (max-iterations=20 for p0, 10 for p1)"
+      given: "用户需要执行开发任务"
+      when: "运行 dev-with-loop 或手动调用 /ralph-loop \"/dev ...\" --completion-promise \"DONE\""
+      then: "自动检测阶段并启动 Ralph Loop (max-iterations=20 for p0, 10 for p1)"
+    note: "v2.1.0: 改为用户直接调用，不依赖 AI 内部启动。完成信号统一为 DONE"
     evidence:
       type: log
-      description: "日志显示 /ralph-loop 命令被自动调用，包含 --max-iterations 和 --completion-promise 参数"
+      description: "日志显示用户调用 dev-with-loop 或 /ralph-loop，包含 --max-iterations 和 --completion-promise \"DONE\""
 
   - id: W7-002
     feature: W7
@@ -895,17 +896,18 @@ workflow:
 
   - id: W7-003
     feature: W7
-    name: "版本号自动更新"
+    name: "版本号自动更新（v2.1.0）"
     scope: workflow
     priority: P1
     trigger: [PR, Release]
     method: manual
-    tags: [dev, version, automation]
+    tags: [dev, version, automation, v2.1.0]
     owner: workflow
     steps:
       given: "Step 7.4 自动化检查阶段"
       when: "运行 scripts/auto-update-version.sh"
       then: "根据第一个 commit 类型（feat/fix/feat!）自动更新 package.json、CHANGELOG.md、hook-core/VERSION"
+    note: "v2.1.0: 与 Ralph Loop 用户直接调用配合，完成信号统一为 DONE"
     evidence:
       type: file-diff
       description: "package.json 版本号已更新，CHANGELOG.md 有新条目，hook-core/VERSION 同步"

@@ -1,88 +1,85 @@
 ---
 name: dev
-version: 2.0.0
-updated: 2026-01-24
+version: 2.1.0
+updated: 2026-01-27
 description: |
-  统一开发工作流入口（两阶段 + 事件驱动）。
+  统一开发工作流入口（必须在 Ralph Loop 内调用）。
+
+  ⚠️  不要直接调用 /dev，使用 dev-with-loop 或手动包装。
 
   触发条件：
-  - 用户说任何开发相关的需求
-  - 用户说 /dev
+  - 用户调用: dev-with-loop .prd.md
+  - 或手动: /ralph-loop "/dev .prd.md" --completion-promise "DONE"
   - Hook 输出 [SKILL_REQUIRED: dev]
 
-  v2.0.0 变更：
-  - 两阶段分离：p0 (发 PR) + p1 (修 CI)
-  - Stop Hook 强制质检（会话结束时强制）
-  - P1 轮询循环（持续检查 CI 直到成功）
+  v2.1.0 变更：
+  - Ralph Loop 改为用户调用（不再由 AI 内部调用）
+  - 简化 /dev 职责：只负责流程编排
+  - 删除内部 Ralph Loop 调用逻辑
 ---
 
-# /dev - 统一开发工作流（v2.0）
+# /dev - 统一开发工作流（v2.1）
+
+## ⚠️  使用警告（CRITICAL）
+
+**不要直接调用 /dev**，因为缺少自动循环机制会导致Step 4/7 停顿。
+
+### 正确用法
+
+```bash
+# 方式 1：使用便捷命令（推荐）
+dev-with-loop .prd-xxx.md
+
+# 方式 2：手动包装 Ralph Loop
+/ralph-loop "/dev .prd-xxx.md" --completion-promise "DONE" --max-iterations 20
+```
+
+### 为什么需要 Ralph Loop？
+
+```
+/dev 执行步骤：
+  Step 4: 调用 /qa → 返回
+  Step 7: 调用 /audit → 返回
+
+问题：
+  /qa 和 /audit 按规范不输出总结就返回
+  AI 自然停下来，需要外层循环驱动继续
+
+解决：
+  Ralph Loop 提供外层循环
+  检测到没有 <promise> → 自动继续
+```
+
+---
 
 ## 核心定位
 
-**流程编排者 + 两阶段分离 + P1 轮询循环**：
+**流程编排者**（不负责循环重试）：
 - 阶段检测 → `scripts/detect-phase.sh`
 - 质检强制 → `hooks/stop.sh` (Stop Hook)
 - 放行判断 → `hooks/pr-gate-v2.sh` (PreToolUse:Bash)
-- P1 轮询 → `skills/dev/steps/09-ci.md` (持续检查 CI)
+- 循环驱动 → Ralph Loop（外部调用）
 
 判断由专门的规范负责：
 - 测试决策 → 参考 `skills/qa/SKILL.md`
 - 代码审计 → 参考 `skills/audit/SKILL.md`
 
----
-
-## ⚡⚡⚡ Ralph Loop 强制调用（CRITICAL - 最高优先级）
-
-**进入 /dev 后，必须立即调用 Ralph Loop 启动自动循环。**
-
-### 调用时机
-
-```bash
-# 1. 检测当前阶段
-PHASE=$(bash scripts/detect-phase.sh | grep "^PHASE:" | awk '{print $2}')
-
-# 2. p0 阶段：质检循环
-if [[ "$PHASE" == "p0" ]]; then
-    /ralph-loop "实现 <PRD 描述的功能>，完成质检并创建 PR 后输出 <promise>QUALITY_GATE_PASSED</promise>" \
-        --completion-promise "QUALITY_GATE_PASSED"
-fi
-
-# 3. p1 阶段：CI 修复循环
-if [[ "$PHASE" == "p1" ]]; then
-    PR_NUMBER=$(gh pr list --head $(git rev-parse --abbrev-ref HEAD) --json number -q '.[0].number')
-    /ralph-loop "修复 PR #$PR_NUMBER 的 CI 失败，CI 通过并合并后输出 <promise>CI_PASSED</promise>" \
-        --completion-promise "CI_PASSED"
-fi
-
-# 4. p2/pending/unknown：直接退出（已完成）
+**职责分离**：
+```
+用户 → Ralph Loop（循环框架）
+         ↓
+       /dev（流程编排）
+         ↓
+       Step 1-8（具体步骤）
 ```
 
-### Ralph Loop 工作机制
-
-**AI 的职责**：
-- ✅ 循环检查完成条件（质检通过？PR 创建？CI 通过？）
-- ✅ 条件未满足 → 执行修复步骤 → **不输出 promise** → Ralph Loop 自动继续
-- ✅ 条件全部满足 → **输出 `<promise>SIGNAL</promise>`** → Ralph Loop 结束
-
-**禁止行为**：
-- ❌ 手动循环检查 CI 状态（手动查 `gh run list`）
-- ❌ 自己写 while 循环
-- ❌ 修复一次就停下来
-- ❌ 等待用户确认
-- ❌ 输出"结束对话"、"会话结束"等字眼
-
-**正确行为**：
-- ✅ 一次调用 `/ralph-loop`
-- ✅ Ralph Loop 自动循环
-- ✅ AI 检查条件并决定是否输出 promise
-- ✅ 持续运行直到检测到 promise
-
 ---
 
-### p0 阶段完成条件检查
+## Ralph Loop 完成条件检查（AI 职责）
 
-**在每次 Ralph Loop 迭代结束时，AI 检查以下条件：**
+**AI 在每次 Ralph Loop 迭代结束时，必须检查完成条件并决定是否输出 promise。**
+
+### p0 阶段完成条件
 
 ```
 1. Audit 报告存在？(docs/AUDIT-REPORT.md)
@@ -97,12 +94,10 @@ fi
 4. PR 已创建？
    ❌ → 创建 PR (gh pr create) → 不输出 promise → 继续
 
-✅ 全部满足 → 输出 <promise>QUALITY_GATE_PASSED</promise> → Ralph Loop 结束
+✅ 全部满足 → 输出 <promise>DONE</promise> → Ralph Loop 结束
 ```
 
-### p1 阶段完成条件检查
-
-**在每次 Ralph Loop 迭代结束时，AI 检查以下条件：**
+### p1 阶段完成条件
 
 ```
 1. 质检仍然有效？（代码修改后需要重新质检）
@@ -116,7 +111,7 @@ fi
 3. PR 已合并？
    ❌ → gh pr merge --squash --delete-branch → 不输出 promise → 继续
 
-✅ 全部满足 → 输出 <promise>CI_PASSED</promise> → Ralph Loop 结束
+✅ 全部满足 → 输出 <promise>DONE</promise> → Ralph Loop 结束
 ```
 
 ---
@@ -148,8 +143,8 @@ Step N 完成 → 立即读取 skills/dev/steps/{N+1}-xxx.md → 立即执行下
 
 ### Ralph Loop 结束条件
 
-- p0 阶段：检查所有条件 → 全部满足 → 输出 `<promise>QUALITY_GATE_PASSED</promise>`
-- p1 阶段：检查所有条件 → 全部满足 → 输出 `<promise>CI_PASSED</promise>`
+- p0 阶段：检查所有条件 → 全部满足 → 输出 `<promise>DONE</promise>`
+- p1 阶段：检查所有条件 → 全部满足 → 输出 `<promise>DONE</promise>`
 - p2/pending/unknown 阶段：不启动 Ralph Loop，直接退出
 
 ### 特别注意：Skill 调用后必须继续

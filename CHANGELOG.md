@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.12.0] - 2026-01-27
+
+### Changed
+
+- **Ralph Loop Wrapper 修复（用户直接调用）**
+  - 创建 `/home/xx/bin/dev-with-loop` 便捷命令
+  - 自动检测阶段（p0/p1/p2/pending/unknown）并调用 Ralph Loop
+  - skills/dev/SKILL.md 版本升级到 2.1.0
+  - 删除 AI 内部 Ralph Loop 调用逻辑
+  - 添加使用警告：不要直接调用 /dev
+  - 简化职责：/dev 只负责流程编排
+  - 完成信号统一为 DONE
+  - 更新 ~/.claude/CLAUDE.md Ralph Loop 使用规则
+  - 更新 RCI: W7-001, W7-003
+
 ## [10.11.0] - 2026-01-27
 
 ### Added
