@@ -4,7 +4,7 @@ version: 1.15.0
 created: 2026-01-20
 updated: 2026-01-27
 changelog:
-  - 1.15.0: 新增 Q1 RISK SCORE + Q2 Structured Audit（三层架构）
+  - 1.15.0: 新增 Q5 RISK SCORE + Q6 Structured Audit（三层架构）
   - 1.14.0: 新增 C6 Evidence CI (SSOT)
   - 1.13.0: 新增 W7 Ralph Loop 自动化
   - 1.12.0: 新增 W6 Worktree 并行开发
@@ -110,8 +110,8 @@ Full Regression（全量测试）
 
 | ID | Feature | 状态 | 最小验收 | 说明 |
 |----|---------|------|----------|------|
-| Q1 | RISK SCORE Trigger | **Committed** | `scripts/qa/risk-score.js` | R1-R8 规则（≥3 分触发 QA Node），自动化判断是否需要 QA Decision |
-| Q2 | Structured Audit | **Committed** | `scripts/audit/generate-report.js` | 结构化验证（Scope+Forbidden+Proof），生成 AUDIT-REPORT.md |
+| Q5 | RISK SCORE Trigger | **Committed** | `scripts/qa/risk-score.cjs` | R1-R8 规则（≥3 分触发 QA Node），自动化判断是否需要 QA Decision |
+| Q6 | Structured Audit | **Committed** | `scripts/audit/generate-report.cjs` | 结构化验证（Scope+Forbidden+Proof），生成 AUDIT-REPORT.md |
 
 **三层架构**：
 - Layer 1: Skills (SKILL.md) - AI 操作手册

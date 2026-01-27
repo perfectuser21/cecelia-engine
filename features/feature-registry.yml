@@ -428,9 +428,9 @@ platform_features:
       - Q4-006  # AI Review CI job
 
   # --------------------------------------------------------------------------
-  # Q1: RISK SCORE Trigger - QA Decision 自动触发机制
+  # Q5: RISK SCORE Trigger - QA Decision 自动触发机制
   # --------------------------------------------------------------------------
-  - id: Q1
+  - id: Q5
     name: RISK SCORE Trigger
     status: Committed
     priority: P1
@@ -467,13 +467,13 @@ platform_features:
         coverage: Q1-001, Q1-002
 
     rcis:
-      - Q1-001  # RISK SCORE 计算准确性
-      - Q1-002  # ≥3 分触发 QA Node
+      - Q5-001  # RISK SCORE 计算准确性
+      - Q5-002  # ≥3 分触发 QA Node
 
   # --------------------------------------------------------------------------
-  # Q2: Structured Audit - 结构化 Audit 验证流程
+  # Q6: Structured Audit - 结构化 Audit 验证流程
   # --------------------------------------------------------------------------
-  - id: Q2
+  - id: Q6
     name: Structured Audit
     status: Committed
     priority: P1
@@ -515,8 +515,8 @@ platform_features:
         coverage: Q2-001, Q2-002
 
     rcis:
-      - Q2-001  # Scope/Forbidden/Proof 验证准确性
-      - Q2-002  # AUDIT-REPORT.md 生成正确
+      - Q6-001  # Scope/Forbidden/Proof 验证准确性
+      - Q6-002  # AUDIT-REPORT.md 生成正确
 
 # ============================================================================
 # Product Core 5 - 引擎核心能力

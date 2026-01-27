@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.16.0
+version: 2.17.0
 created: 2026-01-27
-updated: 2026-01-27
+updated: 2026-01-28
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.16.0: 从 feature-registry.yml 自动生成
+  - 2.17.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -155,7 +155,40 @@ CI → l2b-check job → ai-review job → 通过/失败
 
 ---
 
-## GP-010: Regression Testing Framework (P1)
+## GP-010: RISK SCORE Trigger (Q5)
+
+**Feature**: Q5 - RISK SCORE Trigger
+**Priority**: P1
+
+### Golden Path
+
+```
+/dev Step 3 → risk-score.cjs (计算分数) → ≥3 分 → 执行完整 QA Decision Node →
+生成 docs/QA-DECISION.md
+```
+
+**RCI 覆盖**: Q5-001,Q5-002
+
+---
+
+## GP-011: Structured Audit (Q6)
+
+**Feature**: Q6 - Structured Audit
+**Priority**: P1
+
+### Golden Path
+
+```
+/dev Step 6 → compare-scope.cjs (验证范围) → check-forbidden.cjs (检查禁区) →
+check-proof.cjs (验证证据) → generate-report.cjs (生成报告) →
+AUDIT-REPORT.md (Decision: PASS/FAIL)
+```
+
+**RCI 覆盖**: Q6-001,Q6-002
+
+---
+
+## GP-012: Regression Testing Framework (P1)
 
 **Feature**: P1 - Regression Testing Framework
 **Priority**: P0
@@ -171,7 +204,7 @@ run-regression.sh 执行 → 验证契约不被破坏
 
 ---
 
-## GP-011: DevGate (P2)
+## GP-013: DevGate (P2)
 
 **Feature**: P2 - DevGate
 **Priority**: P0
@@ -186,7 +219,7 @@ CI test job → DevGate checks → 三个检查全部通过 → CI 继续
 
 ---
 
-## GP-012: Quality Reporting (P3)
+## GP-014: Quality Reporting (P3)
 
 **Feature**: P3 - Quality Reporting
 **Priority**: P1
@@ -201,7 +234,7 @@ CI test job → DevGate checks → 三个检查全部通过 → CI 继续
 
 ---
 
-## GP-013: CI Quality Gates (P4)
+## GP-015: CI Quality Gates (P4)
 
 **Feature**: P4 - CI Quality Gates
 **Priority**: P0
@@ -216,7 +249,7 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
-## GP-014: Worktree Parallel Development (P5)
+## GP-016: Worktree Parallel Development (P5)
 
 **Feature**: P5 - Worktree Parallel Development
 **Priority**: P2
@@ -231,7 +264,7 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
-## GP-015: Self-Evolution Automation (P6)
+## GP-017: Self-Evolution Automation (P6)
 
 **Feature**: P6 - Self-Evolution Automation
 **Priority**: P2
@@ -258,5 +291,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.16.0
-**生成时间**: 2026-01-27
+**版本**: 2.17.0
+**生成时间**: 2026-01-28

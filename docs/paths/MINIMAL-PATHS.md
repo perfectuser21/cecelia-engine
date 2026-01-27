@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.16.0
+version: 2.17.0
 created: 2026-01-27
-updated: 2026-01-27
+updated: 2026-01-28
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.16.0: 从 feature-registry.yml 自动生成
+  - 2.17.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -106,6 +106,27 @@ changelog:
 
 ---
 
+### Q5: RISK SCORE Trigger
+
+1. ✅ **risk-score.cjs: 计算 R1-R8 规则，输出 JSON**
+2. ✅ **detect-scope.cjs: 自动建议允许的 Scope**
+3. ✅ **detect-forbidden.cjs: 列出常见禁区**
+
+**RCI 覆盖**: Q5-001,Q5-002
+
+---
+
+### Q6: Structured Audit
+
+1. ✅ **compare-scope.cjs: 对比实际改动与允许范围**
+2. ✅ **check-forbidden.cjs: 检查是否触碰禁区**
+3. ✅ **check-proof.cjs: 验证 Tests 字段完成度**
+4. ✅ **generate-report.cjs: 生成结构化报告**
+
+**RCI 覆盖**: Q6-001,Q6-002
+
+---
+
 ## Product Core 5 - 引擎核心能力
 
 ### P1: Regression Testing Framework
@@ -180,5 +201,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.16.0
-**生成时间**: 2026-01-27
+**版本**: 2.17.0
+**生成时间**: 2026-01-28

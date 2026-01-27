@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "10.11.0"
+version: "11.0.0"
 updated: "2026-01-27"
 
 # ============================================================================
@@ -1924,3 +1924,90 @@ quality_enforcement:
     verification:
       type: manual
       description: "文档审查确认原则清晰"
+  # --------------------------------------------------------------------------
+  # Q5: RISK SCORE Trigger - QA Decision 自动触发机制
+  # --------------------------------------------------------------------------
+  - id: Q5-001
+    feature: Q5
+    name: "RISK SCORE 计算准确性"
+    scope: script
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [qa-decision, risk-score, automation]
+    owner: infra
+    steps:
+      given: "PR 改动文件涉及 R1-R8 规则"
+      when: "执行 node scripts/qa/risk-score.cjs --base develop --head HEAD"
+      then: "正确识别触发的规则，计算 RISK SCORE，≥3 分时 requiresQA: true"
+    evidence:
+      type: json-output
+      contains: '{"riskScore": 4, "rules": ["R3", "R5", "R6", "R7"], "requiresQA": true}'
+    verification:
+      type: manual
+      description: "本 PR 已验证（risk-score.cjs 检测到 4 个风险点）"
+
+  - id: Q5-002
+    feature: Q5
+    name: "≥3 分触发 QA Node"
+    scope: workflow
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [qa-decision, trigger]
+    owner: infra
+    steps:
+      given: "RISK SCORE >= 3"
+      when: "/dev 工作流 Step 3 检查风险分数"
+      then: "执行完整 QA Decision Node，生成 docs/QA-DECISION.md"
+    evidence:
+      type: file
+      path: "docs/QA-DECISION.md"
+      contains: "Scope, Forbidden, Tests, RCI"
+    verification:
+      type: manual
+      description: "本 PR 已验证（生成了 QA-DECISION.md）"
+
+  # --------------------------------------------------------------------------
+  # Q6: Structured Audit - 结构化 Audit 验证流程
+  # --------------------------------------------------------------------------
+  - id: Q6-001
+    feature: Q6
+    name: "Scope/Forbidden/Proof 验证准确性"
+    scope: script
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [audit, scope, forbidden, proof]
+    owner: infra
+    steps:
+      given: "QA-DECISION.md 定义了 Scope/Forbidden/Tests"
+      when: "执行 compare-scope.cjs, check-forbidden.cjs, check-proof.cjs"
+      then: "正确验证实际改动是否符合合同定义"
+    evidence:
+      type: json-output
+      contains: '{"scopeCheck": {"pass": true}, "forbiddenCheck": {"pass": true}, "proofCheck": {"pass": true}}'
+    verification:
+      type: manual
+      description: "本 PR 已验证（所有检查通过）"
+
+  - id: Q6-002
+    feature: Q6
+    name: "AUDIT-REPORT.md 生成正确"
+    scope: script
+    priority: P1
+    trigger: [PR, Release]
+    method: manual
+    tags: [audit, report]
+    owner: infra
+    steps:
+      given: "Audit 验证完成"
+      when: "执行 generate-report.cjs --base develop --head HEAD"
+      then: "生成结构化 AUDIT-REPORT.md，Decision 为 PASS 或 FAIL"
+    evidence:
+      type: file
+      path: "docs/AUDIT-REPORT.md"
+      contains: "Decision: PASS"
+    verification:
+      type: manual
+      description: "本 PR 已验证（生成了 AUDIT-REPORT.md with Decision: PASS）"
