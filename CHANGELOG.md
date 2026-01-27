@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [10.10.1] - 2026-01-27
+
+### Changed
+
+- **Ralph Loop 自动调用修复（统一循环机制）**
+  - SKILL.md 开头添加 Ralph Loop 强制调用规则（最高优先级）
+  - 删除所有"结束对话"、"允许结束"等误导性描述
+  - 修改 p0/p1 流程图为 Ralph Loop 完成条件检查
+  - Step 7 添加 Ralph Loop 循环提示
+  - Step 8 修改为 Ralph Loop 完成条件检查说明
+  - Step 9 完全重写为 Ralph Loop 启动指令，删除所有 while true 循环示例
+  - 归档 09.5-pending-wait.md 到 .archive/
+  - hooks/stop.sh 修复注释和 p0 阶段输出信息
+  - ~/.claude/CLAUDE.md 添加 Ralph Loop 全局调用规则
+
 ## [10.9.5] - 2026-01-27
 
 ### Changed
