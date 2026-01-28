@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.17.0"
-updated: "2026-01-27"
+version: "2.18.0"
+updated: "2026-01-28"
 changelog:
+  - 2.18.0: v11.2.0 - 分支级别 PRD/DoD 文件命名（H1/H2 向后兼容扩展）
   - 2.17.0: v11.0.0 - QA/Audit 三层架构重构（Q1 RISK SCORE + Q2 Structured Audit）
   - 2.16.0: v10.13.1 - /dev 文档修复（循环机制说明） + pr-gate 降级为提示型（exit 0）
   - 2.15.0: v10.13.0 - /dev Skill v2.2.0（删除阶段检测，统一完成条件，强制 Task Checkpoint）
@@ -47,8 +48,11 @@ platform_features:
     name: Branch Protection
     status: Committed
     priority: P0
+    version: "11.2.0"
+    updated: "2026-01-28"
     description: |
       防止在 main/develop 分支直接写代码，强制使用 cp-*/feature/* 工作分支
+      v11.2.0: 支持分支级别 PRD/DoD 文件（.prd-{branch}.md，向后兼容 .prd.md）
 
     entrypoints:
       - type: hook
@@ -123,12 +127,13 @@ platform_features:
     name: PR Gate (Dual Mode)
     status: Committed
     priority: P0
-    version: "10.13.1"
-    updated: "2026-01-27"
+    version: "11.2.0"
+    updated: "2026-01-28"
     description: |
       PR 创建前的质检门禁，支持双模式：
       - PR 模式: L1 (测试) + L2A (审计) + L2B-min (证据)
       - Release 模式: L1 + L2A + L2B-full (证据) + L3 (验收)
+      - v11.2.0: 支持分支级别 PRD/DoD 文件（.prd-{branch}.md，向后兼容 .prd.md）
       - v10.13.1: 降级为提示型 Gate（检查失败 exit 0，不阻断），CI 是唯一门槛
       - v10.8.4: 信任新鲜质检结果（5分钟内），避免重复测试导致不稳定
       - v10.6.0: 新增 Part 0.5 (CI Preflight) 和 L2B-min 检查
