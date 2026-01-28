@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.19.0"
+version: "2.20.0"
 updated: "2026-01-28"
 changelog:
+  - 2.20.0: v11.2.6 - 跨仓库兼容性 + Worktree 支持（-e .git、develop/main fallback）
   - 2.19.0: v11.2.5 - 并发安全修复 Phase 1（原子写入、分支级别状态文件、trap 修复）
   - 2.18.0: v11.2.0 - 分支级别 PRD/DoD 文件命名（H1/H2 向后兼容扩展）
   - 2.17.0: v11.0.0 - QA/Audit 三层架构重构（Q1 RISK SCORE + Q2 Structured Audit）
@@ -49,10 +50,11 @@ platform_features:
     name: Branch Protection
     status: Committed
     priority: P0
-    version: "11.2.0"
+    version: "11.2.6"
     updated: "2026-01-28"
     description: |
       防止在 main/develop 分支直接写代码，强制使用 cp-*/feature/* 工作分支
+      v11.2.6: 移除硬编码路径 + develop/main 自动检测 fallback
       v11.2.0: 支持分支级别 PRD/DoD 文件（.prd-{branch}.md，向后兼容 .prd.md）
 
     entrypoints:
@@ -128,12 +130,13 @@ platform_features:
     name: PR Gate (Dual Mode)
     status: Committed
     priority: P0
-    version: "11.2.5"
+    version: "11.2.6"
     updated: "2026-01-28"
     description: |
       PR 创建前的质检门禁，支持双模式：
       - PR 模式: L1 (测试) + L2A (审计) + L2B-min (证据)
       - Release 模式: L1 + L2A + L2B-full (证据) + L3 (验收)
+      - v11.2.6: .git 检测使用 -e 替代 -d（兼容 worktree）+ develop/main fallback
       - v11.2.5: 并发安全修复（TEMP_FILES 数组管理、分支级别质检文件）
       - v11.2.0: 支持分支级别 PRD/DoD 文件（.prd-{branch}.md，向后兼容 .prd.md）
       - v10.13.1: 降级为提示型 Gate（检查失败 exit 0，不阻断），CI 是唯一门槛
