@@ -72,9 +72,8 @@ describe("l2a-check.sh", () => {
     }
   });
 
-  it("should pass in release mode when requirements are met", () => {
-    writeFileSync(join(TEST_DIR, ".prd.md"), "# PRD\n\nLine 2\n\nLine 3");
-    writeFileSync(join(TEST_DIR, ".dod.md"), "# DoD\n\nQA: test\n\n- [x] done");
+  it("should pass in release mode without PRD/DoD (skip PRD/DoD check)", () => {
+    // Release 模式跳过 PRD/DoD 检查，只需要 QA 和 Audit
     writeFileSync(join(TEST_DIR, "docs/QA-DECISION.md"), "Decision: PASS");
     writeFileSync(join(TEST_DIR, "docs/AUDIT-REPORT.md"), "Decision: PASS");
 
@@ -83,12 +82,12 @@ describe("l2a-check.sh", () => {
       encoding: "utf-8",
     });
     expect(output).toContain("L2A_SUMMARY: passed=4 failed=0");
+    expect(output).toContain("[Release 模式] 跳过 PRD/DoD 检查");
   });
 
-  it("should fail in release mode when DoD has unchecked items", () => {
-    writeFileSync(join(TEST_DIR, ".prd.md"), "# PRD\n\nLine 2\n\nLine 3");
-    writeFileSync(join(TEST_DIR, ".dod.md"), "# DoD\n\nQA: test\n\n- [ ] undone");
-    writeFileSync(join(TEST_DIR, "docs/QA-DECISION.md"), "Decision: PASS");
+  it("should fail in release mode when QA decision is not PASS", () => {
+    // Release 模式仍然检查 QA 必须是 PASS
+    writeFileSync(join(TEST_DIR, "docs/QA-DECISION.md"), "Decision: NO_RCI");
     writeFileSync(join(TEST_DIR, "docs/AUDIT-REPORT.md"), "Decision: PASS");
 
     try {
@@ -96,7 +95,7 @@ describe("l2a-check.sh", () => {
       expect.fail("Should have failed");
     } catch (error: any) {
       expect(error.status).toBe(2);
-      expect(error.stdout + error.stderr).toContain("unchecked");
+      expect(error.stdout + error.stderr).toContain("not PASS");
     }
   });
 });
