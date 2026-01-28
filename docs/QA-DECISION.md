@@ -1,24 +1,32 @@
 # QA Decision
 
-Decision: PASS
-Priority: P3
+Decision: NO_RCI
+Priority: P1
 RepoType: Engine
 
 Tests:
-  - dod_item: "删除垃圾文件"
-    method: manual
-    location: manual:验证 ls 无 .prd-*.md（除当前任务）
+  - dod_item: "track.sh 原子写入"
+    method: auto
+    location: CI shell syntax check
 
-  - dod_item: "regression-contract.yaml 版本号更新"
+  - dod_item: "状态文件分支隔离"
     method: manual
-    location: manual:验证 grep version 返回 11.2.4
+    location: manual:多分支并发验证
 
-  - dod_item: "过时 RCI 已删除"
+  - dod_item: "cecelia-api 命令修复"
     method: manual
-    location: manual:验证 grep H7-001/002/003/W1-007 无结果
+    location: manual:检查 track.sh 不调用不存在的命令
+
+  - dod_item: "pr-gate-v2.sh trap 修复"
+    method: auto
+    location: CI shell syntax check
+
+  - dod_item: "quality-gate 文件分支隔离"
+    method: manual
+    location: manual:多分支验证
 
 RCI:
   new: []
   update: []
 
-Reason: chore 类型任务，删除文件和配置修改，无需自动化测试
+Reason: 内部并发安全修复，不改变外部行为或 API，无需新增回归契约。修复竞态条件和文件命名，属于 bug fix 类型。
