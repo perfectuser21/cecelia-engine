@@ -1168,7 +1168,7 @@ ci:
     scope: ci
     priority: P0
     trigger: [PR, Release]
-    method: manual
+    method: auto
     tags: [ci, evidence, ssot, quality-gate]
     owner: infra
     steps:
@@ -1176,8 +1176,9 @@ ci:
       when: "执行 Generate Evidence step"
       then: "生成 .quality-evidence.<SHA>.json 文件，包含所需字段"
     evidence:
-      type: ci_job
-      name: "Generate Evidence"
+      type: file
+      path: ".quality-evidence.*.json"
+      contains: ["sha", "ci_run_id", "timestamp", "qa_gate_passed", "audit_decision"]
       run: "bash ci/scripts/generate-evidence.sh"
     test: "ci/scripts/generate-evidence.sh"
 

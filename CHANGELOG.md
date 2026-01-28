@@ -7,6 +7,129 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.1.0] - 2026-01-28
+
+### Removed
+
+- **清理 Ralph Loop 架构**
+  - 删除 `/home/xx/bin/dev-with-loop`（bash 脚本无法调用 Claude Code plugin 命令）
+  - 删除 `scripts/detect-phase.sh`（/dev v2.2.0 已删除阶段检测）
+  - 删除 `docs/RALPH_LOOP_WRAPPER.md`（过时文档）
+
+### Changed
+
+- **更新 Ralph Loop 使用方式**
+  - 用户直接在 Claude Code 会话内输入 `/ralph-loop` 命令
+  - 更新 `~/.claude/CLAUDE.md` 全局指南
+  - 更新 `skills/dev/SKILL.md` 使用说明
+  - 更新 `regression-contract.yaml` 测试步骤
+
+## [11.0.0] - 2026-01-27
+
+### Added
+
+- **RISK SCORE 自动触发机制**
+  - 新增 R1-R8 规则（Public API, Data Model, Cross-Module, Dependencies, Security, Core Workflow, Default Behavior, Financial）
+  - 每个规则 1 分，≥3 分自动触发 QA Decision Node
+  - 新增脚本：`scripts/qa/risk-score.js`、`scripts/qa/detect-scope.js`、`scripts/qa/detect-forbidden.js`
+  - 集成到 /dev 工作流 Step 3
+
+- **三层架构（Skills + Scripts + Templates）**
+  - Layer 1: Skills (SKILL.md) - AI 操作手册
+  - Layer 2: Scripts (*.js) - 可执行工具，实际计算/扫描
+  - Layer 3: Templates (*.md) - 结构化输出格式
+  - 明确分层职责，避免混淆
+
+- **结构化 Audit 验证流程**
+  - 新增脚本：`scripts/audit/compare-scope.js`、`scripts/audit/check-forbidden.js`、`scripts/audit/check-proof.js`、`scripts/audit/generate-report.js`
+  - Scope 验证：对比实际改动与 QA-DECISION.md 允许范围
+  - Forbidden 检查：确保未触碰禁区
+  - Proof 验证：检查测试证据完成度
+  - 自动生成结构化 AUDIT-REPORT.md
+
+- **标准化模板**
+  - `templates/QA-DECISION.md` - QA 合同模板
+  - `templates/AUDIT-REPORT.md` - 审计报告模板
+  - 固定 Schema，便于自动化解析和 Gate 检查
+
+### Changed
+
+- **skills/qa/SKILL.md v1.3.0**
+  - 新增 RISK SCORE 自动触发机制章节
+  - 添加 R1-R8 规则定义表格
+  - 说明 /dev 流程集成方式
+  - 相关脚本路径引用
+
+- **skills/audit/SKILL.md v1.3.0**
+  - 新增结构化验证流程章节
+  - 添加四步验证流程（Scope → Forbidden → Proof → Report）
+  - 集成到 /dev 工作流的示例代码
+  - 相关脚本路径引用
+
+### Breaking Changes
+
+- QA Decision Node 不再由人工判断，改为 RISK SCORE >= 3 自动触发
+- Audit Node 必须使用结构化脚本验证，不再接受纯 AI 审计
+- docs/QA-DECISION.md 和 docs/AUDIT-REPORT.md 格式标准化，Gate 依赖固定 Schema
+
+### Rationale
+
+此次重构将 QA/Audit 系统从"AI 判断"升级为"合同验证"：
+- QA Decision Node = 变更合同（BEFORE coding）
+- Audit Node = 合同验收（AFTER coding）
+- CI = 证据执行（evidence provider）
+
+三层架构确保：
+1. AI 有清晰的操作手册（SKILL.md）
+2. 验证逻辑可追溯、可测试（scripts/）
+3. 输出格式标准化（templates/）
+
+RISK SCORE 机制实现自动化触发，避免人为主观判断。
+
+## [10.13.1] - 2026-01-27
+
+### Changed
+
+- **修复 /dev 文档中的循环机制说明**
+  - 删除 Stop Hook 相关说明（已过时）
+  - 统一为"循环机制"概念
+  - 明确两种实现：有头（/ralph-loop plugin）、无头（cecelia-run while 循环）
+  - skills/dev/SKILL.md description 更新
+  - 核心定位章节更新
+- **pr-gate 降级为提示型 Gate**
+  - 检查失败仅警告，exit 0（不阻断流程）
+  - CI + branch protection 是唯一门槛
+  - pr-gate 提供快速反馈，不是决定性检查
+
+## [10.13.0] - 2026-01-27
+
+### Changed
+
+- **修复 /dev Skill v2.2（删除阶段 + 强制 Task Checkpoint）**
+  - 删除 p0/p1/p2 阶段检测逻辑
+  - 删除 detect-phase.sh 调用
+  - 统一完成条件：PR 创建 + CI 通过 + PR 合并 = DONE
+  - 新增官方 Task Checkpoint 使用规范（TaskCreate/TaskUpdate）
+  - 执行流程图改为单一流程（不分阶段）
+  - 核心规则更新为统一流程
+  - skills/dev/SKILL.md 版本升级到 2.2.0
+  - 更新 RCI: W7-001, W7-003
+
+## [10.12.0] - 2026-01-27
+
+### Changed
+
+- **Ralph Loop Wrapper 修复（用户直接调用）**
+  - 创建 `/home/xx/bin/dev-with-loop` 便捷命令
+  - 自动检测阶段（p0/p1/p2/pending/unknown）并调用 Ralph Loop
+  - skills/dev/SKILL.md 版本升级到 2.1.0
+  - 删除 AI 内部 Ralph Loop 调用逻辑
+  - 添加使用警告：不要直接调用 /dev
+  - 简化职责：/dev 只负责流程编排
+  - 完成信号统一为 DONE
+  - 更新 ~/.claude/CLAUDE.md Ralph Loop 使用规则
+  - 更新 RCI: W7-001, W7-003
+
 ## [10.11.0] - 2026-01-27
 
 ### Added

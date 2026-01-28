@@ -1,9 +1,10 @@
 ---
 id: features-registry
-version: 1.14.0
+version: 1.15.0
 created: 2026-01-20
 updated: 2026-01-27
 changelog:
+  - 1.15.0: 新增 Q5 RISK SCORE + Q6 Structured Audit（三层架构）
   - 1.14.0: 新增 C6 Evidence CI (SSOT)
   - 1.13.0: 新增 W7 Ralph Loop 自动化
   - 1.12.0: 新增 W6 Worktree 并行开发
@@ -102,6 +103,31 @@ Full Regression（全量测试）
 | ~~C4~~ | ~~notify-failure~~ | **Deprecated** | - | v8.0.21 删除，改用 n8n/飞书通知 |
 | C5 | release-check | **Committed** | `scripts/release-check.sh` | Release 前 DoD 完成度检查 |
 | C6 | Evidence CI (SSOT) | **Experiment** | CI 运行 | Evidence 只在 CI 生成/校验，本地 Fast Fail，Ralph Loop 自愈 |
+
+---
+
+## QA/Audit (质量保证)
+
+| ID | Feature | 状态 | 最小验收 | 说明 |
+|----|---------|------|----------|------|
+| Q5 | RISK SCORE Trigger | **Committed** | `scripts/qa/risk-score.cjs` | R1-R8 规则（≥3 分触发 QA Node），自动化判断是否需要 QA Decision |
+| Q6 | Structured Audit | **Committed** | `scripts/audit/generate-report.cjs` | 结构化验证（Scope+Forbidden+Proof），生成 AUDIT-REPORT.md |
+
+**三层架构**：
+- Layer 1: Skills (SKILL.md) - AI 操作手册
+- Layer 2: Scripts (*.js) - 可执行工具
+- Layer 3: Templates (*.md) - 结构化输出格式
+
+**QA Scripts**:
+- `scripts/qa/risk-score.js` - RISK SCORE 计算
+- `scripts/qa/detect-scope.js` - 自动建议 Scope
+- `scripts/qa/detect-forbidden.js` - 列出禁区
+
+**Audit Scripts**:
+- `scripts/audit/compare-scope.js` - Scope 对比
+- `scripts/audit/check-forbidden.js` - Forbidden 检查
+- `scripts/audit/check-proof.js` - Proof 验证
+- `scripts/audit/generate-report.js` - 报告生成
 
 ---
 

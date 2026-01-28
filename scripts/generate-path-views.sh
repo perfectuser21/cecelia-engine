@@ -45,7 +45,8 @@ echo ""
 # 读取版本和更新时间
 VERSION=$(yq '.version' "$REGISTRY_FILE")
 UPDATED=$(yq '.updated' "$REGISTRY_FILE")
-TODAY=$(date +%Y-%m-%d)
+# Use the updated date from registry instead of current date to avoid timezone drift
+TODAY="$UPDATED"
 
 # ============================================================================
 # 生成 MINIMAL-PATHS.md

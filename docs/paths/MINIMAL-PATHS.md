@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.13.0
+version: 2.17.0
 created: 2026-01-27
 updated: 2026-01-27
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.13.0: 从 feature-registry.yml 自动生成
+  - 2.17.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -47,22 +47,13 @@ changelog:
 
 ---
 
-### W1: Two-Phase Dev Workflow
+### W1: Unified Dev Workflow
 
 1. ✅ **p0: PRD → DoD → Code → Audit (PASS) → Test (L1) → PR → 结束**
 2. ✅ **p1: CI fail → 修复 → push → 退出（不等 CI）**
 3. ✅ **p2: CI pass → 自动 merge → Learning → Cleanup**
 
 **RCI 覆盖**: W1-001,W1-002,W1-003,W1-004,W1-005,W1-006,W1-008
-
----
-
-### N1: Cecelia Headless Mode
-
-1. ✅ **Notion 任务 → n8n 轮询 (5分钟) → cecelia-run → 执行 → 更新状态**
-2. ✅ **CI fail → PHASE_OVERRIDE=p1 → cecelia-run → 修复 → push → 退出**
-
-**RCI 覆盖**: N1-001,N1-002,N1-003,N1-004
 
 ---
 
@@ -103,6 +94,27 @@ changelog:
 4. ✅ **AI Review: 调用 VPS Review API，L2C 专用提示词**
 
 **RCI 覆盖**: Q4-001,Q4-002,Q4-003,Q4-004,Q4-005,Q4-006
+
+---
+
+### Q5: RISK SCORE Trigger
+
+1. ✅ **risk-score.cjs: 计算 R1-R8 规则，输出 JSON**
+2. ✅ **detect-scope.cjs: 自动建议允许的 Scope**
+3. ✅ **detect-forbidden.cjs: 列出常见禁区**
+
+**RCI 覆盖**: Q5-001,Q5-002
+
+---
+
+### Q6: Structured Audit
+
+1. ✅ **compare-scope.cjs: 对比实际改动与允许范围**
+2. ✅ **check-forbidden.cjs: 检查是否触碰禁区**
+3. ✅ **check-proof.cjs: 验证 Tests 字段完成度**
+4. ✅ **generate-report.cjs: 生成结构化报告**
+
+**RCI 覆盖**: Q6-001,Q6-002
 
 ---
 
@@ -180,5 +192,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.13.0
+**版本**: 2.17.0
 **生成时间**: 2026-01-27

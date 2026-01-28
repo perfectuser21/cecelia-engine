@@ -1,12 +1,12 @@
 ---
 id: optimal-paths
-version: 2.13.0
+version: 2.17.0
 created: 2026-01-27
 updated: 2026-01-27
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.13.0: 从 feature-registry.yml 自动生成
+  - 2.17.0: 从 feature-registry.yml 自动生成
 ---
 
 # Optimal Paths - 推荐体验路径
@@ -43,7 +43,7 @@ StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1:
 
 ---
 
-### W1: Two-Phase Dev Workflow
+### W1: Unified Dev Workflow
 
 ```
 完整的 Golden Path（11 步）：
@@ -58,15 +58,6 @@ StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1:
 9. CI 修复 (p1 事件驱动)
 10. Learning
 11. Cleanup
-```
-
----
-
-### N1: Cecelia Headless Mode
-
-```
-n8n 触发 → cecelia-run → PHASE_OVERRIDE (可选) → claude -p "/dev ..." →
-执行流程 → 输出 JSON → cecelia-api 更新 Core + 同步 Notion
 ```
 
 ---
@@ -104,6 +95,25 @@ CI → l2b-check job → ai-review job → 通过/失败
 
 ---
 
+### Q5: RISK SCORE Trigger
+
+```
+/dev Step 3 → risk-score.cjs (计算分数) → ≥3 分 → 执行完整 QA Decision Node →
+生成 docs/QA-DECISION.md
+```
+
+---
+
+### Q6: Structured Audit
+
+```
+/dev Step 6 → compare-scope.cjs (验证范围) → check-forbidden.cjs (检查禁区) →
+check-proof.cjs (验证证据) → generate-report.cjs (生成报告) →
+AUDIT-REPORT.md (Decision: PASS/FAIL)
+```
+
+---
+
 ## Product Core 5 - 引擎核心能力
 
 ### P1: Regression Testing Framework
@@ -126,7 +136,7 @@ CI test job → DevGate checks → 三个检查全部通过 → CI 继续
 ### P3: Quality Reporting
 
 ```
-执行脚本 → 扫描 repo 结构 → 生成 JSON/TXT 报告 → 供 Dashboard/Cecelia 使用
+执行脚本 → 扫描 repo 结构 → 生成 JSON/TXT 报告 → 供 Dashboard 使用
 ```
 
 ---
@@ -167,5 +177,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.13.0
+**版本**: 2.17.0
 **生成时间**: 2026-01-27

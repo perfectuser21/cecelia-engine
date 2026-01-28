@@ -87,6 +87,85 @@ description: |
 
 ---
 
+## RISK SCORE 自动触发机制
+
+**自动判断是否需要 QA Decision Node**（v11.0.0+）
+
+### 触发规则
+
+```bash
+# 计算 RISK SCORE
+node scripts/qa/risk-score.cjs --base develop --head HEAD
+
+# 输出示例：
+{
+  "riskScore": 4,
+  "rules": ["R1", "R3", "R5"],
+  "requiresQA": true,
+  "details": {...}
+}
+
+# 判定：riskScore >= 3 → 必须执行 QA Decision Node
+```
+
+### R1-R8 规则定义
+
+| Rule | 名称 | 触发条件 | 权重 |
+|------|------|----------|------|
+| R1 | Public API Changes | 改动 api/, sdk/, cli/, exports | 1 |
+| R2 | Data Model Changes | 改动 schema, state.json, summary.json | 1 |
+| R3 | Cross-Module Changes | 改动 ≥2 个顶级目录 | 1 |
+| R4 | New Dependencies | package.json 新增依赖 | 1 |
+| R5 | Security/Permissions | 涉及 token, secret, exec, fs | 1 |
+| R6 | Core Workflow Changes | 改动 skills/dev, hooks, gates | 1 |
+| R7 | Default Behavior Changes | 改动 featureFlag, defaultValue | 1 |
+| R8 | Financial/Billing | 涉及 payment, billing, amount | 1 |
+
+### 使用场景
+
+**在 /dev 流程 Step 3（QA Node）中自动调用**：
+
+```bash
+# Step 3: 计算风险分数
+RISK_SCORE=$(node scripts/qa/risk-score.cjs --base develop --head HEAD)
+
+if [ $? -eq 1 ]; then
+  echo "RISK SCORE >= 3, 执行 QA Decision Node"
+  # 进入完整 QA 决策流程
+else
+  echo "RISK SCORE < 3, 跳过 QA Decision Node"
+  # 使用默认 DoD
+fi
+```
+
+### 输出格式
+
+```json
+{
+  "riskScore": 4,
+  "rules": ["R1", "R3", "R5"],
+  "requiresQA": true,
+  "details": {
+    "R1": "Changed public API: src/api/index.ts",
+    "R3": "Cross-module changes: skills/, scripts/",
+    "R5": "Security related: .env, token usage"
+  },
+  "summary": {
+    "filesChanged": 10,
+    "threshold": 3,
+    "recommendation": "QA Decision Node is REQUIRED"
+  }
+}
+```
+
+### 相关脚本
+
+- `scripts/qa/risk-score.cjs` - RISK SCORE 计算引擎
+- `scripts/qa/detect-scope.cjs` - 自动建议 Scope
+- `scripts/qa/detect-forbidden.cjs` - 列出常见禁区
+
+---
+
 ## 5 种模式详解
 
 ### 模式 1：测试计划模式
@@ -367,11 +446,13 @@ Artifacts: 涉及的文件列表
 
 ## ⚡ 完成后行为（CRITICAL）
 
-**生成 QA-DECISION.md 后，立即返回调用方**：
+**生成 QA-DECISION.md 后的行为**：
 
-1. **不要**输出"QA 决策已生成！现在返回 /dev 流程..."
-2. **不要**停顿或输出总结
-3. **立即**返回，让调用方（/dev）继续执行下一步
-4. **绝对不要**等待用户确认
+1. **不要**输出额外总结（如"QA 决策已生成！现在返回..."）
+2. **直接输出结果**（Decision + Reason + Next Actions）
+3. **调用方（/dev）会立即继续**执行下一步
 
-这个 Skill 的职责是"生成决策文件"，不是"等待确认"。
+**关键点**：
+- Skill 的职责是"生成决策文件 + 简洁输出"
+- 不要输出多余的总结或确认信息
+- /dev 流程会在收到结果后自动继续，无需 Skill 做任何"返回"动作

@@ -1,39 +1,28 @@
 # QA Decision
 
 Decision: PASS
-Priority: P0
+Priority: P2
 RepoType: Engine
 
 Tests:
-  - dod_item: "CI 生成 .quality-evidence.<sha>.json"
-    method: auto
-    location: ci/scripts/generate-evidence.sh
-
-  - dod_item: "Evidence 不写入 git"
-    method: auto
-    location: .gitignore check
-
-  - dod_item: "Gate 校验 SHA = HEAD_SHA"
-    method: auto
-    location: ci/scripts/evidence-gate.sh
-
-  - dod_item: "本地只保留 typecheck/lint"
-    method: auto
-    location: package.json qa:local script
-
-  - dod_item: "CI 完整检查（qa + evidence + version + rci）"
-    method: auto
-    location: .github/workflows/test.yml
-
-  - dod_item: "Ralph Loop 自动修复 CI 失败"
+  - dod_item: "删除 dev-with-loop 脚本"
     method: manual
-    location: manual:skills/dev/steps/09-ci.md 重写验证
+    location: manual:验证 /home/xx/bin/dev-with-loop 不存在
+
+  - dod_item: "删除 detect-phase.sh"
+    method: manual
+    location: manual:验证 scripts/detect-phase.sh 不存在
+
+  - dod_item: "更新全局 CLAUDE.md"
+    method: manual
+    location: manual:验证 Ralph Loop 使用规则已更新
+
+  - dod_item: "清理项目文档引用"
+    method: manual
+    location: manual:grep 检查无 dev-with-loop 引用
 
 RCI:
-  new:
-    - C6-001  # Evidence 生成脚本正常工作
-    - C6-002  # Evidence Gate 校验通过
-    - C6-003  # 本地 qa:local 只跑 typecheck/lint
+  new: []
   update: []
 
-Reason: Evidence CI 化是核心质量契约变更，必须纳入回归契约确保永不漂移
+Reason: 这是脚本清理和文档更新任务，删除无法工作的 wrapper 脚本，无需纳入回归契约
