@@ -13,7 +13,13 @@
 
 set -euo pipefail
 
-TRACK_FILE=".cecelia-run-id"
+# v1.1: 分支级别状态文件隔离
+get_track_file() {
+  local branch
+  branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+  echo ".cecelia-run-id-${branch}"
+}
+
 CECELIA_API="${HOME}/bin/cecelia-api"
 
 # 颜色输出
@@ -24,21 +30,42 @@ NC='\033[0m'
 log_info() { echo -e "${GREEN}[TRACK]${NC} $*" >&2; }
 log_warn() { echo -e "${YELLOW}[TRACK]${NC} $*" >&2; }
 
-# 获取当前 run_id
+# 获取当前 run_id（支持分支隔离 + 向后兼容）
 get_run_id() {
-  if [[ -f "$TRACK_FILE" ]]; then
-    cat "$TRACK_FILE"
+  local track_file
+  track_file=$(get_track_file)
+
+  # 优先读取分支级别文件
+  if [[ -f "$track_file" ]]; then
+    cat "$track_file"
+    return
+  fi
+
+  # 向后兼容：读取旧格式文件
+  if [[ -f ".cecelia-run-id" ]]; then
+    cat ".cecelia-run-id"
   fi
 }
 
-# 保存 run_id
+# 保存 run_id（原子写入，防止并发损坏）
 save_run_id() {
-  echo "$1" > "$TRACK_FILE"
+  local track_file tmp_file
+  track_file=$(get_track_file)
+
+  # 使用 mktemp + mv 实现原子写入
+  tmp_file=$(mktemp) || return 1
+  echo "$1" > "$tmp_file" || { rm -f "$tmp_file"; return 1; }
+  mv "$tmp_file" "$track_file" 2>/dev/null || { rm -f "$tmp_file"; return 1; }
 }
 
-# 清理 run_id
+# 清理 run_id（清理分支级别文件）
 clear_run_id() {
-  rm -f "$TRACK_FILE"
+  local track_file
+  track_file=$(get_track_file)
+  rm -f "$track_file"
+
+  # 同时清理旧格式（如果存在且当前分支创建的）
+  # 注意：不要盲目删除旧格式，可能是其他分支的
 }
 
 # 检测是否是无头模式
@@ -148,13 +175,11 @@ cmd_done() {
 
   log_info "Run completed: $run_id"
 
-  # 更新状态
+  # 更新状态（使用 update-run，传递 PR URL 作为 action）
   if [[ -n "$pr_url" ]]; then
-    "$CECELIA_API" update-run "$run_id" "completed" "Done" "" &>/dev/null || true
-    # 如果有 PR URL，也更新 task
-    "$CECELIA_API" update-task "$run_id" "T-001" "done" "Completed" "$pr_url" &>/dev/null || true
+    "$CECELIA_API" update-run "$run_id" "completed" "Done: $pr_url" "" &>/dev/null || true
   else
-    "$CECELIA_API" update-run "$run_id" "completed" "Done" &>/dev/null || true
+    "$CECELIA_API" update-run "$run_id" "completed" "Done" "" &>/dev/null || true
   fi
 
   # 同步到 Notion

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - Cleanup 脚本
+# v1.5: 支持分支级别状态文件 (.cecelia-run-id-{branch}, .quality-gate-passed-{branch})
 # v1.4: 支持分支级别 PRD/DoD 文件 (.prd-{branch}.md, .dod-{branch}.md)
 # v1.3: 使用 mktemp 替代硬编码 /tmp，修复 MERGE_HEAD 路径
 # v1.2: 报告生成错误记录到日志而非吞掉
@@ -235,7 +236,7 @@ fi
 echo ""
 echo "[8]  删除运行时文件..."
 
-# v1.4: 支持分支级别 PRD/DoD 文件
+# v1.5: 支持分支级别 PRD/DoD/状态文件
 RUNTIME_FILES=(
     ".quality-report.json"
     ".prd.md"
@@ -243,6 +244,9 @@ RUNTIME_FILES=(
     ".prd-${CP_BRANCH}.md"
     ".dod-${CP_BRANCH}.md"
     ".quality-gate-passed"
+    ".quality-gate-passed-${CP_BRANCH}"
+    ".cecelia-run-id"
+    ".cecelia-run-id-${CP_BRANCH}"
     ".layer2-evidence.md"
     ".l3-analysis.md"
     ".quality-evidence.json"

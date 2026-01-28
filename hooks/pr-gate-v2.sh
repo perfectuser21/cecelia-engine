@@ -17,6 +17,15 @@ set -euo pipefail
 # 测试命令超时时间（秒）
 COMMAND_TIMEOUT=120
 
+# ===== 临时文件管理（v4.3: 修复 trap 覆盖问题）=====
+TEMP_FILES=()
+cleanup_temp_files() {
+  for f in "${TEMP_FILES[@]}"; do
+    rm -f "$f" 2>/dev/null || true
+  done
+}
+trap cleanup_temp_files EXIT
+
 # ===== 工具函数 =====
 
 # 清理数值：移除非数字字符，空值默认为 0
@@ -245,9 +254,9 @@ if [[ "$MODE" == "pr" ]]; then
     echo "" >&2
     echo "  [CI Preflight: 快速预检]" >&2
 
-    # 临时文件（提前定义，供 preflight 使用）
+    # 临时文件（使用统一管理）
     PREFLIGHT_OUTPUT=$(mktemp)
-    trap 'rm -f "$PREFLIGHT_OUTPUT"' EXIT
+    TEMP_FILES+=("$PREFLIGHT_OUTPUT")
 
     # 检查 ci:preflight 脚本是否存在
     if [[ -f "scripts/devgate/ci-preflight.sh" ]]; then
@@ -276,8 +285,14 @@ fi
 # ============================================================================
 
 # 检查是否可以信任缓存的质检结果
+# v4.3: 分支级别质检文件隔离
 SKIP_L1_TESTS=0
-QUALITY_GATE_FILE="$PROJECT_ROOT/.quality-gate-passed"
+QUALITY_GATE_FILE="$PROJECT_ROOT/.quality-gate-passed-${CURRENT_BRANCH}"
+
+# 向后兼容：如果新格式不存在，检查旧格式
+if [[ ! -f "$QUALITY_GATE_FILE" && -f "$PROJECT_ROOT/.quality-gate-passed" ]]; then
+    QUALITY_GATE_FILE="$PROJECT_ROOT/.quality-gate-passed"
+fi
 
 if [[ -f "$QUALITY_GATE_FILE" ]]; then
     # 获取文件修改时间
@@ -309,9 +324,9 @@ PROJECT_TYPE=0  # 位标志: 1=node, 2=python, 4=go
 [[ -f "$PROJECT_ROOT/requirements.txt" || -f "$PROJECT_ROOT/pyproject.toml" ]] && PROJECT_TYPE=$((PROJECT_TYPE | 2))
 [[ -f "$PROJECT_ROOT/go.mod" ]] && PROJECT_TYPE=$((PROJECT_TYPE | 4))
 
-# 临时文件用于保存测试输出
+# 临时文件用于保存测试输出（使用统一管理）
 TEST_OUTPUT_FILE=$(mktemp)
-trap 'rm -f "$TEST_OUTPUT_FILE"' EXIT
+TEMP_FILES+=("$TEST_OUTPUT_FILE")
 
 # Node.js 项目 (PROJECT_TYPE & 1)
 if (( PROJECT_TYPE & 1 )); then

@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+## [11.2.5] - 2026-01-28
 
-- 清理过时的 PRD/DoD 残留文件
-- 更新 regression-contract.yaml 版本号为 11.2.4
-- 移除引用不存在脚本的 RCI 定义（H7-001~003, W1-007）
+### Fixed
+
+- **并发安全修复 Phase 1**
+  - `track.sh`: 使用 mktemp + mv 原子写入，防止并发损坏
+  - `track.sh`: 状态文件分支隔离 (`.cecelia-run-id-${branch}`)
+  - `track.sh`: 移除不存在的 `update-task` API 调用
+  - `pr-gate-v2.sh`: 使用 TEMP_FILES 数组统一管理临时文件，修复 trap 覆盖问题
+  - `pr-gate-v2.sh`: 质检文件分支隔离 (`.quality-gate-passed-${branch}`)
+  - `cleanup.sh`: 同步更新清理列表
 
 ## [11.2.4] - 2026-01-28
 

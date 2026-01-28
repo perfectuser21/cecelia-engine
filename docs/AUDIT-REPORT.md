@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-01281742-cleanup-and-fix
+Branch: cp-20260128-phase1-concurrency-fix
 Date: 2026-01-28
-Scope: 清理垃圾文件 + 修复版本号 + 清理过时 RCI
+Scope: track.sh, pr-gate-v2.sh, cleanup.sh
 Target Level: L2
 
 Summary:
@@ -18,9 +18,9 @@ Findings: []
 Blockers: []
 
 Notes:
-  - 删除 6 个过时的 .prd-*.md 文件
-  - 删除 1 个过时的 .dod-*.md 文件
-  - 删除 1 个临时文件 .tmp-flow-analysis.md
-  - 更新 regression-contract.yaml 版本号为 11.2.4
-  - 删除 4 个引用不存在脚本的 RCI (H7-001, H7-002, H7-003, W1-007)
-  - 更新 CHANGELOG.md
+  - T-001: track.sh save_run_id 使用 mktemp + mv 原子写入
+  - T-002: 状态文件改为分支级别 (.cecelia-run-id-${branch})
+  - T-003: 移除不存在的 update-task API 调用
+  - T-004: pr-gate-v2.sh 使用 TEMP_FILES 数组统一管理临时文件
+  - T-005: 质检文件改为分支级别 (.quality-gate-passed-${branch})
+  - cleanup.sh 同步更新清理列表
