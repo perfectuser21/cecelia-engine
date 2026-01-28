@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.2.3] - 2026-01-28
+
+### Fixed
+
+- **CI DevGate Check 只在 PR 事件运行**
+  - 添加 `github.event_name == 'pull_request'` 条件
+
 ## [11.2.2] - 2026-01-28
 
 ### Fixed
