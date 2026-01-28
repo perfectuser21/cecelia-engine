@@ -66,16 +66,22 @@ echo "  [检查 regression-contract.yaml 变更]"
 
 # 获取 base 分支
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
-BASE_BRANCH="${BASE_REF:-$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || echo "develop")}"
+BASE_BRANCH="${BASE_REF:-$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || echo "")}"
+
+# v1.1: 自动检测 base 分支（develop 优先，fallback 到 main）
+if [[ -z "$BASE_BRANCH" ]] || ! git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
+    if git rev-parse develop >/dev/null 2>&1; then
+        BASE_BRANCH="develop"
+    elif git rev-parse main >/dev/null 2>&1; then
+        BASE_BRANCH="main"
+    else
+        echo -e "  ${YELLOW}Warning: No base branch found, using HEAD~10${NC}"
+        BASE_BRANCH="HEAD~10"
+    fi
+fi
 
 # 检查 regression-contract.yaml 是否有变更
 RCI_FILE="regression-contract.yaml"
-
-# L2 fix: 检查 BASE_BRANCH 是否存在
-if ! git rev-parse --verify "$BASE_BRANCH" >/dev/null 2>&1; then
-    echo -e "  ${YELLOW}Warning: Base branch '$BASE_BRANCH' not found, using HEAD~10${NC}"
-    BASE_BRANCH="HEAD~10"
-fi
 
 # 方法 1: git diff（未提交的变更）
 RCI_MODIFIED=$(git diff --name-only 2>/dev/null | grep -c "^$RCI_FILE$" 2>/dev/null || echo 0)

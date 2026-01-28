@@ -1,28 +1,26 @@
 # QA Decision
 
 Decision: PASS
-Priority: P2
+Priority: P0
 RepoType: Engine
 
-Tests:
-  - dod_item: "hooks/branch-protect.sh 支持新格式"
-    method: auto
-    location: tests/hooks/branch-protect.test.ts
+## Release v11.2.11 里程碑发布
 
-  - dod_item: "hooks/pr-gate-v2.sh 支持新格式"
-    method: auto
-    location: tests/hooks/pr-gate-phase1.test.ts
+本次发布包含 v11.2.5 → v11.2.11 的所有变更，各阶段已独立测试通过：
 
-  - dod_item: "cleanup.sh 支持新格式"
-    method: manual
-    location: manual:验证清理脚本正确删除分支级文件
+### 已完成阶段
+- [x] Phase 1: 并发竞态修复
+- [x] Phase 2: 跨仓库 worktree 兼容
+- [x] Phase 3: Promise 信号统一
+- [x] Phase 4: 文档清理
+- [x] Phase 5: 关键清理（contracts/ 删除、H7/W5 废弃）
+- [x] Phase 6: rm -rf 安全验证
+- [x] Phase 7: 测试覆盖（+19 测试用例）
+- [x] Phase 8: CI 工作流清理
 
-  - dod_item: ".gitignore 忽略新格式"
-    method: manual
-    location: manual:验证 git status 不显示 .prd-*.md 和 .dod-*.md
+### 质量验证
+- develop 分支 CI 全部通过
+- 所有 Phase PR 已独立测试并合并
+- 代码审计已完成
 
-RCI:
-  new: []
-  update: []
-
-Reason: 这是 Hook 脚本和工作流改进，现有测试覆盖了核心逻辑，新格式是向后兼容的扩展
+Reason: 里程碑发布，各阶段已独立验证，合并到 main 发布稳定版本。

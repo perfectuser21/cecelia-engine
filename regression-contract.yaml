@@ -18,8 +18,8 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "11.0.0"
-updated: "2026-01-27"
+version: "11.2.11"
+updated: "2026-01-28"
 
 # ============================================================================
 # Hooks 回归契约
@@ -380,82 +380,12 @@ hooks:
       contains: "CRITICAL|HIGH|security"
     test: "tests/hooks/detect-priority.test.ts"
 
-  # --------------------------------------------------------------------------
-  # H7: Stop Hook Quality Gate (v2.0.0 核心)
-  # --------------------------------------------------------------------------
-  - id: H7-001
-    feature: H7
-    name: "p0 阶段质检门禁"
-    scope: hook
-    priority: P0
-    trigger: [PR, Release]
-    method: auto
-    tags: [stop-hook, quality-gate, p0, v2.0.0]
-    owner: infra
-    steps:
-      given: "p0 阶段（无 PR）"
-      when: "会话尝试结束（StopHook 触发）"
-      then: "检查 L2A (AUDIT-REPORT.md PASS) + L1 (.quality-gate-passed) + PR 创建，全部通过则 exit 0，否则 exit 2"
-    evidence:
-      type: code
-      file: "hooks/stop.sh"
-      contains: "PHASE: p0"
-    test: "tests/hooks/stop-hook.test.ts"
-
-  - id: H7-002
-    feature: H7
-    name: "p1 阶段 CI 状态检查"
-    scope: hook
-    priority: P0
-    trigger: [PR, Release]
-    method: auto
-    tags: [stop-hook, ci-check, p1, v2.0.0]
-    owner: infra
-    steps:
-      given: "p1 阶段（PR + CI fail）"
-      when: "会话尝试结束（StopHook 触发）"
-      then: "检查 CI 状态：FAILURE → exit 2 | PENDING → exit 0 | SUCCESS → exit 0"
-    evidence:
-      type: code
-      file: "hooks/stop.sh"
-      contains: "PHASE: p1"
-    test: "tests/hooks/stop-hook.test.ts"
-
-  - id: H7-003
-    feature: H7
-    name: "阶段检测集成"
-    scope: hook
-    priority: P0
-    trigger: [PR, Release]
-    method: auto
-    tags: [stop-hook, phase-detection, v2.0.0]
-    owner: infra
-    steps:
-      given: "任意阶段"
-      when: "StopHook 触发"
-      then: "调用 scripts/detect-phase.sh 检测当前阶段（p0/p1/p2/pending/unknown），根据阶段执行对应检查"
-    evidence:
-      type: command
-      run: "bash scripts/detect-phase.sh"
-      contains: "PHASE:"
-    test: "tests/hooks/stop-hook.test.ts"
-
-  - id: H7-004
-    feature: H7
-    name: "stop.sh v10.0.0 两阶段语义对齐"
-    scope: hook
-    priority: P1
-    trigger: [PR, Release]
-    method: manual
-    tags: [stop-hook, v10.0.0, contract-rebase]
-    owner: infra
-    steps:
-      given: "v10.0.0 Contract Rebase"
-      when: "hooks/stop.sh 执行"
-      then: "使用 v2.0.0 两阶段语义（p0/p1/p2），不再使用旧的 Loop/Ralph 术语"
-    evidence:
-      type: manual
-      desc: "代码审查确认无旧术语残留"
+  # [DEPRECATED] H7 Stop Hook 从未实现，已被 Ralph Loop + PR Gate 替代
+  # - id: H7-004
+  #   feature: H7
+  #   name: "stop.sh v10.0.0 两阶段语义对齐"
+  #   deprecated_since: "11.2.9"
+  #   deprecated_reason: "hooks/stop.sh 从未实现"
 
   # --------------------------------------------------------------------------
   # H8: Session End Hook
@@ -1502,26 +1432,6 @@ n8n:
     evidence:
       type: manual
       desc: "验证视图生成无 git diff"
-
-  # --------------------------------------------------------------------------
-  # W1-007: Phase Detection
-  # --------------------------------------------------------------------------
-  - id: W1-007
-    feature: W1
-    name: "detect-phase.sh 阶段检测"
-    scope: workflow
-    priority: P2
-    trigger: [Release]
-    method: manual
-    tags: [workflow, phase-detection, v10.0.0]
-    owner: infra
-    steps:
-      given: "在任意工作阶段"
-      when: "运行 scripts/detect-phase.sh"
-      then: "正确识别当前阶段（p0/p1/p2/pending/unknown）"
-    evidence:
-      type: manual
-      desc: "验证阶段检测逻辑"
 
 # ============================================================================
 # Golden Paths (E2E 关键链路)

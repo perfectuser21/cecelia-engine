@@ -123,10 +123,10 @@ node scripts/qa/risk-score.cjs --base develop --head HEAD
 
 ### 使用场景
 
-**在 /dev 流程 Step 3（QA Node）中自动调用**：
+**在 /dev 流程 Step 4（DoD/QA Decision Node）中自动调用**：
 
 ```bash
-# Step 3: 计算风险分数
+# Step 4: 计算风险分数
 RISK_SCORE=$(node scripts/qa/risk-score.cjs --base develop --head HEAD)
 
 if [ $? -eq 1 ]; then

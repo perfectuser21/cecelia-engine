@@ -1,0 +1,15 @@
+{
+  "sha": "e12816c607b06fa82148a9d77dac35e226f23e4d",
+  "ci_run_id": "local-release-check",
+  "branch": "cp-20260128-release-v11.2.11",
+  "qa_gate_passed": true,
+  "audit_decision": "PASS",
+  "timestamp": "2026-01-28T22:13:51+08:00",
+  "evidence": {
+    "typecheck": "passed",
+    "tests": "passed",
+    "build": "success",
+    "audit_l1": 0,
+    "audit_l2": 0
+  }
+}

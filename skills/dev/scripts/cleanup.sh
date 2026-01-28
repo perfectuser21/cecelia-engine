@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - Cleanup 脚本
+# v1.7: rm -rf 安全验证
+# v1.6: 跨仓库兼容（develop/main fallback）+ worktree 安全检查
+# v1.5: 支持分支级别状态文件 (.cecelia-run-id-{branch}, .quality-gate-passed-{branch})
 # v1.4: 支持分支级别 PRD/DoD 文件 (.prd-{branch}.md, .dod-{branch}.md)
 # v1.3: 使用 mktemp 替代硬编码 /tmp，修复 MERGE_HEAD 路径
 # v1.2: 报告生成错误记录到日志而非吞掉
@@ -26,10 +29,57 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# v1.7: 安全删除目录 - 验证路径有效性
+safe_rm_rf() {
+    local path="$1"
+    local allowed_parent="$2"
+
+    # 验证 1: 路径非空
+    if [[ -z "$path" ]]; then
+        echo -e "${RED}错误: rm -rf 路径为空，拒绝执行${NC}" >&2
+        return 1
+    fi
+
+    # 验证 2: 路径存在
+    if [[ ! -e "$path" ]]; then
+        return 0
+    fi
+
+    # 验证 3: 路径在允许的父目录内
+    local real_path
+    real_path=$(realpath "$path" 2>/dev/null) || real_path="$path"
+    local real_parent
+    real_parent=$(realpath "$allowed_parent" 2>/dev/null) || real_parent="$allowed_parent"
+
+    if [[ "$real_path" != "$real_parent"* ]]; then
+        echo -e "${RED}错误: 路径 $path 不在允许范围 $allowed_parent 内，拒绝删除${NC}" >&2
+        return 1
+    fi
+
+    # 验证 4: 禁止删除根目录或 home 目录
+    if [[ "$real_path" == "/" || "$real_path" == "$HOME" || "$real_path" == "/home" ]]; then
+        echo -e "${RED}错误: 禁止删除系统关键目录: $real_path${NC}" >&2
+        return 1
+    fi
+
+    rm -rf "$path"
+}
+
 # 参数
 CP_BRANCH="${1:-}"
-# v1.1: 优先使用参数，其次从 git config 读取，最后 fallback 到 develop
-BASE_BRANCH="${2:-$(git config "branch.$CP_BRANCH.base-branch" 2>/dev/null || echo "develop")}"
+# v1.6: 优先使用参数，其次从 git config 读取，最后 fallback 到 develop/main
+BASE_BRANCH="${2:-$(git config "branch.$CP_BRANCH.base-branch" 2>/dev/null || echo "")}"
+
+# v1.6: 自动检测 base 分支（develop 优先，fallback 到 main）
+if [[ -z "$BASE_BRANCH" ]] || ! git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
+    if git rev-parse develop >/dev/null 2>&1; then
+        BASE_BRANCH="develop"
+    elif git rev-parse main >/dev/null 2>&1; then
+        BASE_BRANCH="main"
+    else
+        BASE_BRANCH="HEAD~10"  # 最后的 fallback
+    fi
+fi
 
 if [[ -z "$CP_BRANCH" ]]; then
     echo -e "${RED}错误: 请提供 cp-* 分支名${NC}"
@@ -174,9 +224,15 @@ if [[ -n "$WORKTREE_PATH" ]]; then
                 echo -e "   ${GREEN}[OK] 已移除 worktree${NC}"
             else
                 echo -e "   ${YELLOW}[WARN]  worktree 移除失败，尝试强制清理...${NC}"
-                rm -rf "$WORKTREE_PATH" 2>/dev/null || true
-                git worktree prune 2>/dev/null || true
-                echo -e "   ${GREEN}[OK] 已强制清理${NC}"
+                # v1.7: 使用安全删除，限制在主 worktree 的父目录内
+                MAIN_WT_PARENT=$(dirname "$(git worktree list 2>/dev/null | head -1 | awk '{print $1}')")
+                if safe_rm_rf "$WORKTREE_PATH" "$MAIN_WT_PARENT"; then
+                    git worktree prune 2>/dev/null || true
+                    echo -e "   ${GREEN}[OK] 已强制清理${NC}"
+                else
+                    echo -e "   ${RED}[FAIL] 安全检查失败，请手动删除: $WORKTREE_PATH${NC}"
+                    WARNINGS=$((WARNINGS + 1))
+                fi
             fi
         fi
     fi
@@ -235,7 +291,7 @@ fi
 echo ""
 echo "[8]  删除运行时文件..."
 
-# v1.4: 支持分支级别 PRD/DoD 文件
+# v1.5: 支持分支级别 PRD/DoD/状态文件
 RUNTIME_FILES=(
     ".quality-report.json"
     ".prd.md"
@@ -243,6 +299,9 @@ RUNTIME_FILES=(
     ".prd-${CP_BRANCH}.md"
     ".dod-${CP_BRANCH}.md"
     ".quality-gate-passed"
+    ".quality-gate-passed-${CP_BRANCH}"
+    ".cecelia-run-id"
+    ".cecelia-run-id-${CP_BRANCH}"
     ".layer2-evidence.md"
     ".l3-analysis.md"
     ".quality-evidence.json"

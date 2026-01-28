@@ -49,8 +49,7 @@ zenithjoy-engine/
 │   └── qa/          # /qa QA 总控
 ├── docs/            # 详细文档
 │   ├── ARCHITECTURE.md    # 知识分层架构
-│   ├── LEARNINGS.md       # 开发经验
-│   └── INTERFACE-SPEC.md  # 接口规范
+│   └── LEARNINGS.md       # 开发经验
 ├── templates/       # 文档模板
 ├── scripts/         # 部署脚本
 │   └── deploy.sh    # 部署到 ~/.claude/

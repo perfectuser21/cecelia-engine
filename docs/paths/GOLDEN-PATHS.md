@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.18.0
+version: 2.24.0
 created: 2026-01-28
 updated: 2026-01-28
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.18.0: 从 feature-registry.yml 自动生成
+  - 2.24.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -35,15 +35,13 @@ changelog:
 ## GP-002: Stop Hook Quality Gate (H7)
 
 **Feature**: H7 - Stop Hook Quality Gate
-**Priority**: P0
+**Priority**: P2
 
 ### Golden Path
 
 ```
-StopHook 触发 → 阶段检测 (detect-phase.sh) → p0: 检查质检+PR | p1: 检查CI | p2: exit 0
+null
 ```
-
-**RCI 覆盖**: H7-001,H7-002,H7-003
 
 ---
 
@@ -275,5 +273,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.18.0
+**版本**: 2.24.0
 **生成时间**: 2026-01-28

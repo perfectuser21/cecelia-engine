@@ -82,10 +82,10 @@ if [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
     echo "" >&2
     echo "文件: $FILE_PATH" >&2
     echo "" >&2
-    echo "请在 zenithjoy-engine 修改后部署到全局：" >&2
-    echo "  1. cd /home/xx/dev/zenithjoy-engine" >&2
+    echo "请在 zenithjoy-engine 仓库修改后部署到全局：" >&2
+    echo "  1. 克隆/进入 zenithjoy-engine 仓库" >&2
     echo "  2. 走 /dev 工作流修改 hooks/ 或 skills/" >&2
-    echo "  3. PR 合并到 main 后部署" >&2
+    echo "  3. PR 合并到 main 后运行 deploy.sh" >&2
     echo "" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
@@ -244,10 +244,16 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     fi
 
     # 检查 PRD 是否为当前分支更新的（防止复用旧的）
-    BASE_BRANCH=$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || echo "develop")
-    # 验证 BASE_BRANCH 存在，否则回退到 develop
-    if ! git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
-        BASE_BRANCH="develop"
+    BASE_BRANCH=$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || echo "")
+    # v18: 自动检测 base 分支（develop 优先，fallback 到 main）
+    if [[ -z "$BASE_BRANCH" ]] || ! git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
+        if git rev-parse develop >/dev/null 2>&1; then
+            BASE_BRANCH="develop"
+        elif git rev-parse main >/dev/null 2>&1; then
+            BASE_BRANCH="main"
+        else
+            BASE_BRANCH="HEAD~10"  # 最后的 fallback
+        fi
     fi
 
     # v17: 检查新旧两种格式的 PRD 文件

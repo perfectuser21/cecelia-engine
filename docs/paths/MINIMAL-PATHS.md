@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.18.0
+version: 2.24.0
 created: 2026-01-28
 updated: 2026-01-28
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.18.0: 从 feature-registry.yml 自动生成
+  - 2.24.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -30,11 +30,7 @@ changelog:
 
 ### H7: Stop Hook Quality Gate
 
-1. ✅ **p0 阶段: 质检未过 → exit 2（继续修）| 质检通过+PR创建 → exit 0**
-2. ✅ **p1 阶段: CI fail → exit 2 | CI pending → exit 0 | CI pass → exit 0**
-3. ✅ **p2 阶段: 直接 exit 0**
-
-**RCI 覆盖**: H7-001,H7-002,H7-003
+（暂无 minimal paths）
 
 ---
 
@@ -192,5 +188,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.18.0
+**版本**: 2.24.0
 **生成时间**: 2026-01-28

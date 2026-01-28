@@ -25,9 +25,28 @@ set -euo pipefail
 
 MODE="${1:-pr}"
 
-# 文件路径
-PRD_FILE=".prd.md"
-DOD_FILE=".dod.md"
+# 获取当前分支名（v1.1: 支持 CI 环境）
+# CI 中优先使用 GITHUB_HEAD_REF（PR 源分支）
+if [[ -n "${GITHUB_HEAD_REF:-}" ]]; then
+  CURRENT_BRANCH="$GITHUB_HEAD_REF"
+else
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+fi
+
+# 文件路径（v1.1: 支持分支级别文件，向后兼容旧格式）
+# 优先使用分支级别文件，再 fallback 到旧格式
+if [[ -f ".prd-${CURRENT_BRANCH}.md" ]]; then
+  PRD_FILE=".prd-${CURRENT_BRANCH}.md"
+else
+  PRD_FILE=".prd.md"
+fi
+
+if [[ -f ".dod-${CURRENT_BRANCH}.md" ]]; then
+  DOD_FILE=".dod-${CURRENT_BRANCH}.md"
+else
+  DOD_FILE=".dod.md"
+fi
+
 QA_DECISION_FILE="docs/QA-DECISION.md"
 AUDIT_REPORT_FILE="docs/AUDIT-REPORT.md"
 
@@ -63,53 +82,53 @@ count_non_empty_lines() {
 
 check_prd() {
   echo ""
-  echo "[1/4] Checking .prd.md..."
+  echo "[1/4] Checking PRD ($PRD_FILE)..."
 
   if [[ ! -f "$PRD_FILE" ]]; then
-    log_fail ".prd.md missing"
+    log_fail "PRD missing ($PRD_FILE)"
     return
   fi
 
   local lines
   lines=$(count_non_empty_lines "$PRD_FILE")
   if [[ $lines -lt 3 ]]; then
-    log_fail ".prd.md too short (need >= 3 non-empty lines, got $lines)"
+    log_fail "PRD too short (need >= 3 non-empty lines, got $lines)"
     return
   fi
 
-  log_pass ".prd.md"
+  log_pass "$PRD_FILE"
 }
 
 check_dod() {
   echo ""
-  echo "[2/4] Checking .dod.md..."
+  echo "[2/4] Checking DoD ($DOD_FILE)..."
 
   if [[ ! -f "$DOD_FILE" ]]; then
-    log_fail ".dod.md missing"
+    log_fail "DoD missing ($DOD_FILE)"
     return
   fi
 
   local lines
   lines=$(count_non_empty_lines "$DOD_FILE")
   if [[ $lines -lt 3 ]]; then
-    log_fail ".dod.md too short (need >= 3 non-empty lines, got $lines)"
+    log_fail "DoD too short (need >= 3 non-empty lines, got $lines)"
     return
   fi
 
   if ! grep -q 'QA:' "$DOD_FILE" 2>/dev/null; then
-    log_fail ".dod.md missing 'QA:' reference"
+    log_fail "DoD missing 'QA:' reference"
     return
   fi
 
   # Release 模式：检查全勾选
   if [[ "$MODE" == "release" ]]; then
     if grep -qE '^\s*-\s*\[\s*\]' "$DOD_FILE" 2>/dev/null; then
-      log_fail ".dod.md has unchecked items (release requires all checked)"
+      log_fail "DoD has unchecked items (release requires all checked)"
       return
     fi
   fi
 
-  log_pass ".dod.md"
+  log_pass "$DOD_FILE"
 }
 
 check_qa_decision() {

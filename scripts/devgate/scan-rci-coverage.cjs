@@ -26,7 +26,8 @@ const path = require("path");
 const { execSync } = require("child_process");
 
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
-const RCI_FILE = path.join(PROJECT_ROOT, "contracts/regression-contract.yaml");
+// v11.2.9: 使用根目录的 regression-contract.yaml（删除了 contracts/ 目录）
+const RCI_FILE = path.join(PROJECT_ROOT, "regression-contract.yaml");
 
 // 业务入口模式
 const ENTRY_PATTERNS = [

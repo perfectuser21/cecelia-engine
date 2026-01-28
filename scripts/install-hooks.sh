@@ -96,8 +96,8 @@ TARGET_DIR="$(cd "$TARGET_DIR" 2>/dev/null && pwd)" || {
     exit 1
 }
 
-# Check if target is a git repo
-if [[ ! -d "$TARGET_DIR/.git" ]]; then
+# Check if target is a git repo (use -e to support worktree where .git is a file)
+if [[ ! -e "$TARGET_DIR/.git" ]]; then
     echo -e "${YELLOW}WARNING: Target directory is not a git repository${NC}"
 fi
 

@@ -265,14 +265,15 @@ jobs:
 
       # Phase 1: DevGate 检查（DoD 映射 + P0/P1 RCI 更新 + RCI 覆盖率）
       # 注意：当前只对 npm 项目启用，非 npm 项目跳过此检查
-      # chore/docs/test PR 跳过（这些不需要 DoD）
+      # chore/docs/test/release PR 跳过（这些不需要 DoD）
       - name: DevGate checks
         if: |
           github.event_name == 'pull_request' &&
           steps.detect.outputs.type == 'npm' &&
           !startsWith(github.event.pull_request.title, 'chore:') &&
           !startsWith(github.event.pull_request.title, 'docs:') &&
-          !startsWith(github.event.pull_request.title, 'test:')
+          !startsWith(github.event.pull_request.title, 'test:') &&
+          !startsWith(github.event.pull_request.title, 'release:')
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  Phase 1: DevGate 检查"
@@ -309,7 +310,7 @@ jobs:
               echo ""
               echo "❌ RCI 覆盖率检查失败"
               echo "   新增的业务入口没有对应的 RCI 条目"
-              echo "   请在 contracts/regression-contract.yaml 中添加覆盖"
+              echo "   请在 regression-contract.yaml 中添加覆盖"
               echo ""
               echo "   运行以下命令查看详情："
               echo "   npm run coverage:rci -- --explain"

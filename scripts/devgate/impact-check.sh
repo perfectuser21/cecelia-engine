@@ -18,10 +18,10 @@ BASE_REF="${BASE_REF:-origin/develop}"
 
 # 核心能力文件路径
 # 注意：features/ 不包含在内，因为 feature-registry.yml 是被检查的目标，不是源
+# v11.2.9: 移除 scripts/detect-phase.sh（从未实现，已废弃）
 CORE_PATHS=(
   "hooks/"
   "skills/"
-  "scripts/detect-phase.sh"
   "scripts/qa-with-gate.sh"
 )
 

@@ -110,10 +110,16 @@ mkdir -p "$HISTORY_DIR"
 # 获取当前分支
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
-# 获取 base 分支
-BASE_BRANCH=$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || echo "develop")
-if ! git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
-    BASE_BRANCH="develop"
+# 获取 base 分支（v1.1: develop/main fallback）
+BASE_BRANCH=$(git config "branch.$CURRENT_BRANCH.base-branch" 2>/dev/null || echo "")
+if [[ -z "$BASE_BRANCH" ]] || ! git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
+    if git rev-parse develop >/dev/null 2>&1; then
+        BASE_BRANCH="develop"
+    elif git rev-parse main >/dev/null 2>&1; then
+        BASE_BRANCH="main"
+    else
+        BASE_BRANCH="HEAD~10"  # 最后的 fallback
+    fi
 fi
 
 # 获取 head SHA

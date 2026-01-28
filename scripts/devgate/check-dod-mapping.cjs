@@ -148,9 +148,48 @@ function validateTestRef(testRef, projectRoot) {
   return { valid: false, reason: `无效的 Test 格式: ${testRef}` };
 }
 
+/**
+ * 获取当前分支名（v1.1: 支持 CI 环境）
+ */
+function getCurrentBranch() {
+  // CI 中优先使用 GITHUB_HEAD_REF（PR 源分支）
+  if (process.env.GITHUB_HEAD_REF) {
+    return process.env.GITHUB_HEAD_REF;
+  }
+
+  // 本地环境使用 git 命令
+  try {
+    const { execSync } = require("child_process");
+    return execSync("git rev-parse --abbrev-ref HEAD", {
+      encoding: "utf-8",
+    }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+
+/**
+ * 获取 DoD 文件路径（v1.1: 支持分支级别文件）
+ * 优先使用分支级别文件，再 fallback 到旧格式
+ */
+function getDodFilePath(projectRoot, explicitFile) {
+  if (explicitFile && explicitFile !== ".dod.md") {
+    return explicitFile;
+  }
+
+  const branch = getCurrentBranch();
+  const branchDod = path.join(projectRoot, `.dod-${branch}.md`);
+  const defaultDod = path.join(projectRoot, ".dod.md");
+
+  if (fs.existsSync(branchDod)) {
+    return branchDod;
+  }
+  return defaultDod;
+}
+
 function main() {
   const args = process.argv.slice(2);
-  const dodFile = args[0] || ".dod.md";
+  const dodFileArg = args[0];
 
   // L3 fix: 找项目根目录（兼容 Windows）
   let projectRoot = process.cwd();
@@ -162,9 +201,8 @@ function main() {
     projectRoot = process.cwd();
   }
 
-  const dodPath = path.isAbsolute(dodFile)
-    ? dodFile
-    : path.join(projectRoot, dodFile);
+  // v1.1: 支持分支级别 DoD 文件
+  const dodPath = getDodFilePath(projectRoot, dodFileArg);
 
   console.log("");
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");

@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.2.11] - 2026-01-28
+
+### Added
+
+- **测试覆盖率提升 Phase 1**
+  - 新增 `tests/scripts/track.test.ts`: track.sh 核心功能测试（9 个用例）
+  - 新增 `tests/scripts/safe-rm-rf.test.ts`: safe_rm_rf 安全验证测试（10 个用例）
+  - 测试覆盖：分支级别文件隔离、向后兼容、路径验证、系统目录保护
+
+## [11.2.10] - 2026-01-28
+
+### Security
+
+- **rm -rf 安全验证**
+  - 新增 `safe_rm_rf()` 函数，验证路径非空、存在、在允许范围内
+  - `worktree-manage.sh` v1.1.0: 使用安全删除
+  - `cleanup.sh` v1.7: 使用安全删除
+  - `deploy.sh` v1.1.0: 使用安全删除
+  - 禁止删除根目录、home 目录等系统关键路径
+
+## [11.2.9] - 2026-01-28
+
+### Changed
+
+- **Phase 5 关键问题清理**
+  - 删除重复的 `contracts/` 目录，根目录 `regression-contract.yaml` 为唯一源
+  - H7 Stop Hook 标记为 Deprecated（从未实现，已被 Ralph Loop + PR Gate 替代）
+  - W5 Phase Detection 标记为 Deprecated（脚本从未实现）
+  - 归档 `docs/PHASE-DETECTION.md` 到 `.archive/`
+  - 移除 `impact-check.sh` 和 `09-ci.md` 中对不存在脚本的引用
+  - 更新 `scan-rci-coverage.cjs` 使用根目录 regression-contract.yaml
+
+## [11.2.8] - 2026-01-28
+
+### Changed
+
+- **Phase 4 文档矛盾清理**
+  - 统一 `FEATURES.md` 和 `feature-registry.yml` 的状态定义
+  - 将 H1/H2/H4 从 Stable 改为 Committed（有 RCI 覆盖）
+  - 移除 regression-contract.yaml 中的 deprecated 字段
+
+## [11.2.7] - 2026-01-28
+
+### Changed
+
+- **Phase 3 Promise 信号统一**
+  - /dev 工作流完成信号统一为 `<promise>DONE</promise>`
+  - 移除所有其他形式的完成标记
+
+## [11.2.6] - 2026-01-28
+
+### Fixed
+
+- **跨仓库兼容性修复**
+  - `track.sh`: 移除 `npm run coverage:rci` 依赖，改用条件检测
+  - `track.sh`: 增加 worktree 模式支持（CECELIA_WORKTREE 环境变量）
+
+## [11.2.5] - 2026-01-28
+
+### Fixed
+
+- **并发安全修复 Phase 1**
+  - `track.sh`: 使用 mktemp + mv 原子写入，防止并发损坏
+  - `track.sh`: 状态文件分支隔离 (`.cecelia-run-id-${branch}`)
+  - `track.sh`: 移除不存在的 `update-task` API 调用
+  - `pr-gate-v2.sh`: 使用 TEMP_FILES 数组统一管理临时文件，修复 trap 覆盖问题
+  - `pr-gate-v2.sh`: 质检文件分支隔离 (`.quality-gate-passed-${branch}`)
+  - `cleanup.sh`: 同步更新清理列表
+
 ## [11.2.4] - 2026-01-28
 
 ### Fixed
