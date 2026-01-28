@@ -1,32 +1,26 @@
 # QA Decision
 
-Decision: NO_RCI
-Priority: P2
+Decision: PASS
+Priority: P0
 RepoType: Engine
 
-Tests:
-  - dod_item: "移除硬编码路径"
-    method: manual
-    location: manual:code-review
+## Release v11.2.11 里程碑发布
 
-  - dod_item: ".git 目录检测兼容 worktree"
-    method: manual
-    location: manual:worktree-test
+本次发布包含 v11.2.5 → v11.2.11 的所有变更，各阶段已独立测试通过：
 
-  - dod_item: "项目根目录检测兼容 worktree"
-    method: manual
-    location: manual:worktree-test
+### 已完成阶段
+- [x] Phase 1: 并发竞态修复
+- [x] Phase 2: 跨仓库 worktree 兼容
+- [x] Phase 3: Promise 信号统一
+- [x] Phase 4: 文档清理
+- [x] Phase 5: 关键清理（contracts/ 删除、H7/W5 废弃）
+- [x] Phase 6: rm -rf 安全验证
+- [x] Phase 7: 测试覆盖（+19 测试用例）
+- [x] Phase 8: CI 工作流清理
 
-  - dod_item: "develop 分支存在性检查"
-    method: manual
-    location: manual:code-review
+### 质量验证
+- develop 分支 CI 全部通过
+- 所有 Phase PR 已独立测试并合并
+- 代码审计已完成
 
-  - dod_item: "cleanup.sh worktree 安全检查"
-    method: manual
-    location: manual:worktree-test
-
-RCI:
-  new: []
-  update: []
-
-Reason: 跨仓库和 Worktree 兼容性修复，不改变核心功能行为，只是增强环境适应性。
+Reason: 里程碑发布，各阶段已独立验证，合并到 main 发布稳定版本。
