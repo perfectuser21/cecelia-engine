@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.21.0"
+version: "2.22.0"
 updated: "2026-01-28"
 changelog:
+  - 2.22.0: v11.2.8 - 文档矛盾清理（归档过时文档、修正 Step 编号、删除不存在引用）
   - 2.21.0: v11.2.7 - Promise 信号统一（DONE 替代 QUALITY_GATE_PASSED/CI_PASSED）
   - 2.20.0: v11.2.6 - 跨仓库兼容性 + Worktree 支持（-e .git、develop/main fallback）
   - 2.19.0: v11.2.5 - 并发安全修复 Phase 1（原子写入、分支级别状态文件、trap 修复）
