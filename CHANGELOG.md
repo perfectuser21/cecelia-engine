@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.2.9] - 2026-01-28
+
+### Changed
+
+- **Phase 5 关键问题清理**
+  - 删除重复的 `contracts/` 目录，根目录 `regression-contract.yaml` 为唯一源
+  - H7 Stop Hook 标记为 Deprecated（从未实现，已被 Ralph Loop + PR Gate 替代）
+  - W5 Phase Detection 标记为 Deprecated（脚本从未实现）
+  - 归档 `docs/PHASE-DETECTION.md` 到 `.archive/`
+  - 移除 `impact-check.sh` 和 `09-ci.md` 中对不存在脚本的引用
+  - 更新 `scan-rci-coverage.cjs` 使用根目录 regression-contract.yaml
+
+## [11.2.8] - 2026-01-28
+
+### Changed
+
+- **Phase 4 文档矛盾清理**
+  - 统一 `FEATURES.md` 和 `feature-registry.yml` 的状态定义
+  - 将 H1/H2/H4 从 Stable 改为 Committed（有 RCI 覆盖）
+  - 移除 regression-contract.yaml 中的 deprecated 字段
+
+## [11.2.7] - 2026-01-28
+
+### Changed
+
+- **Phase 3 Promise 信号统一**
+  - /dev 工作流完成信号统一为 `<promise>DONE</promise>`
+  - 移除所有其他形式的完成标记
+
+## [11.2.6] - 2026-01-28
+
+### Fixed
+
+- **跨仓库兼容性修复**
+  - `track.sh`: 移除 `npm run coverage:rci` 依赖，改用条件检测
+  - `track.sh`: 增加 worktree 模式支持（CECELIA_WORKTREE 环境变量）
+
 ## [11.2.5] - 2026-01-28
 
 ### Fixed
