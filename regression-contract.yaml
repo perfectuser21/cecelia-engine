@@ -1170,8 +1170,7 @@ ci:
     scope: ci
     priority: P0
     trigger: [PR, Release]
-    method: manual
-    manual_type: ci_job
+    method: auto
     tags: [ci, evidence, ssot, quality-gate]
     owner: infra
     steps:

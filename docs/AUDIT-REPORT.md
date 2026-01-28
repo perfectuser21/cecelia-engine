@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-fix-ralph-loop-architecture
+Branch: cp-sync-main-to-develop
 Date: 2026-01-28
-Scope: skills/dev/SKILL.md, regression-contract.yaml, features/feature-registry.yml, CHANGELOG.md, package.json, hook-core/VERSION
+Scope: Merge main into develop for Release v11.2.3
 Target Level: L2
 
 Summary:
@@ -18,8 +18,7 @@ Findings: []
 Blockers: []
 
 Notes:
-  - 本次修改主要是清理和文档更新
-  - 删除了无法工作的脚本（dev-with-loop, detect-phase.sh）
-  - 删除了过时文档（RALPH_LOOP_WRAPPER.md）
-  - 更新了 Ralph Loop 使用说明
-  - 无代码逻辑变更，无 L1/L2 问题
+  - 合并 main 到 develop 解决 PR #329 冲突
+  - 保留 develop 的 v11.2.x 版本号和功能
+  - 包含分支级别 PRD/DoD 文件命名功能 (v11.2.0)
+  - 包含 CI 修复 (v11.2.1, v11.2.2, v11.2.3)

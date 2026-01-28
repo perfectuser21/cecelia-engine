@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# ZenithJoy Engine - 分支保护 Hook v16
+# ZenithJoy Engine - 分支保护 Hook v17
+# v17: 支持分支级别 PRD/DoD 文件 (.prd-{branch}.md, .dod-{branch}.md)
 # 保护：代码文件 + 重要目录（skills/, hooks/, .github/）+ 全局配置目录
 
 set -euo pipefail
@@ -148,11 +149,41 @@ fi
 if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
    [[ "$CURRENT_BRANCH" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]*$ ]]; then
 
+    # v17: 分支级别 PRD/DoD 文件（优先新格式，fallback 旧格式）
+    PRD_FILE_NEW="$PROJECT_ROOT/.prd-${CURRENT_BRANCH}.md"
+    PRD_FILE_OLD="$PROJECT_ROOT/.prd.md"
+    DOD_FILE_NEW="$PROJECT_ROOT/.dod-${CURRENT_BRANCH}.md"
+    DOD_FILE_OLD="$PROJECT_ROOT/.dod.md"
+
+    # 选择 PRD 文件（优先新格式）
+    if [[ -f "$PRD_FILE_NEW" ]]; then
+        PRD_FILE="$PRD_FILE_NEW"
+        PRD_BASENAME=".prd-${CURRENT_BRANCH}.md"
+    elif [[ -f "$PRD_FILE_OLD" ]]; then
+        PRD_FILE="$PRD_FILE_OLD"
+        PRD_BASENAME=".prd.md"
+    else
+        PRD_FILE=""
+        PRD_BASENAME=".prd-${CURRENT_BRANCH}.md"  # 新分支应使用新格式
+    fi
+
+    # 选择 DoD 文件（优先新格式）
+    if [[ -f "$DOD_FILE_NEW" ]]; then
+        DOD_FILE="$DOD_FILE_NEW"
+        DOD_BASENAME=".dod-${CURRENT_BRANCH}.md"
+    elif [[ -f "$DOD_FILE_OLD" ]]; then
+        DOD_FILE="$DOD_FILE_OLD"
+        DOD_BASENAME=".dod.md"
+    else
+        DOD_FILE=""
+        DOD_BASENAME=".dod-${CURRENT_BRANCH}.md"  # 新分支应使用新格式
+    fi
+
     # 检查 PRD 文件是否存在
-    if [[ ! -f "$PROJECT_ROOT/.prd.md" ]]; then
+    if [[ -z "$PRD_FILE" || ! -f "$PRD_FILE" ]]; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  [ERROR] 缺少 PRD 文件 (.prd.md)" >&2
+        echo "  [ERROR] 缺少 PRD 文件 ($PRD_BASENAME)" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "当前分支: $CURRENT_BRANCH" >&2
@@ -164,13 +195,13 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
 
     # 检查 PRD 内容有效性（至少 3 行，且包含关键字段）
     # L2 修复: wc -l 输出可能带空格，使用 clean_number 处理
-    PRD_LINES=$(clean_number "$(wc -l < "$PROJECT_ROOT/.prd.md" 2>/dev/null)")
-    PRD_HAS_CONTENT=$(clean_number "$(grep -cE '(功能描述|成功标准|需求来源|描述|标准)' "$PROJECT_ROOT/.prd.md" 2>/dev/null || echo 0)")
+    PRD_LINES=$(clean_number "$(wc -l < "$PRD_FILE" 2>/dev/null)")
+    PRD_HAS_CONTENT=$(clean_number "$(grep -cE '(功能描述|成功标准|需求来源|描述|标准)' "$PRD_FILE" 2>/dev/null || echo 0)")
 
     if [[ "$PRD_LINES" -lt 3 || "$PRD_HAS_CONTENT" -eq 0 ]]; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  [ERROR] PRD 文件内容无效 (.prd.md)" >&2
+        echo "  [ERROR] PRD 文件内容无效 ($PRD_BASENAME)" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "当前分支: $CURRENT_BRANCH" >&2
@@ -181,10 +212,10 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     fi
 
     # 检查 DoD 文件是否存在
-    if [[ ! -f "$PROJECT_ROOT/.dod.md" ]]; then
+    if [[ -z "$DOD_FILE" || ! -f "$DOD_FILE" ]]; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  [ERROR] 缺少 DoD 文件 (.dod.md)" >&2
+        echo "  [ERROR] 缺少 DoD 文件 ($DOD_BASENAME)" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "当前分支: $CURRENT_BRANCH" >&2
@@ -196,13 +227,13 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
 
     # 检查 DoD 内容有效性（至少 3 行，且包含验收标准或 checkbox）
     # L2 修复: grep 正则支持大小写 x/X
-    DOD_LINES=$(clean_number "$(wc -l < "$PROJECT_ROOT/.dod.md" 2>/dev/null)")
-    DOD_HAS_CHECKBOX=$(clean_number "$(grep -cE '^\s*-\s*\[[ xX]\]' "$PROJECT_ROOT/.dod.md" 2>/dev/null || echo 0)")
+    DOD_LINES=$(clean_number "$(wc -l < "$DOD_FILE" 2>/dev/null)")
+    DOD_HAS_CHECKBOX=$(clean_number "$(grep -cE '^\s*-\s*\[[ xX]\]' "$DOD_FILE" 2>/dev/null || echo 0)")
 
     if [[ "$DOD_LINES" -lt 3 || "$DOD_HAS_CHECKBOX" -eq 0 ]]; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  [ERROR] DoD 文件内容无效 (.dod.md)" >&2
+        echo "  [ERROR] DoD 文件内容无效 ($DOD_BASENAME)" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "当前分支: $CURRENT_BRANCH" >&2
@@ -219,38 +250,39 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
         BASE_BRANCH="develop"
     fi
 
-    PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -c '^\.prd\.md$' || echo 0)")
-    PRD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -c '^\.prd\.md$' || echo 0)")
-    PRD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -c '^\.prd\.md$' || echo 0)")
-    PRD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c '^?? \.prd\.md$' || echo 0)")
+    # v17: 检查新旧两种格式的 PRD 文件
+    PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
+    PRD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
+    PRD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
+    PRD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c "^?? $PRD_BASENAME$" || echo 0)")
 
     if [[ "$PRD_IN_BRANCH" -eq 0 && "$PRD_STAGED" -eq 0 && "$PRD_MODIFIED" -eq 0 && "$PRD_UNTRACKED" -eq 0 ]]; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  [ERROR] PRD 文件未更新 (.prd.md)" >&2
+        echo "  [ERROR] PRD 文件未更新 ($PRD_BASENAME)" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "当前分支: $CURRENT_BRANCH" >&2
-        echo "当前 .prd.md 是旧任务的，请为本次任务更新 PRD" >&2
+        echo "当前 PRD 是旧任务的，请为本次任务更新 PRD" >&2
         echo "" >&2
         echo "[SKILL_REQUIRED: dev]" >&2
         exit 2
     fi
 
-    # 检查 DoD 是否为当前分支更新的
-    DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-    DOD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-    DOD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
-    DOD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c '^?? \.dod\.md$' || echo 0)")
+    # v17: 检查新旧两种格式的 DoD 文件
+    DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
+    DOD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
+    DOD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
+    DOD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c "^?? $DOD_BASENAME$" || echo 0)")
 
     if [[ "$DOD_IN_BRANCH" -eq 0 && "$DOD_STAGED" -eq 0 && "$DOD_MODIFIED" -eq 0 && "$DOD_UNTRACKED" -eq 0 ]]; then
         echo "" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-        echo "  [ERROR] DoD 文件未更新 (.dod.md)" >&2
+        echo "  [ERROR] DoD 文件未更新 ($DOD_BASENAME)" >&2
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
         echo "" >&2
         echo "当前分支: $CURRENT_BRANCH" >&2
-        echo "当前 .dod.md 是旧任务的，请为本次任务更新 DoD" >&2
+        echo "当前 DoD 是旧任务的，请为本次任务更新 DoD" >&2
         echo "" >&2
         echo "[SKILL_REQUIRED: dev]" >&2
         exit 2

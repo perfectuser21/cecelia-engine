@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.2.3] - 2026-01-28
+
+### Fixed
+
+- **CI DevGate Check 只在 PR 事件运行**
+  - 添加 `github.event_name == 'pull_request'` 条件
+
+## [11.2.2] - 2026-01-28
+
+### Fixed
+
+- **CI L2A Check 只在 PR 事件运行**
+  - 添加 `github.event_name == 'pull_request'` 条件
+  - 修复 push 事件时 L2A Check 失败的问题
+
+## [11.2.1] - 2026-01-28
+
+### Fixed
+
+- **CI DevGate 检查跳过 chore/docs/test PR**
+  - 与 L2A check 保持一致，chore/docs/test PR 不需要 DoD 文件
+  - 修复清理 PR 无法通过 CI 的问题
+
+## [11.2.0] - 2026-01-28
+
+### Added
+
+- **分支级别 PRD/DoD 文件命名**
+  - 新格式：`.prd-{branch}.md` 和 `.dod-{branch}.md`
+  - 多个分支可以独立拥有各自的 PRD/DoD 文件
+  - 解决多会话在同一 repo 工作时互相覆盖的问题
+
+### Changed
+
+- `hooks/branch-protect.sh` v17: 支持新格式，向后兼容旧格式
+- `hooks/pr-gate-v2.sh` v4.2: 支持新格式，向后兼容旧格式
+- `skills/dev/scripts/cleanup.sh` v1.4: 清理分支对应的 PRD/DoD 文件
+- `.gitignore`: 忽略 `.prd-*.md` 和 `.dod-*.md` 文件
+
 ## [11.1.0] - 2026-01-28
 
 ### Removed
