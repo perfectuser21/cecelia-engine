@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- 清理过时的 PRD/DoD 残留文件
+- 更新 regression-contract.yaml 版本号为 11.2.4
+- 移除引用不存在脚本的 RCI 定义（H7-001~003, W1-007）
+
 ## [11.2.4] - 2026-01-28
 
 ### Fixed

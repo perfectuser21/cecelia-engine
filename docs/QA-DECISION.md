@@ -1,28 +1,24 @@
 # QA Decision
 
 Decision: PASS
-Priority: P2
+Priority: P3
 RepoType: Engine
 
 Tests:
-  - dod_item: "hooks/branch-protect.sh 支持新格式"
-    method: auto
-    location: tests/hooks/branch-protect.test.ts
-
-  - dod_item: "hooks/pr-gate-v2.sh 支持新格式"
-    method: auto
-    location: tests/hooks/pr-gate-phase1.test.ts
-
-  - dod_item: "cleanup.sh 支持新格式"
+  - dod_item: "删除垃圾文件"
     method: manual
-    location: manual:验证清理脚本正确删除分支级文件
+    location: manual:验证 ls 无 .prd-*.md（除当前任务）
 
-  - dod_item: ".gitignore 忽略新格式"
+  - dod_item: "regression-contract.yaml 版本号更新"
     method: manual
-    location: manual:验证 git status 不显示 .prd-*.md 和 .dod-*.md
+    location: manual:验证 grep version 返回 11.2.4
+
+  - dod_item: "过时 RCI 已删除"
+    method: manual
+    location: manual:验证 grep H7-001/002/003/W1-007 无结果
 
 RCI:
   new: []
   update: []
 
-Reason: 这是 Hook 脚本和工作流改进，现有测试覆盖了核心逻辑，新格式是向后兼容的扩展
+Reason: chore 类型任务，删除文件和配置修改，无需自动化测试
