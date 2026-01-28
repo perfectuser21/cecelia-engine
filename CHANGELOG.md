@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.2.11] - 2026-01-28
+
+### Added
+
+- **测试覆盖率提升 Phase 1**
+  - 新增 `tests/scripts/track.test.ts`: track.sh 核心功能测试（9 个用例）
+  - 新增 `tests/scripts/safe-rm-rf.test.ts`: safe_rm_rf 安全验证测试（10 个用例）
+  - 测试覆盖：分支级别文件隔离、向后兼容、路径验证、系统目录保护
+
 ## [11.2.10] - 2026-01-28
 
 ### Security
