@@ -37,19 +37,18 @@ description: |
 
 ### 为什么需要循环？
 
-```
-/dev 执行步骤：
-  Step 4: 调用 /qa → 返回
-  Step 7: 调用 /audit → 返回
+循环机制的作用：
+1. **CI 失败自动重试**：CI 失败 → 修复代码 → push → 等 CI → 重复直到成功
+2. **完成检测**：检测 `<promise>DONE</promise>` 来判断整个流程结束
 
-问题：
-  /qa 和 /audit 按规范不输出总结就返回
-  AI 自然停下来，需要外层循环驱动继续
+**Skill 调用的处理**：
+- /qa 和 /audit 调用返回后，AI 立即继续执行下一步
+- 不会有停顿，不依赖循环机制驱动
+- 循环机制只在 CI 失败重试和完成检测时发挥作用
 
-解决：
-  - 有头：/ralph-loop plugin 检测无 <promise> → 自动继续
-  - 无头：cecelia-run while 循环检测无 DONE → 再次调用 claude
-```
+实现方式：
+- 有头：dev-with-loop（使用 /ralph-loop plugin）
+- 无头：cecelia-run（使用 while 循环）
 
 ---
 

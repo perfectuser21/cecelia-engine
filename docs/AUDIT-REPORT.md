@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-cleanup-configs-01280828
+Branch: cp-fix-skill-continuation-contradiction
 Date: 2026-01-28
-Scope: .claude/settings.json, features/feature-registry.yml, docs/paths/*.md, regression-contract.yaml
+Scope: skills/dev/SKILL.md, skills/qa/SKILL.md, skills/audit/SKILL.md
 Target Level: L2
 
 Summary:
@@ -19,11 +19,9 @@ Blockers: []
 
 ## Notes
 
-This is a cleanup task:
-- Removed deprecated SessionStart hook
-- Removed N1 (Cecelia) feature from Engine (moved to cecelia-workspace)
-- Deleted AI Thinking restriction from global CLAUDE.md
-- Removed git-push-and-wait mandatory rule from global CLAUDE.md
+这是文档澄清任务：
+- skills/dev/SKILL.md: 修改"为什么需要循环？"章节，澄清 Ralph Loop 的作用是 CI 重试和完成检测，而非驱动步骤继续
+- skills/qa/SKILL.md: 修改"完成后行为"章节，删除"立即返回调用方"的误导性表述
+- skills/audit/SKILL.md: 修改"完成后行为"章节，删除"立即返回调用方"的误导性表述
 
-No code logic changes, only configuration and documentation updates.
-All changes are file removals and moves, which are inherently safe.
+所有修改都是文档说明的澄清，逻辑一致，无功能性问题。

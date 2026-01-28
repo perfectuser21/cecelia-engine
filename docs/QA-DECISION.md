@@ -5,32 +5,32 @@ Priority: P2
 RepoType: Engine
 
 Tests:
-  - dod_item: "删除全局 CLAUDE.md 中 AI Thinking 规则章节"
+  - dod_item: "修改 skills/dev/SKILL.md 的'为什么需要循环？'章节"
     method: manual
-    location: "manual:验证 ~/.claude/CLAUDE.md 不包含 AI Thinking 章节"
-  
-  - dod_item: "删除全局 CLAUDE.md 中 git-push-and-wait 强制使用规则"
+    location: manual:检查文档内容是否准确描述 Ralph Loop 作用（CI 重试 + 完成检测，而非驱动步骤继续）
+
+  - dod_item: "澄清 skills/qa/SKILL.md 的'完成后行为'章节"
     method: manual
-    location: "manual:验证 ~/.claude/CLAUDE.md 不包含 git-push-and-wait 强制规则"
-  
-  - dod_item: "从 .claude/settings.json 移除 SessionStart hook 配置"
-    method: auto
-    location: "tests/hooks/settings-validation.test.ts"
-  
-  - dod_item: "删除 hooks/session-start.sh 文件"
-    method: auto
-    location: "tests/hooks/file-existence.test.ts"
-  
-  - dod_item: "移动 Cecelia 相关文档到 cecelia-workspace"
+    location: manual:检查是否删除"立即返回"误导性表述，改为"简洁输出结果"
+
+  - dod_item: "澄清 skills/audit/SKILL.md 的'完成后行为'章节"
     method: manual
-    location: "manual:验证文件已移动到 /home/xx/dev/cecelia-workspace/docs/from-engine/"
-  
-  - dod_item: "确认无残留 Cecelia 引用"
-    method: auto
-    location: "scripts/devgate/check-cecelia-references.sh"
+    location: manual:检查是否删除"立即返回"误导性表述，改为"简洁输出结果"
+
+  - dod_item: "验证 skills/dev/steps/04-dod.md 保持不变"
+    method: manual
+    location: manual:确认"立即继续下一步"指令未被修改
+
+  - dod_item: "验证 skills/dev/steps/07-quality.md 保持不变"
+    method: manual
+    location: manual:确认"立即继续下一步"指令未被修改
+
+  - dod_item: "功能验收：无可见停顿"
+    method: manual
+    location: manual:运行 dev-with-loop 测试，观察 Skill 返回后是否有停顿
 
 RCI:
   new: []
   update: []
 
-Reason: 这是清理工作，不涉及核心功能变更，无需纳入回归契约。主要是文件移动和配置删除，不影响 Engine 核心能力。
+Reason: 这是文档澄清任务，修正内部矛盾描述，不涉及功能变更，无需纳入回归契约
