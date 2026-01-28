@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.1.0] - 2026-01-28
+
+### Removed
+
+- **清理 Ralph Loop 架构**
+  - 删除 `/home/xx/bin/dev-with-loop`（bash 脚本无法调用 Claude Code plugin 命令）
+  - 删除 `scripts/detect-phase.sh`（/dev v2.2.0 已删除阶段检测）
+  - 删除 `docs/RALPH_LOOP_WRAPPER.md`（过时文档）
+
+### Changed
+
+- **更新 Ralph Loop 使用方式**
+  - 用户直接在 Claude Code 会话内输入 `/ralph-loop` 命令
+  - 更新 `~/.claude/CLAUDE.md` 全局指南
+  - 更新 `skills/dev/SKILL.md` 使用说明
+  - 更新 `regression-contract.yaml` 测试步骤
+
 ## [11.0.0] - 2026-01-27
 
 ### Added

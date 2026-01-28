@@ -869,7 +869,7 @@ workflow:
     owner: workflow
     steps:
       given: "用户需要执行开发任务"
-      when: "运行 dev-with-loop 或手动调用 /ralph-loop \"/dev ...\" --completion-promise \"DONE\""
+      when: "在 Claude Code 会话内输入 /ralph-loop \"/dev .prd.md\" --completion-promise \"DONE\" --max-iterations 20"
       then: "从头到尾一直执行，直到 PR 创建 + CI 通过 + PR 合并，才输出 DONE"
     note: "v2.2.0: 删除阶段检测（不再分 p0/p1/p2），统一完成条件，不在 PR 创建后停止"
     evidence:

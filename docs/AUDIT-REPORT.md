@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-fix-skill-continuation-contradiction
+Branch: cp-fix-ralph-loop-architecture
 Date: 2026-01-28
-Scope: skills/dev/SKILL.md, skills/qa/SKILL.md, skills/audit/SKILL.md
+Scope: skills/dev/SKILL.md, regression-contract.yaml, features/feature-registry.yml, CHANGELOG.md, package.json, hook-core/VERSION
 Target Level: L2
 
 Summary:
@@ -17,11 +17,9 @@ Findings: []
 
 Blockers: []
 
-## Notes
-
-这是文档澄清任务：
-- skills/dev/SKILL.md: 修改"为什么需要循环？"章节，澄清 Ralph Loop 的作用是 CI 重试和完成检测，而非驱动步骤继续
-- skills/qa/SKILL.md: 修改"完成后行为"章节，删除"立即返回调用方"的误导性表述
-- skills/audit/SKILL.md: 修改"完成后行为"章节，删除"立即返回调用方"的误导性表述
-
-所有修改都是文档说明的澄清，逻辑一致，无功能性问题。
+Notes:
+  - 本次修改主要是清理和文档更新
+  - 删除了无法工作的脚本（dev-with-loop, detect-phase.sh）
+  - 删除了过时文档（RALPH_LOOP_WRAPPER.md）
+  - 更新了 Ralph Loop 使用说明
+  - 无代码逻辑变更，无 L1/L2 问题

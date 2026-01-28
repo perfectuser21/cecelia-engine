@@ -6,13 +6,12 @@ description: |
   统一开发工作流入口（必须在循环机制内调用）。
 
   循环机制有两种实现：
-  - 有头模式: dev-with-loop（使用 /ralph-loop plugin）
+  - 有头模式: /ralph-loop plugin（在 Claude Code 会话内直接输入）
   - 无头模式: cecelia-run（使用 while 循环）
 
   触发方式：
-  - 有头: dev-with-loop .prd.md
+  - 有头: /ralph-loop "/dev .prd.md" --completion-promise "DONE" --max-iterations 20
   - 无头: cecelia-run task123 cp001 prompt.txt（prompt 内容：/dev .prd.md）
-  - 手动: /ralph-loop "/dev .prd.md" --completion-promise "DONE"
 
   v2.2.0 变更：
   - 删除阶段检测（不再分 p0/p1/p2）
@@ -32,7 +31,7 @@ description: |
 
 | 模式 | 循环实现 | 使用方式 |
 |------|---------|---------|
-| **有头模式** | /ralph-loop plugin | `dev-with-loop .prd.md` |
+| **有头模式** | /ralph-loop plugin | `/ralph-loop "/dev .prd.md" --completion-promise "DONE" --max-iterations 20` |
 | **无头模式** | cecelia-run while 循环 | `cecelia-run task123 cp001 prompt.txt` |
 
 ### 为什么需要循环？
@@ -47,7 +46,7 @@ description: |
 - 循环机制只在 CI 失败重试和完成检测时发挥作用
 
 实现方式：
-- 有头：dev-with-loop（使用 /ralph-loop plugin）
+- 有头：/ralph-loop plugin（在 Claude Code 会话内直接输入命令）
 - 无头：cecelia-run（使用 while 循环）
 
 ---

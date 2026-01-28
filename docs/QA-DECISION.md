@@ -5,32 +5,24 @@ Priority: P2
 RepoType: Engine
 
 Tests:
-  - dod_item: "修改 skills/dev/SKILL.md 的'为什么需要循环？'章节"
+  - dod_item: "删除 dev-with-loop 脚本"
     method: manual
-    location: manual:检查文档内容是否准确描述 Ralph Loop 作用（CI 重试 + 完成检测，而非驱动步骤继续）
+    location: manual:验证 /home/xx/bin/dev-with-loop 不存在
 
-  - dod_item: "澄清 skills/qa/SKILL.md 的'完成后行为'章节"
+  - dod_item: "删除 detect-phase.sh"
     method: manual
-    location: manual:检查是否删除"立即返回"误导性表述，改为"简洁输出结果"
+    location: manual:验证 scripts/detect-phase.sh 不存在
 
-  - dod_item: "澄清 skills/audit/SKILL.md 的'完成后行为'章节"
+  - dod_item: "更新全局 CLAUDE.md"
     method: manual
-    location: manual:检查是否删除"立即返回"误导性表述，改为"简洁输出结果"
+    location: manual:验证 Ralph Loop 使用规则已更新
 
-  - dod_item: "验证 skills/dev/steps/04-dod.md 保持不变"
+  - dod_item: "清理项目文档引用"
     method: manual
-    location: manual:确认"立即继续下一步"指令未被修改
-
-  - dod_item: "验证 skills/dev/steps/07-quality.md 保持不变"
-    method: manual
-    location: manual:确认"立即继续下一步"指令未被修改
-
-  - dod_item: "功能验收：无可见停顿"
-    method: manual
-    location: manual:运行 dev-with-loop 测试，观察 Skill 返回后是否有停顿
+    location: manual:grep 检查无 dev-with-loop 引用
 
 RCI:
   new: []
   update: []
 
-Reason: 这是文档澄清任务，修正内部矛盾描述，不涉及功能变更，无需纳入回归契约
+Reason: 这是脚本清理和文档更新任务，删除无法工作的 wrapper 脚本，无需纳入回归契约
