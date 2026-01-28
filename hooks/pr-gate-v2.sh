@@ -8,6 +8,7 @@
 # v3.1: 添加 timeout 保护，防止测试命令卡住
 # v4.0: 快速模式 - 只检查产物，不运行测试（交给 CI + SessionEnd Hook）
 # v4.1: 提示型 Gate - 检查失败仅警告，exit 0（不阻断），CI 是唯一门槛
+# v4.2: 支持分支级别 PRD/DoD 文件 (.prd-{branch}.md, .dod-{branch}.md)
 # ============================================================================
 
 set -euo pipefail
@@ -505,10 +506,23 @@ if [[ "$MODE" == "pr" ]]; then
     echo "" >&2
     echo "  [PRD 检查]" >&2
 
-    PRD_FILE="$PROJECT_ROOT/.prd.md"
+    # v4.2: 支持分支级别 PRD/DoD 文件（优先新格式，fallback 旧格式）
+    PRD_FILE_NEW="$PROJECT_ROOT/.prd-${CURRENT_BRANCH}.md"
+    PRD_FILE_OLD="$PROJECT_ROOT/.prd.md"
+    if [[ -f "$PRD_FILE_NEW" ]]; then
+        PRD_FILE="$PRD_FILE_NEW"
+        PRD_BASENAME=".prd-${CURRENT_BRANCH}.md"
+    elif [[ -f "$PRD_FILE_OLD" ]]; then
+        PRD_FILE="$PRD_FILE_OLD"
+        PRD_BASENAME=".prd.md"
+    else
+        PRD_FILE=""
+        PRD_BASENAME=".prd-${CURRENT_BRANCH}.md"
+    fi
+
     echo -n "  PRD 文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
-    if [[ -f "$PRD_FILE" ]]; then
+    if [[ -n "$PRD_FILE" && -f "$PRD_FILE" ]]; then
         # 检查 PRD 内容有效性
         PRD_LINES=$(clean_number "$(wc -l < "$PRD_FILE" 2>/dev/null)")
         PRD_HAS_CONTENT=$(clean_number "$(grep -cE '(功能描述|成功标准|需求来源|描述|标准)' "$PRD_FILE" 2>/dev/null || echo 0)")
@@ -518,26 +532,26 @@ if [[ "$MODE" == "pr" ]]; then
             echo "    -> PRD 需要至少 3 行，且包含关键字段（功能描述/成功标准）" >&2
             FAILED=1
         else
-            # 检查 .prd.md 是否在当前分支有修改
-            PRD_MODIFIED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -c '^\.prd\.md$' || echo 0)")
-            PRD_NEW=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c '\.prd\.md' || echo 0)")
+            # 检查 PRD 是否在当前分支有修改
+            PRD_MODIFIED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
+            PRD_NEW=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c "$PRD_BASENAME" || echo 0)")
 
             if [[ "$PRD_MODIFIED" -gt 0 || "$PRD_NEW" -gt 0 ]]; then
                 echo "[OK]" >&2
             else
-                PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -c '^\.prd\.md$' || echo 0)")
+                PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
                 if [[ "$PRD_IN_BRANCH" -gt 0 ]]; then
                     echo "[OK] (本分支已提交)" >&2
                 else
-                    echo "[FAIL] (.prd.md 未更新)" >&2
-                    echo "    -> 当前 .prd.md 是旧任务的，请为本次任务更新 PRD" >&2
+                    echo "[FAIL] ($PRD_BASENAME 未更新)" >&2
+                    echo "    -> 当前 PRD 是旧任务的，请为本次任务更新 PRD" >&2
                     FAILED=1
                 fi
             fi
         fi
     else
-        echo "[FAIL] (.prd.md 不存在)" >&2
-        echo "    -> 请创建 .prd.md 记录需求" >&2
+        echo "[FAIL] ($PRD_BASENAME 不存在)" >&2
+        echo "    -> 请创建 $PRD_BASENAME 记录需求" >&2
         FAILED=1
     fi
 
@@ -545,13 +559,26 @@ if [[ "$MODE" == "pr" ]]; then
     echo "" >&2
     echo "  [DoD 检查]" >&2
 
-    DOD_FILE="$PROJECT_ROOT/.dod.md"
+    # v4.2: 支持分支级别 DoD 文件
+    DOD_FILE_NEW="$PROJECT_ROOT/.dod-${CURRENT_BRANCH}.md"
+    DOD_FILE_OLD="$PROJECT_ROOT/.dod.md"
+    if [[ -f "$DOD_FILE_NEW" ]]; then
+        DOD_FILE="$DOD_FILE_NEW"
+        DOD_BASENAME=".dod-${CURRENT_BRANCH}.md"
+    elif [[ -f "$DOD_FILE_OLD" ]]; then
+        DOD_FILE="$DOD_FILE_OLD"
+        DOD_BASENAME=".dod.md"
+    else
+        DOD_FILE=""
+        DOD_BASENAME=".dod-${CURRENT_BRANCH}.md"
+    fi
+
     echo -n "  DoD 文件... " >&2
     CHECK_COUNT=$((CHECK_COUNT + 1))
 
-    if [[ ! -f "$DOD_FILE" ]]; then
-        echo "[FAIL] (.dod.md 不存在)" >&2
-        echo "    -> 必须提供 .dod.md 作为验收清单" >&2
+    if [[ -z "$DOD_FILE" || ! -f "$DOD_FILE" ]]; then
+        echo "[FAIL] ($DOD_BASENAME 不存在)" >&2
+        echo "    -> 必须提供 $DOD_BASENAME 作为验收清单" >&2
         FAILED=1
     else
         # 两阶段友好：不再要求"本次必须修改过"，改为"DoD 是否完成"
@@ -564,7 +591,7 @@ if [[ "$MODE" == "pr" ]]; then
             FAILED=1
         else
             # 仅作提示：本次是否修改过（不作为门槛）
-            DOD_TOUCHED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -c '^\.dod\.md$' || echo 0)")
+            DOD_TOUCHED=$(clean_number "$(git diff "$BASE_BRANCH" --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
             if [[ "$DOD_TOUCHED" -gt 0 ]]; then
                 echo "[OK] (本次已更新 & 全勾)" >&2
             else

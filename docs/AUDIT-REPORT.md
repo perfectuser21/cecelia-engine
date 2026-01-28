@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-fix-ralph-loop-architecture
+Branch: cp-branch-scoped-prd-dod
 Date: 2026-01-28
-Scope: skills/dev/SKILL.md, regression-contract.yaml, features/feature-registry.yml, CHANGELOG.md, package.json, hook-core/VERSION
+Scope: hooks/branch-protect.sh, hooks/pr-gate-v2.sh, skills/dev/scripts/cleanup.sh, .gitignore
 Target Level: L2
 
 Summary:
@@ -18,8 +18,8 @@ Findings: []
 Blockers: []
 
 Notes:
-  - 本次修改主要是清理和文档更新
-  - 删除了无法工作的脚本（dev-with-loop, detect-phase.sh）
-  - 删除了过时文档（RALPH_LOOP_WRAPPER.md）
-  - 更新了 Ralph Loop 使用说明
-  - 无代码逻辑变更，无 L1/L2 问题
+  - 修改 Hook 脚本支持分支级别 PRD/DoD 文件命名
+  - 向后兼容：优先使用新格式 .prd-{branch}.md，fallback 到旧格式 .prd.md
+  - 更新 cleanup.sh 清理分支对应的 PRD/DoD 文件
+  - 更新 .gitignore 忽略所有 .prd-*.md 和 .dod-*.md 文件
+  - 所有现有测试通过（180 passed）

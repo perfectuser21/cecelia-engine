@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.2.0] - 2026-01-28
+
+### Added
+
+- **分支级别 PRD/DoD 文件命名**
+  - 新格式：`.prd-{branch}.md` 和 `.dod-{branch}.md`
+  - 多个分支可以独立拥有各自的 PRD/DoD 文件
+  - 解决多会话在同一 repo 工作时互相覆盖的问题
+
+### Changed
+
+- `hooks/branch-protect.sh` v17: 支持新格式，向后兼容旧格式
+- `hooks/pr-gate-v2.sh` v4.2: 支持新格式，向后兼容旧格式
+- `skills/dev/scripts/cleanup.sh` v1.4: 清理分支对应的 PRD/DoD 文件
+- `.gitignore`: 忽略 `.prd-*.md` 和 `.dod-*.md` 文件
+
 ## [11.1.0] - 2026-01-28
 
 ### Removed

@@ -40,8 +40,11 @@ skills/dev/VALIDATION.md
 .test-level.json
 
 # Workflow runtime files (per-branch, runtime)
+# v1.1: 支持分支级别 PRD/DoD 文件
 .prd.md
+.prd-*.md
 .dod.md
+.dod-*.md
 .quality-gate-passed
 .layer2-evidence.md
 .l3-analysis.md
