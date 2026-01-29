@@ -83,10 +83,41 @@ Claude 直接使用 PRD → 继续
 
 ---
 
+## 创建 .dev-mode 文件（CRITICAL）
+
+**在 PRD 确认后，必须创建 .dev-mode 文件**，这是 Stop Hook 循环控制的信号：
+
+```bash
+# 在项目根目录创建 .dev-mode
+cat > .dev-mode << EOF
+dev
+branch: $(git rev-parse --abbrev-ref HEAD)
+prd: .prd-$(git rev-parse --abbrev-ref HEAD).md
+started: $(date -Iseconds)
+EOF
+
+echo "✅ .dev-mode 已创建（Stop Hook 循环控制已启用）"
+```
+
+**文件格式**：
+```
+dev
+branch: cp-xxx
+prd: .prd-cp-xxx.md
+started: 2026-01-29T10:00:00+00:00
+```
+
+**生命周期**：
+- Step 1 创建
+- Step 11 (Cleanup) 删除
+- 或 PR 合并后由 Stop Hook 自动删除
+
+---
+
 ## 完成后
 
 ```bash
-echo "✅ Step 1 完成 (PRD 已生成)"
+echo "✅ Step 1 完成 (PRD 已生成 + .dev-mode 已创建)"
 ```
 
 继续 → Step 2

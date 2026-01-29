@@ -112,6 +112,22 @@ bash scripts/post-pr-checklist.sh
 
 ---
 
+## 删除 .dev-mode 文件（CRITICAL）
+
+**在 Cleanup 开始时，必须删除 .dev-mode 文件**：
+
+```bash
+# 删除 .dev-mode 文件（Stop Hook 循环控制信号）
+if [[ -f ".dev-mode" ]]; then
+    rm -f .dev-mode
+    echo "✅ .dev-mode 已删除（Stop Hook 循环控制已禁用）"
+fi
+```
+
+**注意**：如果 PR 已合并，Stop Hook 会自动删除 .dev-mode。但为了确保清理完整，Cleanup 步骤也要删除。
+
+---
+
 ## 使用 cleanup 脚本（推荐）
 
 ```bash
@@ -119,15 +135,16 @@ bash skills/dev/scripts/cleanup.sh "$BRANCH_NAME" "$BASE_BRANCH"
 ```
 
 **脚本会**：
-1. **运行 Post-PR Checklist**（新增）
-2. 切换到 base 分支
-3. 拉取最新代码
-4. 删除本地 cp-* 分支
-5. 删除远程 cp-* 分支
-6. 清理 git config
-7. 清理 stale remote refs
-8. 检查未提交文件
-9. 检查其他遗留 cp-* 分支
+1. **删除 .dev-mode 文件**（新增）
+2. **运行 Post-PR Checklist**
+3. 切换到 base 分支
+4. 拉取最新代码
+5. 删除本地 cp-* 分支
+6. 删除远程 cp-* 分支
+7. 清理 git config
+8. 清理 stale remote refs
+9. 检查未提交文件
+10. 检查其他遗留 cp-* 分支
 
 ---
 

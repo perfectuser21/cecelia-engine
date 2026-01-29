@@ -1,61 +1,69 @@
 ---
 name: dev
-version: 2.2.0
-updated: 2026-01-27
+version: 2.3.0
+updated: 2026-01-29
 description: |
-  统一开发工作流入口（必须在循环机制内调用）。
+  统一开发工作流入口。
 
-  循环机制有两种实现：
-  - 有头模式: /ralph-loop plugin（在 Claude Code 会话内直接输入）
-  - 无头模式: cecelia-run（使用 while 循环）
+  循环控制由 Stop Hook 实现：
+  - 有头模式: Stop Hook 检测 .dev-mode 文件，exit 2 阻止会话结束
+  - 无头模式: CECELIA_HEADLESS=true 时 Stop Hook 直接 exit 0，外部循环控制
 
-  触发方式：
-  - 有头: /ralph-loop "/dev .prd.md" --completion-promise "DONE" --max-iterations 20
-  - 无头: cecelia-run task123 cp001 prompt.txt（prompt 内容：/dev .prd.md）
-
-  v2.2.0 变更：
-  - 删除阶段检测（不再分 p0/p1/p2）
-  - 统一完成条件：PR 创建 + CI 通过 + PR 合并 = DONE
-  - 强制使用官方 Task checkpoint 追踪进度
+  v2.3.0 变更：
+  - Stop Hook 替代 Ralph Loop 作为循环控制器
+  - .dev-mode 文件作为循环信号
+  - 移除 p0/p1/p2 阶段检测
+  - 统一完成条件：PR 创建 + CI 通过 + PR 合并
 ---
 
-# /dev - 统一开发工作流（v2.2）
+# /dev - 统一开发工作流（v2.3）
 
-## ⚠️  使用警告（CRITICAL）
+## 循环控制机制
 
-**不要在普通会话直接调用 /dev**，必须配合循环机制。
+/dev 的循环控制由 **Stop Hook** 实现：
 
-### 循环机制
-
-/dev 需要外层循环机制驱动，有两种实现：
-
-| 模式 | 循环实现 | 使用方式 |
+| 模式 | 循环实现 | 工作方式 |
 |------|---------|---------|
-| **有头模式** | /ralph-loop plugin | `/ralph-loop "/dev .prd.md" --completion-promise "DONE" --max-iterations 20` |
-| **无头模式** | cecelia-run while 循环 | `cecelia-run task123 cp001 prompt.txt` |
+| **有头模式** | Stop Hook | 检测 `.dev-mode` 文件，未完成时 exit 2 阻止会话结束 |
+| **无头模式** | 外部 while 循环 | `CECELIA_HEADLESS=true` 时 Stop Hook exit 0，由 cecelia-run 控制 |
 
-### 为什么需要循环？
+### 工作流程
 
-循环机制的作用：
-1. **CI 失败自动重试**：CI 失败 → 修复代码 → push → 等 CI → 重复直到成功
-2. **完成检测**：检测 `<promise>DONE</promise>` 来判断整个流程结束
+```
+/dev 启动 → Step 1 创建 .dev-mode
+    ↓
+执行 Step 1-11...
+    ↓
+会话尝试结束 → Stop Hook 触发
+    ↓
+检测 .dev-mode → 检查完成条件
+    ↓
+├─ PR 未合并 → exit 2 → Claude 继续执行
+└─ PR 已合并 → 删除 .dev-mode → exit 0 → 会话结束
+```
 
-**Skill 调用的处理**：
-- /qa 和 /audit 调用返回后，AI 立即继续执行下一步
-- 不会有停顿，不依赖循环机制驱动
-- 循环机制只在 CI 失败重试和完成检测时发挥作用
+### .dev-mode 文件
 
-实现方式：
-- 有头：/ralph-loop plugin（在 Claude Code 会话内直接输入命令）
-- 无头：cecelia-run（使用 while 循环）
+**格式**：
+```
+dev
+branch: cp-xxx
+prd: .prd-cp-xxx.md
+started: 2026-01-29T10:00:00+00:00
+```
+
+**生命周期**：
+- Step 1 (PRD) 创建
+- Step 11 (Cleanup) 删除
+- 或 PR 合并后由 Stop Hook 自动删除
 
 ---
 
 ## 核心定位
 
-**流程编排者**（不负责循环重试）：
+**流程编排者**：
 - 放行判断 → `hooks/pr-gate-v2.sh` (PreToolUse:Bash)
-- 循环驱动 → 外部循环机制（有头：/ralph-loop plugin / 无头：cecelia-run while）
+- 循环驱动 → Stop Hook (hooks/stop.sh)
 - 进度追踪 → Task Checkpoint（TaskCreate/TaskUpdate）
 
 判断由专门的规范负责：
@@ -64,36 +72,34 @@ description: |
 
 **职责分离**：
 ```
-用户 → 循环机制（有头：/ralph-loop / 无头：cecelia-run）
+用户 → /dev（流程编排）
          ↓
-       /dev（流程编排）
+       Step 1-11（具体步骤）
          ↓
-       Step 1-15（具体步骤）
+       会话结束 → Stop Hook 检查完成条件
          ↓
-       Task Checkpoint（进度追踪）
+       ├─ 未完成 → exit 2 → 继续执行
+       └─ 已完成 → exit 0 → 会话结束
 ```
 
 ---
 
-## 统一完成条件（AI 职责）
+## 统一完成条件
 
-**AI 在每次 Ralph Loop 迭代结束时，必须检查完成条件并决定是否输出 promise。**
-
-### 唯一完成条件
+**Stop Hook 检查以下条件**：
 
 ```
 1. PR 已创建？
-   ❌ → 继续执行到创建 PR → 不输出 promise → 继续
+   ❌ → exit 2 → 继续执行到创建 PR
 
 2. CI 状态？
-   - PENDING/QUEUED/IN_PROGRESS → 等待 → 不输出 promise → 继续
-   - FAILURE → 分析失败 → 修复代码 → push → 不输出 promise → 继续
+   - PENDING/IN_PROGRESS → exit 2 → 等待 CI
+   - FAILURE → exit 2 → 修复代码
    - SUCCESS → 继续下一步
 
 3. PR 已合并？
-   ❌ → gh pr merge --squash --delete-branch → 不输出 promise → 继续
-
-✅ 全部满足 → 输出 <promise>DONE</promise> → Ralph Loop 结束
+   ❌ → exit 2 → 合并 PR
+   ✅ → 删除 .dev-mode → exit 0 → 完成
 ```
 
 **不再分阶段**：
@@ -127,10 +133,6 @@ Step N 完成 → 立即读取 skills/dev/steps/{N+1}-xxx.md → 立即执行下
 - ✅ 完成 Step 6 (Test) → **立即**执行 Step 7 (Quality)
 - ✅ 完成 Step 7 (Quality + /audit) → **立即**执行 Step 8 (PR)
 - ✅ 一直执行到 Step 8 创建 PR 为止
-
-### Ralph Loop 结束条件
-
-统一完成条件：检查所有条件 → 全部满足 → 输出 `<promise>DONE</promise>`
 
 ### 特别注意：Skill 调用后必须继续
 
@@ -198,7 +200,7 @@ TaskList()
 ### 1. 统一流程（不分阶段）✅
 
 ```
-开始 → Step 1-11 → PR 创建 → CI 监控 → PR 合并 → DONE
+开始 → Step 1-11 → PR 创建 → CI 监控 → PR 合并 → 完成
 ```
 
 **不再有**：
@@ -245,8 +247,8 @@ TaskList()
 skills/dev/
 ├── SKILL.md        ← 你在这里（入口 + 流程总览）
 ├── steps/          ← 每步详情（按需加载）
-│   ├── 01-prd.md
-│   ├── 02-detect.md
+│   ├── 01-prd.md       ← 创建 .dev-mode
+│   ├── 02-detect.md    ← Worktree 检测
 │   ├── 03-branch.md
 │   ├── 04-dod.md       ← QA Decision Node
 │   ├── 05-code.md
@@ -255,7 +257,7 @@ skills/dev/
 │   ├── 08-pr.md
 │   ├── 09-ci.md
 │   ├── 10-learning.md
-│   └── 11-cleanup.md
+│   └── 11-cleanup.md   ← 删除 .dev-mode
 └── scripts/        ← 辅助脚本
     ├── cleanup.sh
     ├── check.sh
@@ -272,6 +274,7 @@ skills/dev/
 | QA 决策 | docs/QA-DECISION.md | skills/qa/SKILL.md | ✅ 存在 |
 | DoD | .dod.md | - | ✅ 存在 + 引用 QA 决策 |
 | 审计报告 | docs/AUDIT-REPORT.md | skills/audit/SKILL.md | ✅ 存在 + PASS |
+| .dev-mode | .dev-mode | - | Step 1 创建，Step 11 删除 |
 
 ---
 
