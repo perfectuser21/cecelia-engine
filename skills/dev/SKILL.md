@@ -10,9 +10,8 @@ description: |
   - 无头模式: CECELIA_HEADLESS=true 时 Stop Hook 直接 exit 0，外部循环控制
 
   v2.3.0 变更：
-  - Stop Hook 替代 Ralph Loop 作为循环控制器
-  - .dev-mode 文件作为循环信号
-  - 移除 p0/p1/p2 阶段检测
+  - Stop Hook 作为循环控制器
+  - .dev-mode 文件作为循环信号（Step 3 分支创建后生成）
   - 统一完成条件：PR 创建 + CI 通过 + PR 合并
 ---
 
@@ -53,7 +52,7 @@ started: 2026-01-29T10:00:00+00:00
 ```
 
 **生命周期**：
-- Step 1 (PRD) 创建
+- Step 3 (Branch) 分支创建后创建（此时分支名正确）
 - Step 11 (Cleanup) 删除
 - 或 PR 合并后由 Stop Hook 自动删除
 
@@ -247,9 +246,9 @@ TaskList()
 skills/dev/
 ├── SKILL.md        ← 你在这里（入口 + 流程总览）
 ├── steps/          ← 每步详情（按需加载）
-│   ├── 01-prd.md       ← 创建 .dev-mode
+│   ├── 01-prd.md
 │   ├── 02-detect.md    ← Worktree 检测
-│   ├── 03-branch.md
+│   ├── 03-branch.md    ← 创建 .dev-mode
 │   ├── 04-dod.md       ← QA Decision Node
 │   ├── 05-code.md
 │   ├── 06-test.md
@@ -274,7 +273,7 @@ skills/dev/
 | QA 决策 | docs/QA-DECISION.md | skills/qa/SKILL.md | ✅ 存在 |
 | DoD | .dod.md | - | ✅ 存在 + 引用 QA 决策 |
 | 审计报告 | docs/AUDIT-REPORT.md | skills/audit/SKILL.md | ✅ 存在 + PASS |
-| .dev-mode | .dev-mode | - | Step 1 创建，Step 11 删除 |
+| .dev-mode | .dev-mode | - | Step 3 创建，Step 11 删除 |
 
 ---
 

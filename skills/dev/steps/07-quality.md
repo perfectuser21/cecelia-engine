@@ -1,10 +1,7 @@
 # Step 7: 质检
 
 > Audit Node 做代码审计，然后跑测试
-> **Ralph Loop 循环执行：质检失败时自动修复并重试**
-> **Stop Hook 检查：质检未通过时阻止退出（exit 2）**
->
-> **注意**：Step 7 由 Ralph Loop 控制循环，AI 不需要手动循环检查
+> **Stop Hook 控制循环：质检失败时阻止会话结束（exit 2），AI 继续修复**
 
 ---
 

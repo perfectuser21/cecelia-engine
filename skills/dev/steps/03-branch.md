@@ -108,6 +108,37 @@ echo "   Base: $BASE_BRANCH"
 
 ---
 
+## 创建 .dev-mode 文件（CRITICAL）
+
+**分支创建后，必须创建 .dev-mode 文件**，这是 Stop Hook 循环控制的信号：
+
+```bash
+# 在项目根目录创建 .dev-mode（分支已创建，分支名正确）
+cat > .dev-mode << EOF
+dev
+branch: $BRANCH_NAME
+prd: .prd.md
+started: $(date -Iseconds)
+EOF
+
+echo "✅ .dev-mode 已创建（Stop Hook 循环控制已启用）"
+```
+
+**文件格式**：
+```
+dev
+branch: H7-remove-ralph-loop
+prd: .prd.md
+started: 2026-01-29T10:00:00+00:00
+```
+
+**生命周期**：
+- Step 3 分支创建后创建（此时分支名正确）
+- Step 11 (Cleanup) 删除
+- 或 PR 合并后由 Stop Hook 自动删除
+
+---
+
 ## 分支命名规则
 
 **格式**：`{Feature ID}-{任务名}`
