@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.31.0"
+version: "2.32.0"
 updated: "2026-01-30"
 changelog:
+  - 2.32.0: v11.6.0 - Gate Skill 家族（独立质量审核：prd, dod, test, audit）
   - 2.31.0: v11.5.0 - 放宽 skills 保护（只保护 Engine skills：dev, qa, audit, semver）
   - 2.30.0: v11.4.1 - 修复 Stop Hook 跳过 Cleanup bug（cleanup_done 检测 + PR 合并时 exit 2）
   - 2.29.0: v11.4.0 - Task Checkpoint 强制执行（branch-protect v18 检查 tasks_created 字段）
@@ -811,3 +812,54 @@ product_features:
       - H8-001  # 检测真实凭据
       - H8-002  # 放行占位符
       - H8-003  # 放行 credentials 目录
+
+  # --------------------------------------------------------------------------
+  # G1: Gate Skill Family - 独立质量审核
+  # --------------------------------------------------------------------------
+  - id: G1
+    name: Gate Skill Family
+    status: Committed
+    priority: P1
+    version: "11.6.0"
+    updated: "2026-01-30"
+    description: |
+      独立质量审核 Skill 家族，每个 gate 是"守门 Subagent"：
+      - gate:prd - PRD 完整性、需求可验收性审核
+      - gate:dod - PRD↔DoD 覆盖率、Test 映射有效性审核
+      - gate:test - 测试↔DoD 覆盖率、边界用例审核
+      - gate:audit - 审计证据真实性、风险点识别审核
+
+      解决问题：
+      - PRD/DoD/QA/Audit 可以写空壳文件应付检查
+      - CI 只检查文件存在，不检查内容质量
+      - 主 Agent 自己写、自己检查 = 自己给自己打分
+
+    entrypoints:
+      - type: skill
+        file: skills/gate/SKILL.md
+      - type: skill
+        file: skills/gate/gates/prd.md
+      - type: skill
+        file: skills/gate/gates/dod.md
+      - type: skill
+        file: skills/gate/gates/test.md
+      - type: skill
+        file: skills/gate/gates/audit.md
+
+    golden_path: |
+      主 Agent 产出 → Gate Subagent 审核 → FAIL → 返回修改 → 再审核 → PASS → 继续
+
+    minimal_paths:
+      - "写完 DoD → gate:dod 审核 → FAIL → 修改 → 再审核 → PASS"
+      - "写完测试 → gate:test 审核 → PASS → 继续质检"
+
+    tests:
+      - type: manual
+        description: 手动验证审核循环
+        coverage: G1-001, G1-002, G1-003, G1-004
+
+    rcis:
+      - G1-001  # gate:prd 审核 PRD 完整性
+      - G1-002  # gate:dod 审核 DoD 覆盖率
+      - G1-003  # gate:test 审核测试覆盖率
+      - G1-004  # gate:audit 审核证据真实性
