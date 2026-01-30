@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.11.0] - 2026-01-30
+
+### Security
+
+- **P0-2: Stop Hook 并发锁**
+  - 添加 flock 并发锁防止多个会话同时操作 `.dev-mode` 文件
+  - 锁文件放在 `.git/cecelia-stop.lock`
+  - 等待最多 2 秒，拿不到锁则 exit 2 提示重试
+
+- **P0-4: CI known-failures 白名单机制**
+  - 新增 `ci/known-failures.json` 白名单定义
+  - CI 严格验证：只允许白名单内的失败模式跳过
+  - 规则：max_skip_count=3, require_ticket=true
+  - 防止随意填写字符串绕过 CI 检查
+
+### Fixed
+
+- **P0-3: pr-gate 超时保护**
+  - `verify-gate-signature.sh` 调用添加 10 秒超时
+  - 超时时返回 exit 124 并明确提示
+  - 防止验证脚本卡死导致 Hook 无限等待
+
+- **P1-6: branch-protect skills 正则修复**
+  - 使用 `grep -Eq` 替代 bash regex 进行路径匹配
+  - 修复 `/.claude/skills/(dev|qa|audit|semver)` 分组失败问题
+  - 确保 Engine 核心 skills 保护正常工作
+
 ## [11.10.0] - 2026-01-30
 
 ### Security

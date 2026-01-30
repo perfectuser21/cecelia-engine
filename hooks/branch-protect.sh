@@ -92,9 +92,14 @@ if [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
 fi
 
 # skills 目录：只保护 Engine 相关的 skills (dev, qa, audit, semver)
-PROTECTED_ENGINE_SKILLS="dev|qa|audit|semver"
-if [[ "$REAL_FILE_PATH" =~ $HOME_DIR/.claude/skills/($PROTECTED_ENGINE_SKILLS)/ ]] || \
-   [[ "$FILE_PATH" =~ $HOME_DIR/.claude/skills/($PROTECTED_ENGINE_SKILLS)/ ]]; then
+# P1-6 修复：使用 grep -Eq 强锚点匹配，修复 bash regex 分组问题
+is_protected_engine_skill() {
+    local path="$1"
+    # 锚点匹配：.claude/skills/(dev|qa|audit|semver) 后面必须是 / 或结尾
+    echo "$path" | grep -Eq "/.claude/skills/(dev|qa|audit|semver)(/|$)"
+}
+
+if is_protected_engine_skill "$REAL_FILE_PATH" || is_protected_engine_skill "$FILE_PATH"; then
     echo "" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     echo "  [ERROR] 禁止直接修改 Engine 核心 skills" >&2

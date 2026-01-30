@@ -119,27 +119,56 @@ jobs:
           # L1: 自动化测试（按顺序）
           npm run typecheck --if-present   # 类型检查
 
-          # 单元测试 - 支持已知失败模式
+          # 单元测试 - P0-4 修复：严格的已知失败白名单校验
           if npm run test --if-present; then
             echo "✅ 测试通过"
           else
             TEST_EXIT_CODE=$?
             echo "⚠️ 测试失败（退出码: $TEST_EXIT_CODE）"
 
-            # 检查是否有质检证据标记为已知失败
-            if [ -f .quality-evidence.json ]; then
-              if grep -q "known failures" .quality-evidence.json; then
-                echo "✅ 检测到已知测试失败（已在 .quality-evidence.json 中记录）"
-                echo "   这些失败是预期的，不阻止 CI"
-                echo ""
-                echo "已知失败说明："
-                jq -r '.evidence.tests // "N/A"' .quality-evidence.json
-              else
-                echo "❌ 测试失败且无已知失败记录"
+            # P0-4 修复：严格校验 known-failures，不接受任意字符串
+            if [ -f .quality-evidence.json ] && [ -f ci/known-failures.json ]; then
+              # 必须包含 known_failure_keys 数组字段
+              if ! jq -e '.known_failure_keys | type == "array"' .quality-evidence.json >/dev/null 2>&1; then
+                echo "❌ 测试失败：.quality-evidence.json 缺少有效的 known_failure_keys 数组"
                 exit $TEST_EXIT_CODE
               fi
+
+              # 提取请求跳过的 keys
+              REQUESTED_KEYS=$(jq -r '.known_failure_keys[]' .quality-evidence.json 2>/dev/null || echo "")
+              if [ -z "$REQUESTED_KEYS" ]; then
+                echo "❌ 测试失败：known_failure_keys 为空"
+                exit $TEST_EXIT_CODE
+              fi
+
+              # 检查数量限制（最多 3 个）
+              KEY_COUNT=$(echo "$REQUESTED_KEYS" | wc -l)
+              MAX_SKIP=$(jq -r '.rules.max_skip_count // 3' ci/known-failures.json)
+              if [ "$KEY_COUNT" -gt "$MAX_SKIP" ]; then
+                echo "❌ 测试失败：请求跳过 $KEY_COUNT 项，超过最大限制 $MAX_SKIP"
+                exit $TEST_EXIT_CODE
+              fi
+
+              # 验证每个 key 都在白名单中
+              ALLOWED_KEYS=$(jq -r '.allowed | keys[]' ci/known-failures.json)
+              INVALID_KEYS=""
+              while IFS= read -r key; do
+                if ! echo "$ALLOWED_KEYS" | grep -qx "$key"; then
+                  INVALID_KEYS="$INVALID_KEYS $key"
+                fi
+              done <<< "$REQUESTED_KEYS"
+
+              if [ -n "$INVALID_KEYS" ]; then
+                echo "❌ 测试失败：以下 known_failure_keys 不在白名单中：$INVALID_KEYS"
+                echo "   允许的 keys: $ALLOWED_KEYS"
+                exit $TEST_EXIT_CODE
+              fi
+
+              echo "✅ 已知失败校验通过（$KEY_COUNT 项已登记）"
+              echo "   跳过的测试："
+              echo "$REQUESTED_KEYS" | sed 's/^/     - /'
             else
-              echo "❌ 测试失败且无质检证据"
+              echo "❌ 测试失败且无有效的 known-failures 配置"
               exit $TEST_EXIT_CODE
             fi
           fi

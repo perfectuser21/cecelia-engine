@@ -757,9 +757,18 @@ if [[ "$MODE" == "pr" ]]; then
             if [[ "$GATE_VERIFY_AVAILABLE" -eq 0 ]]; then
                 echo "[OK] (签名验证已跳过)" >&2
             else
-                # 运行 verify 脚本并根据 exit code 给出具体错误
-                GATE_OUTPUT=$(bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" 2>&1)
+                # P0-3 修复：运行 verify 脚本并加超时保护（防止卡死）
+                GATE_OUTPUT=$(run_with_timeout 10 bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" 2>&1) || true
                 GATE_EXIT_CODE=$?
+
+                # 超时处理（exit code 124）
+                if [[ "$GATE_EXIT_CODE" -eq 124 ]]; then
+                    echo "[FAIL] (验证超时)" >&2
+                    echo "    -> verify-gate-signature.sh 超时（>10s）" >&2
+                    FAILED=1
+                    GATE_FAILED=1
+                    continue
+                fi
 
                 case $GATE_EXIT_CODE in
                     0)
