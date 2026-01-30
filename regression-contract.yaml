@@ -1156,7 +1156,8 @@ ci:
     name: "CI Evidence 生成脚本正常工作"
     scope: ci
     priority: P0
-    trigger: [PR, Release]
+    # Note: Only PR trigger because release-check depends on test job which already validates evidence
+    trigger: [PR]
     method: auto
     tags: [ci, evidence, ssot, quality-gate]
     owner: infra

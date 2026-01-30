@@ -64,5 +64,11 @@
     "actor": "claude",
     "timestamp": "2026-01-30T13:45:00Z",
     "evidence": "代码审查确认 Generate Evidence 在 L3 Regression Tests 之前"
+  },
+  {
+    "id": "ci-evidence-removed",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:00:00Z",
+    "evidence": "移除 release-check 的 Generate Evidence 步骤（test job 已验证）"
   }
 ]
