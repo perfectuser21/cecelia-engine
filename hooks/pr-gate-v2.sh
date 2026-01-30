@@ -717,13 +717,14 @@ if [[ "$MODE" == "pr" ]]; then
         echo "  ⚠️  l2b-check.sh 不存在，跳过证据检查" >&2
     fi
 
-    # ===== Gate 文件检查（v19: 强制 gate 审核通过）=====
+    # ===== Gate 文件检查（v19: 强制 gate 审核通过，v20: 阻止型）=====
     echo "" >&2
     echo "  [Gate 审核文件检查]" >&2
 
     GATE_VERIFY_SCRIPT="$PROJECT_ROOT/scripts/gate/verify-gate-signature.sh"
     GATE_FILES=(".gate-prd-passed" ".gate-dod-passed" ".gate-test-passed" ".gate-audit-passed")
     GATE_NAMES=("gate:prd" "gate:dod" "gate:test" "gate:audit")
+    GATE_FAILED=0  # v20: Gate 检查失败是阻止型（exit 2）
 
     # 检查 verify 脚本是否存在
     if [[ -f "$GATE_VERIFY_SCRIPT" ]]; then
@@ -738,6 +739,7 @@ if [[ "$MODE" == "pr" ]]; then
                 echo "[FAIL] (文件不存在)" >&2
                 echo "    -> 必须先通过 $GATE_NAME 审核" >&2
                 FAILED=1
+                GATE_FAILED=1
             elif bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" >/dev/null 2>&1; then
                 echo "[OK]" >&2
             else
@@ -746,6 +748,7 @@ if [[ "$MODE" == "pr" ]]; then
                 echo "[FAIL]" >&2
                 echo "    -> $GATE_ERROR" >&2
                 FAILED=1
+                GATE_FAILED=1
             fi
         done
     else
@@ -821,6 +824,22 @@ fi
 # 结果输出
 # ============================================================================
 echo "" >&2
+
+# v20: Gate 文件检查失败是阻止型（必须通过 gate 审核）
+if [[ "${GATE_FAILED:-0}" -eq 1 ]]; then
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "  [ERROR] Gate 审核未通过（阻止型）" >&2
+    echo "" >&2
+    echo "  必须先通过以下 gate 审核才能创建 PR：" >&2
+    echo "    - gate:prd  (PRD 审核)" >&2
+    echo "    - gate:dod  (DoD 审核)" >&2
+    echo "    - gate:test (测试审核)" >&2
+    echo "    - gate:audit (审计审核)" >&2
+    echo "" >&2
+    echo "  请调用对应的 gate skill 完成审核。" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    exit 2
+fi
 
 if [[ $FAILED -eq 1 ]]; then
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2

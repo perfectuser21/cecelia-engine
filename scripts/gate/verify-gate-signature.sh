@@ -50,7 +50,7 @@ generate_signature() {
 # 主逻辑
 main() {
     local secret
-    secret=$(cat "$SECRET_FILE")
+    secret=$(cat "$SECRET_FILE" | tr -d '\n\r')
 
     local current_branch
     current_branch=$(get_current_branch)
@@ -63,7 +63,12 @@ main() {
     branch=$(jq -r '.branch' "$GATE_FILE" 2>/dev/null)
     signature=$(jq -r '.signature' "$GATE_FILE" 2>/dev/null)
 
-    if [[ -z "$gate" || -z "$decision" || -z "$timestamp" || -z "$branch" || -z "$signature" ]]; then
+    # 检查字段有效性（jq 对不存在的字段返回 "null" 字符串）
+    if [[ -z "$gate" || "$gate" == "null" || \
+          -z "$decision" || "$decision" == "null" || \
+          -z "$timestamp" || "$timestamp" == "null" || \
+          -z "$branch" || "$branch" == "null" || \
+          -z "$signature" || "$signature" == "null" ]]; then
         echo "❌ Gate 文件格式错误: $GATE_FILE" >&2
         exit 1
     fi

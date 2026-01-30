@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.7.1] - 2026-01-30
+
+### Fixed
+
+- **Gate 签名机制 bug 修复**
+  - Secret 读取时去除换行符 (`tr -d '\n\r'`)
+  - 使用 `jq -n --arg` 生成 JSON，防止特殊字符破坏
+  - 处理 jq 返回的 "null" 字符串
+
+- **Gate 检查改为阻止型**
+  - `pr-gate-v2.sh` v20: Gate 检查失败时 `exit 2` 阻止 PR 创建
+  - CI DevGate checks: 添加 gate 文件签名验证
+
 ## [11.7.0] - 2026-01-30
 
 ### Added

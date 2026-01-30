@@ -63,7 +63,7 @@ main() {
     ensure_secret
 
     local secret
-    secret=$(cat "$SECRET_FILE")
+    secret=$(cat "$SECRET_FILE" | tr -d '\n\r')
 
     local branch
     branch=$(get_current_branch)
@@ -76,16 +76,15 @@ main() {
     local signature
     signature=$(generate_signature "$GATE_TYPE" "$decision" "$timestamp" "$branch" "$secret")
 
-    # 生成 JSON 文件
-    cat > "$GATE_FILE" << EOF
-{
-  "gate": "$GATE_TYPE",
-  "decision": "$decision",
-  "timestamp": "$timestamp",
-  "branch": "$branch",
-  "signature": "$signature"
-}
-EOF
+    # 生成 JSON 文件（使用 jq 防止特殊字符破坏 JSON）
+    jq -n \
+        --arg gate "$GATE_TYPE" \
+        --arg decision "$decision" \
+        --arg timestamp "$timestamp" \
+        --arg branch "$branch" \
+        --arg signature "$signature" \
+        '{gate: $gate, decision: $decision, timestamp: $timestamp, branch: $branch, signature: $signature}' \
+        > "$GATE_FILE"
 
     echo "✅ Gate 文件已生成: $GATE_FILE" >&2
     echo "   gate: $GATE_TYPE" >&2

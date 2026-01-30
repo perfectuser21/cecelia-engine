@@ -320,6 +320,37 @@ jobs:
             echo "ℹ️ scan-rci-coverage.cjs not found, skipping"
           fi
 
+          # Gate 文件检查（v20: 远端强制）
+          # 验证所有 gate 审核文件存在且签名有效
+          if [ -f "scripts/gate/verify-gate-signature.sh" ]; then
+            echo ""
+            echo "  [Gate 审核文件检查]"
+            GATE_FAILED=0
+            CURRENT_BRANCH="${{ github.head_ref }}"
+
+            for GATE_TYPE in prd dod test audit; do
+              GATE_FILE=".gate-${GATE_TYPE}-passed"
+              if [ ! -f "$GATE_FILE" ]; then
+                echo "  ❌ gate:${GATE_TYPE} - 文件不存在"
+                GATE_FAILED=1
+              elif bash scripts/gate/verify-gate-signature.sh "$GATE_FILE" >/dev/null 2>&1; then
+                echo "  ✅ gate:${GATE_TYPE} - 签名有效"
+              else
+                echo "  ❌ gate:${GATE_TYPE} - 签名无效或分支不匹配"
+                GATE_FAILED=1
+              fi
+            done
+
+            if [ "$GATE_FAILED" -eq 1 ]; then
+              echo ""
+              echo "❌ Gate 审核检查失败"
+              echo "   必须通过所有 gate 审核才能合并 PR"
+              exit 1
+            fi
+          else
+            echo "ℹ️ verify-gate-signature.sh not found, skipping gate check"
+          fi
+
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  ✅ DevGate 检查通过"
