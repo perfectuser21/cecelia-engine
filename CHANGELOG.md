@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.5.0] - 2026-01-30
+
+### Changed
+
+- **放宽 skills 目录保护**（branch-protect.sh v18）
+  - `hooks/branch-protect.sh`: 只保护 Engine 核心 skills（dev, qa, audit, semver）
+  - 其他 skills（如 script-manager, credentials）可从任何 repo 部署
+  - hooks 目录仍然全部保护（不变）
+  - 支持 HR (Cecelia-OS) 和业务 repo 部署自己的 skills
+
 ## [11.4.1] - 2026-01-30
 
 ### Fixed
