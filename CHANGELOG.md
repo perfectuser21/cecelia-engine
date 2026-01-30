@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.6.0] - 2026-01-30
+
+### Added
+
+- **Gate Skill 家族** - 独立质量审核机制
+  - `skills/gate/SKILL.md`: Gate skill 入口定义
+  - `skills/gate/gates/prd.md`: PRD 完整性、需求可验收性审核
+  - `skills/gate/gates/dod.md`: PRD↔DoD 覆盖率、Test 映射有效性审核
+  - `skills/gate/gates/test.md`: 测试↔DoD 覆盖率、边界用例审核
+  - `skills/gate/gates/audit.md`: 审计证据真实性、风险点识别审核
+
+- **/dev 流程集成 Gate 审核**
+  - Step 1 后可调用 gate:prd
+  - Step 4 后推荐调用 gate:dod（审核循环）
+  - Step 6 后推荐调用 gate:test
+  - Step 7 后推荐调用 gate:audit
+
+### Changed
+
+- **Gatekeeper Subagent 模式** - 解决"主 Agent 自己写、自己检查"问题
+  - 每个 gate 通过 Task tool 启动独立 Subagent
+  - FAIL 时返回具体问题和修复要求
+  - 主 agent 必须修到 PASS 才能继续
+
 ## [11.5.0] - 2026-01-30
 
 ### Changed

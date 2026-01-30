@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.31.0
+version: 2.32.0
 created: 2026-01-30
 updated: 2026-01-30
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.31.0: 从 feature-registry.yml 自动生成
+  - 2.32.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -278,6 +278,21 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
+## GP-018: Gate Skill Family (G1)
+
+**Feature**: G1 - Gate Skill Family
+**Priority**: P1
+
+### Golden Path
+
+```
+主 Agent 产出 → Gate Subagent 审核 → FAIL → 返回修改 → 再审核 → PASS → 继续
+```
+
+**RCI 覆盖**: G1-001,G1-002,G1-003,G1-004
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -290,5 +305,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.31.0
+**版本**: 2.32.0
 **生成时间**: 2026-01-30

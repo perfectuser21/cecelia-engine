@@ -89,6 +89,31 @@ Claude 直接使用 PRD → 继续
 echo "✅ Step 1 完成 (PRD 已生成)"
 ```
 
+---
+
+## Gate 审核（可选）
+
+PRD 生成后，可调用 `/gate:prd` 进行独立审核：
+
+```javascript
+// 启动审核 Subagent
+Task({
+  subagent_type: "general-purpose",
+  prompt: `你是独立的 PRD 审核员。审核 ${prd_file}...`,
+  description: "Gate: PRD 审核"
+})
+
+// 根据结果决定
+if (result.decision === "FAIL") {
+  // 根据 Required Fixes 修改 PRD
+  // 再次审核
+}
+```
+
+**审核标准**：参考 `skills/gate/gates/prd.md`
+
+---
+
 继续 → Step 2
 
 **注意**：`.dev-mode` 文件在 Step 3 分支创建后生成（需要正确的分支名）。

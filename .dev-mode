@@ -1,3 +1,5 @@
-branch: cp-0130-relax-skills-protection
-started: 2026-01-30T09:00:00
+dev
+branch: cp-0130-gate-skill
+prd: .prd-cp-0130-gate-skill.md
+started: 2026-01-30T09:39:03+08:00
 tasks_created: true

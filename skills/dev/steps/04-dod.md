@@ -147,6 +147,43 @@ PR Gate 会检查：
 
 ---
 
+## Step 4.4: Gate 审核（推荐）
+
+DoD + QA 完成后，调用 `/gate:dod` 进行独立审核：
+
+```javascript
+// 审核循环
+while (true) {
+  const result = await Task({
+    subagent_type: "general-purpose",
+    prompt: `你是独立的 DoD 审核员。审核以下文件：
+      - PRD: ${prd_file}
+      - DoD: ${dod_file}
+      - QA: ${qa_file}
+      ...（详见 skills/gate/gates/dod.md）`,
+    description: "Gate: DoD 审核"
+  });
+
+  if (result.decision === "PASS") {
+    break;  // 继续 Step 5
+  }
+
+  // FAIL: 根据 Required Fixes 修改
+  // ...修改 DoD/QA 文件...
+  // 再次循环审核
+}
+```
+
+**审核标准**：参考 `skills/gate/gates/dod.md`
+
+**检查内容**：
+1. PRD ↔ DoD 覆盖率
+2. 验收项具体性
+3. Test 字段有效性
+4. QA 引用正确性
+
+---
+
 ## 完成后
 
 **Task Checkpoint**: `TaskUpdate({ taskId: "4", status: "completed" })`

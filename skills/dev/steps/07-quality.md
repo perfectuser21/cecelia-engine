@@ -237,6 +237,43 @@ Release Check 额外检查：
 
 ---
 
+## Step 7.5: Gate 审核（推荐）
+
+Audit 报告生成后，调用 `/gate:audit` 进行独立审核：
+
+```javascript
+// 审核循环
+while (true) {
+  const result = await Task({
+    subagent_type: "general-purpose",
+    prompt: `你是独立的审计审核员。审核以下文件：
+      - PRD: ${prd_file}（查看影响范围）
+      - 审计报告: docs/AUDIT-REPORT.md
+      - 实际代码: ${affected_files}
+      ...（详见 skills/gate/gates/audit.md）`,
+    description: "Gate: 审计审核"
+  });
+
+  if (result.decision === "PASS") {
+    break;  // 继续 Step 8
+  }
+
+  // FAIL: 根据 Required Fixes 补充审计
+  // ...补充证据引用、风险识别...
+  // 再次循环审核
+}
+```
+
+**审核标准**：参考 `skills/gate/gates/audit.md`
+
+**检查内容**：
+1. 审计证据真实性（文件/行号存在）
+2. 问题识别（不是废话）
+3. 风险点识别（Known Limitations）
+4. 覆盖范围（PRD 影响文件都被审计）
+
+---
+
 ## 完成后
 
 **Task Checkpoint**: `TaskUpdate({ taskId: "7", status: "completed" })`

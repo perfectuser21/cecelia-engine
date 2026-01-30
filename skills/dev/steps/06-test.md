@@ -73,6 +73,42 @@ describe('login', () => {
 
 ---
 
+## Gate 审核（推荐）
+
+测试写完后，调用 `/gate:test` 进行独立审核：
+
+```javascript
+// 审核循环
+while (true) {
+  const result = await Task({
+    subagent_type: "general-purpose",
+    prompt: `你是独立的测试审核员。审核以下文件：
+      - DoD: ${dod_file}
+      - 测试文件: ${test_files}
+      ...（详见 skills/gate/gates/test.md）`,
+    description: "Gate: 测试审核"
+  });
+
+  if (result.decision === "PASS") {
+    break;  // 继续 Step 7
+  }
+
+  // FAIL: 根据 Required Fixes 补充测试
+  // ...添加缺失的测试用例...
+  // 再次循环审核
+}
+```
+
+**审核标准**：参考 `skills/gate/gates/test.md`
+
+**检查内容**：
+1. DoD ↔ 测试覆盖率
+2. 边界用例覆盖
+3. 反例测试
+4. 测试质量（断言明确性）
+
+---
+
 ## 完成后
 
 **Task Checkpoint**: `TaskUpdate({ taskId: "6", status: "completed" })`
