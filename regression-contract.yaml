@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "11.12.3"
+version: "11.12.5"
 updated: "2026-01-30"
 
 # ============================================================================
@@ -1246,7 +1246,10 @@ ci:
     name: "Release 前 DoD 完成度检查"
     scope: ci
     priority: P1
-    trigger: [Release]
+    # Note: Only PR trigger because running scripts/release-check.sh inside
+    # the release-check job creates a circular dependency (C5-001 calls
+    # release-check.sh which is already being run by run-regression.sh)
+    trigger: [PR]
     method: auto
     tags: [ci, release, dod]
     owner: infra

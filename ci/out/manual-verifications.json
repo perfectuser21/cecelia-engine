@@ -70,5 +70,41 @@
     "actor": "claude",
     "timestamp": "2026-01-30T14:00:00Z",
     "evidence": "移除 release-check 的 Generate Evidence 步骤（test job 已验证）"
+  },
+  {
+    "id": "c5-001-trigger-fix",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:15:00Z",
+    "evidence": "C5-001 trigger 从 [Release] 改为 [PR]，避免循环依赖"
+  },
+  {
+    "id": "version-file",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:20:00Z",
+    "evidence": "VERSION 文件已更新为 11.12.5"
+  },
+  {
+    "id": "hook-core-version",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:20:00Z",
+    "evidence": "hook-core/VERSION 文件已更新为 11.12.5"
+  },
+  {
+    "id": "package-version",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:20:00Z",
+    "evidence": "package.json 版本已更新为 11.12.5"
+  },
+  {
+    "id": "rci-version",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:20:00Z",
+    "evidence": "regression-contract.yaml 版本已更新为 11.12.5"
+  },
+  {
+    "id": "manual-verify-entry",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:20:00Z",
+    "evidence": "manual-verifications.json 已添加相关条目"
   }
 ]
