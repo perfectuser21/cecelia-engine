@@ -1,21 +1,23 @@
 ---
 name: dev
-version: 2.3.0
-updated: 2026-01-29
+version: 3.0.0
+updated: 2026-01-30
 description: |
   统一开发工作流入口。
+
+  v3.0.0 变更：
+  - Gate/Quality/CI 三层职责分离
+  - Audit 移到 Code 之后（先审计后测试）
+  - gate:dod + QA 并行执行（Subagent）
+  - Quality 只汇总不判定
+  - Learning 使用 Subagent
 
   循环控制由 Stop Hook 实现：
   - 有头模式: Stop Hook 检测 .dev-mode 文件，exit 2 阻止会话结束
   - 无头模式: CECELIA_HEADLESS=true 时 Stop Hook 直接 exit 0，外部循环控制
-
-  v2.3.0 变更：
-  - Stop Hook 作为循环控制器
-  - .dev-mode 文件作为循环信号（Step 3 分支创建后生成）
-  - 统一完成条件：PR 创建 + CI 通过 + PR 合并
 ---
 
-# /dev - 统一开发工作流（v2.3）
+# /dev - 统一开发工作流（v3.0）
 
 ## 循环控制机制
 
@@ -246,22 +248,50 @@ TaskList()
 skills/dev/
 ├── SKILL.md        ← 你在这里（入口 + 流程总览）
 ├── steps/          ← 每步详情（按需加载）
-│   ├── 01-prd.md
+│   ├── 01-prd.md       ← gate:prd (Subagent)
 │   ├── 02-detect.md    ← Worktree 检测
 │   ├── 03-branch.md    ← 创建 .dev-mode
-│   ├── 04-dod.md       ← QA Decision Node
-│   ├── 05-code.md
-│   ├── 06-test.md
-│   ├── 07-quality.md   ← Audit Node
+│   ├── 04-dod.md       ← gate:dod + QA (并行 Subagents)
+│   ├── 05-code.md      ← Audit Loop (Subagent)
+│   ├── 06-test.md      ← gate:test (Subagent)
+│   ├── 07-quality.md   ← 只汇总，不判定
 │   ├── 08-pr.md
 │   ├── 09-ci.md
-│   ├── 10-learning.md
+│   ├── 10-learning.md  ← Subagent
 │   └── 11-cleanup.md   ← 删除 .dev-mode
 └── scripts/        ← 辅助脚本
     ├── cleanup.sh
     ├── check.sh
     └── ...
 ```
+
+### 流程图 (v3)
+
+```
+1-PRD ────→ gate:prd (Subagent)
+    ↓
+2-Detect → 3-Branch
+    ↓
+4-DoD ────→ ┌─ gate:dod (Subagent) ─┐
+            │                        │ 并行
+            └─ QA (Subagent) ────────┘
+    ↓
+5-Code ───→ Audit Loop (Subagent, 循环直到 PASS)
+    ↓
+6-Test ───→ gate:test (Subagent)
+    ↓
+7-Quality → 只汇总 (quality-summary.json)
+    ↓
+8-PR → 9-CI → 10-Learning (Subagent) → 11-Cleanup
+```
+
+### 三层职责分离
+
+| 层 | 位置 | 类型 | 职责 |
+|---|------|------|------|
+| **Gate** | 本地 | 阻止型 | 过程卡口，FAIL 就停 |
+| **Quality** | 本地 | 汇总型 | 打包结账单，不做判定 |
+| **CI** | 远端 | 复核型 | 最终裁判，硬门禁 |
 
 ---
 

@@ -38,7 +38,50 @@ A: 调整方案，重新实现。
 
 ---
 
-## 完成后
+## 完成后：Audit Loop（必须）
+
+代码写完后，**必须**进入 Audit 循环：
+
+```javascript
+// Audit 循环（阻止型：L1/L2 问题清零才能继续）
+while (true) {
+  const result = await Task({
+    subagent_type: "general-purpose",
+    prompt: `你是代码审计员。审计以下改动文件：
+      - 改动文件：${changed_files}
+      - 目标层级：L2（默认）
+
+      参考 skills/audit/SKILL.md 规则：
+      - L1 阻塞性：功能不工作、崩溃、数据丢失（必须修）
+      - L2 功能性：边界条件、错误处理、edge case（建议修）
+      - L3 最佳实践：代码风格、一致性（可选）
+      - L4 过度优化：理论边界（不修）
+
+      输出 docs/AUDIT-REPORT.md：
+      - Decision: PASS | FAIL
+      - Summary: L1/L2/L3/L4 各多少
+      - Findings: [问题列表]
+      - Blockers: [L1+L2 问题 ID]`,
+    description: "Audit: 代码审计"
+  });
+
+  if (result.decision === "PASS") {
+    // 生成 gate 文件
+    await Bash({ command: `bash scripts/gate/generate-gate-file.sh audit PASS` });
+    break;  // 继续 Step 6
+  }
+
+  // FAIL: 修复 L1/L2 问题
+  // ...根据 Findings 修复代码...
+  // 再次循环审计
+}
+```
+
+**审核标准**：参考 `skills/audit/SKILL.md`
+
+**关键原则**：
+- Audit 在 Test 之前执行
+- 改完代码再跑 Test，避免测试白跑
 
 **Task Checkpoint**: `TaskUpdate({ taskId: "5", status: "completed" })`
 

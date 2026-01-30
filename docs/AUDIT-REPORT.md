@@ -1,15 +1,8 @@
----
-id: audit-report-gate-fix
-version: 1.0.0
-created: 2026-01-30
-updated: 2026-01-30
----
+# Audit Report: /dev 工作流 v3 重构
 
-# Audit Report: Gate 签名算法修复
-
-Branch: cp-0130-gate-fix
+Branch: cp-0130-dev-flow-v3
 Date: 2026-01-30
-Scope: scripts/gate/
+Scope: skills/dev/SKILL.md, skills/dev/steps/*.md, runtime/quality-summary.schema.json
 Target Level: L2
 
 ## Summary
@@ -27,40 +20,35 @@ Decision: PASS
 
 | 文件 | 变更类型 |
 |------|----------|
-| scripts/gate/generate-gate-file.sh | 修复（head_sha 加入签名） |
-| scripts/gate/verify-gate-signature.sh | 修复（head_sha 验证 + null 检查） |
+| skills/dev/SKILL.md | 更新（v3 流程图） |
+| skills/dev/steps/01-prd.md | 更新（gate:prd 必须） |
+| skills/dev/steps/04-dod.md | 更新（并行 Subagent） |
+| skills/dev/steps/05-code.md | 更新（Audit Loop） |
+| skills/dev/steps/06-test.md | 更新（gate:test 必须） |
+| skills/dev/steps/07-quality.md | 重写（只汇总不判定） |
+| skills/dev/steps/10-learning.md | 更新（Subagent 模式） |
+| runtime/quality-summary.schema.json | 新增 |
 
 ## L1 检查（阻塞性）
 
 | 项目 | 状态 | 说明 |
 |------|------|------|
-| 语法错误 | PASS | bash -n 通过 |
-| 签名一致性 | PASS | 生成/验证算法一致 |
+| 文档格式 | PASS | Markdown 语法正确 |
+| JSON Schema | PASS | 格式有效 |
 
 ## L2 检查（功能性）
 
 | 项目 | 状态 | 说明 |
 |------|------|------|
-| head_sha 加入签名 | PASS | 防止跨 commit 复用 |
-| head_sha 必需 | PASS | 旧版文件会被拒绝 |
-| 参数名统一 | PASS | timestamp → generated_at |
+| 流程一致性 | PASS | 步骤文件与 SKILL.md 流程图一致 |
+| Subagent 模式 | PASS | Promise.all 并行语法正确 |
+| 职责分离 | PASS | Gate/Quality/CI 定义清晰 |
 
-## 测试验证
+## 架构变更说明
 
-```bash
-# 正常验证
-bash scripts/gate/verify-gate-signature.sh .gate-prd-passed
-# exit 0 ✓
-
-# 篡改 head_sha
-jq '.head_sha = "tampered"' .gate-prd-passed > /tmp/t.json
-bash scripts/gate/verify-gate-signature.sh /tmp/t.json
-# exit 5 ✓ (签名无效)
-```
-
-## 向后兼容
-
-注意：v2.1 不兼容 v2.0 的 gate 文件，旧文件需要重新生成。
+1. **Gate（阻止型）**：gate:prd, gate:dod, audit, gate:test
+2. **Quality（汇总型）**：只生成 quality-summary.json
+3. **CI（复核型）**：远端硬门禁
 
 ## Blockers
 
@@ -68,4 +56,4 @@ None
 
 ## Conclusion
 
-签名算法安全性提升，head_sha 现在被正确验证。
+文档重构，无代码逻辑变更，无阻塞问题。

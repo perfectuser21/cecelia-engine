@@ -72,7 +72,48 @@ IS_TEST=$(git config branch."$BRANCH_NAME".is-test 2>/dev/null)
 
 ---
 
-## 实际操作
+## 实际操作（Subagent 模式）
+
+Learning 使用 Subagent 执行，**写好才能回来**：
+
+```javascript
+// Learning Subagent（循环型：写好才能继续）
+while (true) {
+  const result = await Task({
+    subagent_type: "general-purpose",
+    prompt: `你是经验记录员。回顾本次开发，记录到 docs/LEARNINGS.md：
+
+      本次任务：${task_summary}
+      改动文件：${changed_files}
+      遇到的问题：${issues_encountered}
+
+      记录内容：
+      1. Bug：遇到的问题和解决方案
+      2. 优化点：可改进的地方和具体建议
+      3. 影响程度：Low/Medium/High
+
+      格式：
+      ### [YYYY-MM-DD] <任务简述>
+      - **Bug**: <遇到的问题和解决方案>
+      - **优化点**: <可改进的地方和具体建议>
+      - **影响程度**: Low/Medium/High
+
+      输出：
+      Decision: PASS | FAIL
+      Content: [记录内容]`,
+    description: "Learning: 经验记录"
+  });
+
+  if (result.decision === "PASS") {
+    // 追加到 LEARNINGS.md 并提交
+    break;
+  }
+
+  // FAIL: 重新总结
+}
+```
+
+### 手动模式（备选）
 
 1. **回顾本次开发**
    - 有遇到什么意外的 bug 吗？

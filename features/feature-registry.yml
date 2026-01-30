@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.35.0"
+version: "2.36.0"
 updated: "2026-01-30"
 changelog:
+  - 2.36.0: v11.9.0 - /dev 工作流 v3（Gate/Quality/CI 三层分离 + Audit 前置 + Subagent 并行）
   - 2.35.0: v11.8.0 - Gate v2 方案 A 改造（防误用字段 + exit code 分层 + 硬失败）
   - 2.33.0: v11.7.0 - Gate 强制执行机制（签名防伪 + pr-gate-v2 检查）
   - 2.32.0: v11.6.0 - Gate Skill 家族（独立质量审核：prd, dod, test, audit）

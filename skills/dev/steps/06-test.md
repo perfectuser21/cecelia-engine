@@ -73,23 +73,35 @@ describe('login', () => {
 
 ---
 
-## Gate 审核（推荐）
+## Gate 审核（必须）
 
-测试写完后，调用 `/gate:test` 进行独立审核：
+测试写完后，**必须**调用 gate:test 进行独立审核：
 
 ```javascript
-// 审核循环
+// 审核循环（阻止型：FAIL 就不能继续）
 while (true) {
   const result = await Task({
     subagent_type: "general-purpose",
     prompt: `你是独立的测试审核员。审核以下文件：
       - DoD: ${dod_file}
       - 测试文件: ${test_files}
-      ...（详见 skills/gate/gates/test.md）`,
+
+      检查内容：
+      1. DoD ↔ 测试覆盖率（每个验收项都有测试）
+      2. 边界用例覆盖（空值、极端值）
+      3. 反例测试（错误路径）
+      4. 测试质量（断言明确性）
+
+      输出格式：
+      Decision: PASS | FAIL
+      Findings: [检查结果列表]
+      Required Fixes: [如果 FAIL，具体修复要求]`,
     description: "Gate: 测试审核"
   });
 
   if (result.decision === "PASS") {
+    // 生成 gate 文件
+    await Bash({ command: `bash scripts/gate/generate-gate-file.sh test PASS` });
     break;  // 继续 Step 7
   }
 
@@ -101,12 +113,6 @@ while (true) {
 
 **审核标准**：参考 `skills/gate/gates/test.md`
 
-**检查内容**：
-1. DoD ↔ 测试覆盖率
-2. 边界用例覆盖
-3. 反例测试
-4. 测试质量（断言明确性）
-
 ---
 
 ## 完成后
@@ -116,10 +122,10 @@ while (true) {
 **立即执行下一步**：
 
 1. 读取 `skills/dev/steps/07-quality.md`
-2. 立即进入质检循环
+2. 立即进入 Quality 汇总
 3. **不要**输出总结或等待确认
 4. **不要**停顿
 
 ---
 
-**Step 7：质检循环**
+**Step 7：Quality 汇总**
