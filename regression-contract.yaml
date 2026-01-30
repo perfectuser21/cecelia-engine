@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "11.7.0"
+version: "11.12.1"
 updated: "2026-01-30"
 
 # ============================================================================
@@ -1258,6 +1258,109 @@ ci:
       run: "bash scripts/release-check.sh"
       contains: "Release 检查通过"
     test: "scripts/release-check.sh"
+
+# --------------------------------------------------------------------------
+  # C8: Evidence Truth System (P0-1)
+  # --------------------------------------------------------------------------
+  - id: C8-001
+    feature: C8
+    name: "Evidence 来自真实 CI 结果"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, security, v11.12.1]
+    owner: infra
+    steps:
+      given: "CI 运行完成"
+      when: "generate-evidence.sh 生成 evidence"
+      then: "qa_gate_passed 从 ci/out/checks/*.json 计算，不再硬编码"
+    note: "v11.12.1 P0-1: 修复 evidence 硬编码漏洞"
+    evidence:
+      type: code
+      file: "ci/scripts/generate-evidence.sh"
+      not_contains: "qa_gate_passed: true"
+    test: "tests/ci/evidence.test.ts"
+
+  - id: C8-002
+    feature: C8
+    name: "Evidence Gate 验证 required checks"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, gate, security, v11.12.1]
+    owner: infra
+    steps:
+      given: "evidence 文件已生成"
+      when: "evidence-gate.sh 运行"
+      then: "验证 typecheck/test/build/shell-check 全存在且 ok=true"
+    evidence:
+      type: code
+      file: "ci/scripts/evidence-gate.sh"
+      contains: "REQUIRED_CHECKS"
+    test: "tests/ci/evidence.test.ts"
+
+  - id: C8-003
+    feature: C8
+    name: "Evidence hash 防篡改"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [ci, evidence, hash, security, v11.12.1]
+    owner: infra
+    steps:
+      given: "evidence 文件包含 file_hash"
+      when: "evidence-gate.sh 验证"
+      then: "重新计算 hash 并比对，不匹配则 FAIL"
+    evidence:
+      type: code
+      file: "ci/scripts/evidence-gate.sh"
+      contains: "sha256sum"
+    test: "tests/ci/evidence.test.ts"
+
+  # --------------------------------------------------------------------------
+  # C9: DoD manual: backdoor fix (P0-2)
+  # --------------------------------------------------------------------------
+  - id: C9-001
+    feature: C9
+    name: "manual: Test 必须有 evidence 记录"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [devgate, dod, manual, security, v11.12.1]
+    owner: infra
+    steps:
+      given: "DoD 包含 Test: manual:xxx"
+      when: "check-dod-mapping.cjs 验证"
+      then: "必须在 evidence 的 manual_verifications 中找到匹配记录"
+    note: "v11.12.1 P0-2: 修复 manual: 后门漏洞"
+    evidence:
+      type: code
+      file: "scripts/devgate/check-dod-mapping.cjs"
+      contains: "validateManualEvidence"
+    test: "tests/gate/scan-rci-coverage.test.ts"
+
+  - id: C9-002
+    feature: C9
+    name: "manual_verifications 必须包含必需字段"
+    scope: ci
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [devgate, dod, manual, security, v11.12.1]
+    owner: infra
+    steps:
+      given: "manual_verifications 记录存在"
+      when: "validateManualEvidence 检查"
+      then: "必须包含 actor, timestamp, evidence 三个字段"
+    evidence:
+      type: code
+      file: "scripts/devgate/check-dod-mapping.cjs"
+      contains: "!verification.actor || !verification.timestamp || !verification.evidence"
+    test: "tests/gate/scan-rci-coverage.test.ts"
 
 # ============================================================================
 # Export 回归契约
