@@ -62,3 +62,4 @@ artifacts/screenshots/*.png
 # Old Subagent files (deprecated)
 .subagent-lock
 .subagent-proof.json
+.gate-*-passed

@@ -716,6 +716,41 @@ if [[ "$MODE" == "pr" ]]; then
     else
         echo "  ⚠️  l2b-check.sh 不存在，跳过证据检查" >&2
     fi
+
+    # ===== Gate 文件检查（v19: 强制 gate 审核通过）=====
+    echo "" >&2
+    echo "  [Gate 审核文件检查]" >&2
+
+    GATE_VERIFY_SCRIPT="$PROJECT_ROOT/scripts/gate/verify-gate-signature.sh"
+    GATE_FILES=(".gate-prd-passed" ".gate-dod-passed" ".gate-test-passed" ".gate-audit-passed")
+    GATE_NAMES=("gate:prd" "gate:dod" "gate:test" "gate:audit")
+
+    # 检查 verify 脚本是否存在
+    if [[ -f "$GATE_VERIFY_SCRIPT" ]]; then
+        for i in "${!GATE_FILES[@]}"; do
+            GATE_FILE="$PROJECT_ROOT/${GATE_FILES[$i]}"
+            GATE_NAME="${GATE_NAMES[$i]}"
+
+            echo -n "  $GATE_NAME... " >&2
+            CHECK_COUNT=$((CHECK_COUNT + 1))
+
+            if [[ ! -f "$GATE_FILE" ]]; then
+                echo "[FAIL] (文件不存在)" >&2
+                echo "    -> 必须先通过 $GATE_NAME 审核" >&2
+                FAILED=1
+            elif bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" >/dev/null 2>&1; then
+                echo "[OK]" >&2
+            else
+                # 获取具体错误
+                GATE_ERROR=$(bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" 2>&1 || true)
+                echo "[FAIL]" >&2
+                echo "    -> $GATE_ERROR" >&2
+                FAILED=1
+            fi
+        done
+    else
+        echo "  ⚠️  verify-gate-signature.sh 不存在，跳过 gate 检查" >&2
+    fi
 fi
 
 # ============================================================================

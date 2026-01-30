@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.7.0] - 2026-01-30
+
+### Added
+
+- **Gate 强制执行机制** - 防止跳过 gate 审核
+  - `scripts/gate/generate-gate-file.sh`: 生成带签名的 gate 通过文件
+  - `scripts/gate/verify-gate-signature.sh`: 验证 gate 文件签名
+  - `hooks/pr-gate-v2.sh` v19: 创建 PR 时检查所有 4 个 gate 文件
+
+- **签名防伪机制**
+  - Secret 存储在 `~/.claude/.gate-secret`（首次运行自动生成）
+  - 签名算法: `sha256("{gate}:{decision}:{timestamp}:{branch}:{secret}")`
+  - 验证分支匹配，防止跨分支复用
+
 ## [11.6.0] - 2026-01-30
 
 ### Added

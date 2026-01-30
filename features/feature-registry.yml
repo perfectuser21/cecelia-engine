@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.32.0"
+version: "2.33.0"
 updated: "2026-01-30"
 changelog:
+  - 2.33.0: v11.7.0 - Gate 强制执行机制（签名防伪 + pr-gate-v2 检查）
   - 2.32.0: v11.6.0 - Gate Skill 家族（独立质量审核：prd, dod, test, audit）
   - 2.31.0: v11.5.0 - 放宽 skills 保护（只保护 Engine skills：dev, qa, audit, semver）
   - 2.30.0: v11.4.1 - 修复 Stop Hook 跳过 Cleanup bug（cleanup_done 检测 + PR 合并时 exit 2）
@@ -820,7 +821,7 @@ product_features:
     name: Gate Skill Family
     status: Committed
     priority: P1
-    version: "11.6.0"
+    version: "11.7.0"
     updated: "2026-01-30"
     description: |
       独立质量审核 Skill 家族，每个 gate 是"守门 Subagent"：
@@ -828,6 +829,11 @@ product_features:
       - gate:dod - PRD↔DoD 覆盖率、Test 映射有效性审核
       - gate:test - 测试↔DoD 覆盖率、边界用例审核
       - gate:audit - 审计证据真实性、风险点识别审核
+
+      v11.7.0 强制执行机制：
+      - 创建 PR 时检查所有 4 个 gate 文件（.gate-*-passed）
+      - 签名防伪：sha256(gate:decision:timestamp:branch:secret)
+      - 分支匹配：防止跨分支复用 gate 文件
 
       解决问题：
       - PRD/DoD/QA/Audit 可以写空壳文件应付检查
