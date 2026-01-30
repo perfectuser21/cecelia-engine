@@ -1,0 +1,54 @@
+{
+  "sha": "badf35f",
+  "generated_at": "2026-01-30T13:10:00Z",
+  "manual_verifications": [
+    {
+      "id": "p2-1-analysis",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "分析结论见 docs/AUDIT-REPORT.md P2-1 章节"
+    },
+    {
+      "id": "p2-2-analysis",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "分析结论见 docs/AUDIT-REPORT.md P2-2 章节"
+    },
+    {
+      "id": "p2-3-syntax",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "bash -n hooks/pr-gate-v2.sh 通过"
+    },
+    {
+      "id": "p2-3-version-compare",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "本地测试版本比较逻辑正确"
+    },
+    {
+      "id": "p2-3-skip-chore",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "代码审查确认 chore:/docs:/test: 跳过逻辑"
+    },
+    {
+      "id": "p2-3-warn-only",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "代码审查确认无 FAILED=1，仅警告"
+    },
+    {
+      "id": "p3-1-analysis",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "分析结论见 docs/AUDIT-REPORT.md P3-1 章节"
+    },
+    {
+      "id": "p3-2-analysis",
+      "actor": "claude",
+      "timestamp": "2026-01-30T13:00:00Z",
+      "evidence": "分析结论见 docs/AUDIT-REPORT.md P3-2 章节"
+    }
+  ]
+}
