@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.37.0"
+version: "2.38.0"
 updated: "2026-01-30"
 changelog:
+  - 2.38.0: v11.11.0 - 并发安全修复（P0-2 Stop Hook flock锁 + P0-3 超时保护 + P0-4 CI白名单 + P1-6 正则修复）
   - 2.37.0: v11.10.0 - Gate v3 安全机制（TTL 过期 + tree_sha/repo_id 绑定 + 验证器软警告 + Stop Hook 自动清理）
   - 2.36.0: v11.9.0 - /dev 工作流 v3（Gate/Quality/CI 三层分离 + Audit 前置 + Subagent 并行）
   - 2.35.0: v11.8.0 - Gate v2 方案 A 改造（防误用字段 + exit code 分层 + 硬失败）
@@ -66,10 +67,11 @@ platform_features:
     name: Branch Protection
     status: Committed
     priority: P0
-    version: "11.5.0"
+    version: "11.11.0"
     updated: "2026-01-30"
     description: |
       防止在 main/develop 分支直接写代码，强制使用 cp-*/feature/* 工作分支
+      v11.11.0: P1-6 修复 - 使用 grep -Eq 替代 bash regex 进行 skills 路径匹配（修复分组失败问题）
       v11.5.0: 放宽 skills 保护（只保护 Engine skills：dev, qa, audit, semver，其他 skills 可从任何 repo 部署）
       v11.4.0: 添加 Task Checkpoint 检查（.dev-mode 必须包含 tasks_created: true）
       v11.2.6: 移除硬编码路径 + develop/main 自动检测 fallback
@@ -106,7 +108,7 @@ platform_features:
     name: Stop Hook Loop Controller
     status: Committed
     priority: P0
-    version: "11.10.0"
+    version: "11.11.0"
     updated: "2026-01-30"
     description: |
       Stop Hook 作为 /dev 工作流的循环控制器，替代 Ralph Loop 插件：
@@ -115,7 +117,8 @@ platform_features:
       - 未完成时 exit 2 阻止会话结束，Claude 继续执行
       - 完成时（cleanup_done: true）删除 .dev-mode 并 exit 0
       - 无头模式 (CECELIA_HEADLESS=true) 直接 exit 0，由外部循环控制
-      v11.10.0: P0-2 修复 - PR 合并后自动执行 cleanup（删除 .dev-mode、切换分支、删除本地分支），不再悬空
+      v11.11.0: P0-2 修复 - 添加 flock 并发锁防止多个会话同时操作 .dev-mode 文件
+      v11.10.0: PR 合并后自动执行 cleanup（删除 .dev-mode、切换分支、删除本地分支），不再悬空
       v11.4.1: 修复跳过 Cleanup bug（cleanup_done 检测 + PR 合并时 exit 2）
       v11.3.0: 首次实现，替代 Ralph Loop 插件
 
@@ -148,12 +151,13 @@ platform_features:
     name: PR Gate (Dual Mode)
     status: Committed
     priority: P0
-    version: "11.10.0"
+    version: "11.11.0"
     updated: "2026-01-30"
     description: |
       PR 创建前的质检门禁，支持双模式：
       - PR 模式: L1 (测试) + L2A (审计) + L2B-min (证据)
       - Release 模式: L1 + L2A + L2B-full (证据) + L3 (验收)
+      - v11.11.0: P0-3 修复 - verify-gate-signature.sh 调用添加 10 秒超时保护（防止卡死）
       - v11.10.0: P0-1 修复 - 验证器缺失时改为软警告（不再阻止），支持 v3 exit code (7/8/9)
       - v11.8.0: Gate 验证器硬失败（脚本缺失时 exit 2）+ 分层 exit code 错误提示
       - v11.2.6: .git 检测使用 -e 替代 -d（兼容 worktree）+ develop/main fallback
