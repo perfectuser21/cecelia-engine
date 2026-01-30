@@ -1,8 +1,8 @@
-# Audit Report: 测试清理（第二批）
+# Audit Report: CI 一致性修复（第三批）
 
-Branch: cp-0130-test-cleanup
+Branch: cp-0130-consistency-fixes
 Date: 2026-01-30
-Scope: tests/hooks/detect-priority.test.ts, tests/hooks/pr-gate-phase1.test.ts
+Scope: hooks/pr-gate-v2.sh
 Target Level: L2
 
 ## Summary
@@ -20,54 +20,53 @@ Decision: PASS
 
 | 文件 | 变更类型 | 说明 |
 |------|---------|------|
-| tests/hooks/detect-priority.test.ts | 测试清理 | 删除 17 个无效 skip 测试 |
-| tests/hooks/pr-gate-phase1.test.ts | 测试清理 | 删除 3 个无效 skip 测试 |
+| hooks/pr-gate-v2.sh | 功能增强 | 添加本地版本检查（警告模式） |
 
 ## L1 检查（阻塞性）
 
 | 项目 | 状态 | 说明 |
 |------|------|------|
-| TypeScript 语法 | PASS | vitest 测试文件语法正确 |
-| 测试通过 | PASS | 252 tests passed, 2 skipped |
-| 功能覆盖 | PASS | 保留测试覆盖仍在使用的功能 |
+| Shell 语法 | PASS | bash 语法正确 |
+| 变量引用 | PASS | 正确引用变量 |
+| 功能正常 | PASS | 版本检查逻辑正确 |
 
 ## L2 检查（功能性）
 
 | 项目 | 状态 | 说明 |
 |------|------|------|
-| 注释说明 | PASS | 删除的测试有明确注释说明原因 |
-| 测试完整性 | PASS | label/env 检测仍有测试覆盖 |
-| 文档一致性 | PASS | detect-priority.cjs L265-266 已说明功能移除 |
+| 版本比较 | PASS | 正确比较 package.json 版本 |
+| 跳过条件 | PASS | chore:/docs:/test: 正确跳过 |
+| 错误处理 | PASS | 无法获取版本时仅警告 |
+| 输出格式 | PASS | 符合现有输出风格 |
 
-## 清理详情
+## 问题分析
 
-### detect-priority.test.ts
+### P2-1: Gate 文件检查不一致
+- **结论**: 无需修复
+- 本地 gate 文件（.gate-*-passed）和 CI evidence（quality-evidence.json）是独立互补机制
+- 本地：实时检查，快速反馈
+- CI：SHA 签名验证，防伪造
 
-**删除的 describe blocks**:
-- `describe.skip("CRITICAL → P0 映射")` - 4 个测试
-- `describe.skip("HIGH → P1 映射")` - 3 个测试
-- `describe.skip("security 前缀 → P0 映射")` - 4 个测试
+### P2-2: PRD/DoD 验证规则不一致
+- **结论**: 无需修复
+- 设计意图：本地轻量，CI 严格
+- 本地：3 行 + 关键字段（快速反馈）
+- CI：sections + Test: 映射（深度验证）
 
-**删除的 it.skip**:
-- "P0/P1/P2/P3 直接映射" 中 4 个测试
-- "优先级检测顺序" 中 2 个测试
+### P2-3: 版本检查缺失
+- **修复**: 添加本地版本检查
+- 仅警告不阻止（CI 强制检查）
+- 比较当前 package.json 与 develop 分支
 
-**保留的测试**:
-- label 检测（CRITICAL/HIGH/priority:Px）
-- env 变量检测（PR_PRIORITY）
-- unknown 默认值测试
+### P3-1: RCI 自动化覆盖率
+- **结论**: 现状合理
+- 41 个 manual RCIs 大多需要人工验证 UX 效果
+- 无法自动化验证的场景：Hook 输出格式、用户交互流程
 
-### pr-gate-phase1.test.ts
-
-**删除的测试**:
-- "should detect P0 from env variable" - QA-DECISION.md 优先
-- "should detect P1 from PR title" - PR_TITLE 检测已移除
-- "should output JSON with --json flag" - 同上
-
-**保留的测试**:
-- check-dod-mapping.cjs 所有测试
-- detect-priority.cjs 基本测试
-- require-rci-update-if-p0p1.sh 所有测试
+### P3-2: metrics 时间窗口测试
+- **结论**: skip 合理
+- 原因：临时目录残留导致不稳定
+- 已有 TODO 注释，可在未来重构时修复
 
 ## Blockers
 
@@ -75,4 +74,4 @@ None
 
 ## Conclusion
 
-测试清理完成。删除的 20 个 skip 测试均为已移除功能（PR_TITLE 检测），保留的测试仍覆盖有效功能。
+一致性修复完成。P2-3 版本检查已添加，P2-1/P2-2/P3-1/P3-2 经分析确认现状合理无需修改。

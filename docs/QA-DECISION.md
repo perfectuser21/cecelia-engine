@@ -1,43 +1,49 @@
-# QA Decision: 测试清理和 CI 漏洞修复（第二批）
+# QA Decision: CI 一致性修复（第三批）
 
 Decision: NO_RCI
-Priority: P1
+Priority: P2
 RepoType: Engine
 
 ## 变更范围
 
 | 文件 | 类型 | 影响 |
 |------|------|------|
-| tests/hooks/detect-priority.test.ts | 测试 | 删除 17 个无效 skip 测试 |
-| tests/hooks/pr-gate-phase1.test.ts | 测试 | 删除 3 个无效 skip 测试 |
-| tests/hooks/metrics.test.ts | 测试 | 保留 1 个 skip（已注释原因） |
+| hooks/pr-gate-v2.sh | Hook | 添加本地版本检查（警告模式） |
 
-## Skip 测试分析
+## 分析结论
 
-| 文件 | Skip 数量 | 原因 | 处理方案 |
-|------|-----------|------|----------|
-| detect-priority.test.ts | 17 | PR_TITLE 检测功能已移除 | 删除测试 |
-| pr-gate-phase1.test.ts | 3 | QA-DECISION 优先/PR_TITLE 移除 | 删除测试 |
-| metrics.test.ts | 1 | 临时目录不稳定 | 保留 skip，已有 TODO 注释 |
+### P2-1: Gate 文件检查不一致
+- **结论**: 设计如此，无需修复
+- 本地 gate 文件和 CI evidence 是独立互补机制
 
-## known-failures 漏洞状态
+### P2-2: PRD/DoD 验证规则不一致
+- **结论**: CI 故意更严格，分层设计合理
+- 本地快速反馈，CI 严格把关
 
-**已确认修复**：ci.yml L149-198 显示严格校验逻辑已存在：
-- 如果文件缺失 → else 分支 → "测试失败且无有效的 known-failures 配置" → exit
-- 攻击者无法通过删除文件绕过校验
-- 无需额外修改
+### P2-3: 版本检查缺失
+- **修复**: 添加本地版本检查（仅警告）
+- 比较 package.json 与 develop 分支
+- chore:/docs:/test: commit 跳过
+
+### P3-1: RCI 自动化覆盖率
+- **结论**: 41 个 manual RCIs 大多需要人工验证 UX
+- 无需转为 auto
+
+### P3-2: metrics 时间窗口测试
+- **结论**: skip 合理，临时目录隔离问题
+- 已有 TODO 注释说明
 
 ## Tests
 
 | DoD Item | Method | Location |
 |----------|--------|----------|
-| 清理 skip 的测试 | auto | npm run test |
-| known-failures 漏洞已修复 | auto | .github/workflows/ci.yml（已存在） |
-| 测试通过数量保持 | auto | npm run test |
-| CI 测试通过 | auto | .github/workflows/ci.yml |
+| 版本检查功能 | manual | 本地测试 pr-gate-v2.sh |
+| 版本一致时警告 | manual | 观察输出 |
+| 版本不同时通过 | manual | 观察输出 |
+| chore: commit 跳过 | manual | 观察输出 |
 
 RCI:
   new: []
   update: []
 
-Reason: 测试代码清理任务，删除因 PR_TITLE 功能移除而失效的 skip 测试。不涉及新功能，无需新增 RCI。
+Reason: 一致性修复和分析任务。添加本地版本检查（仅警告模式），确认 P2-1/P2-2 设计合理无需修改，P3-1/P3-2 现状合理。
