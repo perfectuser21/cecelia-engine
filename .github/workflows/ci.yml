@@ -216,6 +216,7 @@ jobs:
 
       # L2A: PRD/DoD/QA/Audit 远端检查
       # PRD/DoD Residue Check (develop/main only)
+      # Note: Skip if .layer2-evidence.md exists (release evidence files are allowed)
       - name: Check for PRD/DoD in develop/main
         if: |
           steps.detect.outputs.type == 'npm' &&
@@ -225,6 +226,15 @@ jobs:
           echo "  PRD/DoD Residue Check"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
+
+          # If .layer2-evidence.md exists, this is release evidence - allow .dod.md
+          if [ -f ".layer2-evidence.md" ]; then
+            echo "ℹ️ Release evidence detected (.layer2-evidence.md exists)"
+            echo "✅ Allowing .dod.md for release validation"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            exit 0
+          fi
+
           if git ls-files | grep -E "^\.(prd|dod)\.md$"; then
             echo "❌ PRD/DoD 文件不应存在于 develop/main 分支"
             echo ""

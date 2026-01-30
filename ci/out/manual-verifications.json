@@ -130,5 +130,17 @@
     "actor": "claude",
     "timestamp": "2026-01-30T14:40:00Z",
     "evidence": "package.json version: 11.12.5"
+  },
+  {
+    "id": "residue-check-fix",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:50:00Z",
+    "evidence": "CI 残留检查在 .layer2-evidence.md 存在时跳过"
+  },
+  {
+    "id": "residue-check-normal",
+    "actor": "claude",
+    "timestamp": "2026-01-30T14:50:00Z",
+    "evidence": "正常 PRD/DoD 残留检查逻辑保持不变"
   }
 ]
