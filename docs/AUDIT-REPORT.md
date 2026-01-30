@@ -1,6 +1,6 @@
 # Audit Report
 
-Branch: cp-H1-monorepo-path-support
+Branch: cp-H1-monorepo-fix-v2
 Date: 2026-01-31
 Scope: hooks/branch-protect.sh
 Target Level: L2
@@ -14,7 +14,7 @@ Target Level: L2
 | L3 (Best Practice) | 0 |
 | L4 (Over-engineering) | 0 |
 
-**Decision: PASS**
+Decision: PASS
 
 ## Changes Review
 
