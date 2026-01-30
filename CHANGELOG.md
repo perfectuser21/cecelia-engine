@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.13.1] - 2026-01-31
+
+### Fixed
+
+- **branch-protect.sh v19**: 支持 monorepo 子目录的 PRD/DoD 文件检测
+  - 修复正则只匹配根目录的问题（如 `apps/core/.prd.md` 无法识别）
+  - 8 处正则修改：PRD_IN_BRANCH, PRD_STAGED, PRD_MODIFIED, PRD_UNTRACKED,
+    DOD_IN_BRANCH, DOD_STAGED, DOD_MODIFIED, DOD_UNTRACKED
+
+## [11.13.0] - 2026-01-30
+
+### Changed
+
+- **CI 架构简化**
+  - 删除 `cleanup-prd-dod` job（push 后清理改为 PR 前阻止）
+  - 新增 PRD/DoD Gate：阻止 PRD/DoD 文件进入 develop/main PR
+  - `release-check` 移除 L2A/L4 检查（功能验收在功能分支完成）
+  - `l2b-check` 只对 PR to develop 运行，release 跳过
+  - 新增 CHANGELOG 检查（release PR 必须有当前版本条目）
+
+### Added
+
+- **版本同步脚本**
+  - 新增 `scripts/sync-version.sh`
+  - 从 package.json 同步版本到 VERSION, hook-core/VERSION, regression-contract.yaml
+  - 支持 `--check` 模式（CI 只检查不修改）
+
+### Design
+
+- **CI 检查职责分离**
+  - 功能分支 → develop: L1 + L2A + L2B + L3 子集 + DevGate
+  - develop → main: L1 + L3 全量 + CHANGELOG（无 L2A/L2B/L4）
+  - PRD/DoD 通过 Gate 阻止，不再需要 push 后清理
+
 ## [11.12.4] - 2026-01-30
 
 ### Added

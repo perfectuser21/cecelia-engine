@@ -215,37 +215,37 @@ jobs:
           fi
 
       # L2A: PRD/DoD/QA/Audit 远端检查
-      # PRD/DoD Residue Check (develop/main only)
-      # Note: Skip if .layer2-evidence.md exists (release evidence files are allowed)
-      - name: Check for PRD/DoD in develop/main
+      # PRD/DoD Gate: 阻止 PRD/DoD 文件进入 develop/main PR（前移检查）
+      - name: Block PRD/DoD in PR to develop/main
         if: |
+          github.event_name == 'pull_request' &&
           steps.detect.outputs.type == 'npm' &&
-          (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+          (github.base_ref == 'develop' || github.base_ref == 'main')
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  PRD/DoD Residue Check"
+          echo "  PRD/DoD Gate (PR to ${{ github.base_ref }})"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
 
-          # If .layer2-evidence.md exists, this is release evidence - allow .dod.md
-          if [ -f ".layer2-evidence.md" ]; then
-            echo "ℹ️ Release evidence detected (.layer2-evidence.md exists)"
-            echo "✅ Allowing .dod.md for release validation"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            exit 0
-          fi
+          # 检查 PR 中是否包含 PRD/DoD 文件
+          PRD_DOD_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.(prd|dod)(-[^/]+)?\.md$' || true)
 
-          if git ls-files | grep -E "^\.(prd|dod)\.md$"; then
-            echo "❌ PRD/DoD 文件不应存在于 develop/main 分支"
-            echo ""
-            echo "这些文件应该只存在于功能分支 (cp-*, feature/*)"
+          if [ -n "$PRD_DOD_FILES" ]; then
+            echo "❌ PRD/DoD 文件不应出现在 PR to ${{ github.base_ref }} 中"
             echo ""
             echo "发现的文件："
-            git ls-files | grep -E "^\.(prd|dod)\.md$"
+            echo "$PRD_DOD_FILES" | sed 's/^/  - /'
             echo ""
+            echo "请在 merge 前删除这些文件："
+            echo "  git rm \$PRD_DOD_FILES"
+            echo "  git commit --amend"
+            echo ""
+            echo "说明: PRD/DoD 是功能分支的工作文档，不应进入 develop/main"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             exit 1
           fi
-          echo "✅ 无 PRD/DoD 残留"
+
+          echo "✅ 无 PRD/DoD 文件"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: L2A Check
@@ -258,7 +258,7 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  L2A: PRD/DoD/QA/Audit 检查"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          # L2A check 在 L1 之后、DevGate 之前
+          # L2A check 在 L1 之后、DevGate 之前（只对 PR to develop）
           if [ -f "scripts/devgate/l2a-check.sh" ]; then
             bash scripts/devgate/l2a-check.sh pr || exit 1
           else
@@ -580,88 +580,50 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # L2A Release 模式（更严格）
-      - name: L2A Check (release mode)
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  L2A: Release 模式（更严格检查）"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if [ -f "scripts/devgate/l2a-check.sh" ]; then
-            bash scripts/devgate/l2a-check.sh release || exit 1
-          else
-            echo "⚠️ l2a-check.sh not found, skipping"
-          fi
-
-      # Note: Evidence generation is skipped here because:
-      # 1. test job already validates evidence (needs: [test])
-      # 2. generate-evidence.sh requires ci/out/checks from test steps
-      # 3. C8-001 RCI is validated in test job
+      # Release 只需要 L1+L3，不需要 L2A/L2B/L4（功能验收在功能分支已完成）
 
       - name: L3 Regression Tests
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  Release Check: L3 回归测试"
+          echo "  Release Check: L3 回归测试（全量）"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           bash scripts/run-regression.sh release
 
-      - name: L4 Evidence Check
+      - name: CHANGELOG Check
         run: |
-          echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  L4: 文档 & 验收检查"
+          echo "  Release Check: CHANGELOG 检查"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
 
-          FAILED=0
-
-          # L4a: 检查 .layer2-evidence.md
-          echo "  [Evidence 文件]"
-          if [ -f ".layer2-evidence.md" ]; then
-            echo "  .layer2-evidence.md... ✅"
-          else
-            echo "  .layer2-evidence.md... ❌ (不存在)"
-            FAILED=1
-          fi
-
-          # L4b: 检查 .dod.md
+          # 获取当前版本
+          VERSION=$(jq -r '.version' package.json)
+          echo "当前版本: $VERSION"
           echo ""
-          echo "  [DoD 验收]"
-          if [ -f ".dod.md" ]; then
-            echo "  .dod.md... ✅"
 
-            # 检查是否全勾
-            # 注意：grep -c 找到 0 匹配时输出 "0" 但 exit 1，不能用 || echo "0"
-            UNCHECKED=$(grep -c '\- \[ \]' .dod.md 2>/dev/null) || true
-            CHECKED=$(grep -c '\- \[x\]' .dod.md 2>/dev/null) || true
-            UNCHECKED=${UNCHECKED:-0}
-            CHECKED=${CHECKED:-0}
-
-            if [ "$UNCHECKED" -eq 0 ] && [ "$CHECKED" -gt 0 ]; then
-              echo "  验收项... ✅ ($CHECKED 项全部完成)"
-            else
-              echo "  验收项... ❌ ($UNCHECKED 项未完成)"
-              FAILED=1
-            fi
-          else
-            echo "  .dod.md... ❌ (不存在)"
-            FAILED=1
-          fi
-
-          echo ""
-          if [ "$FAILED" -eq 1 ]; then
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "  ❌ Release Check 失败"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          # 检查 CHANGELOG.md 是否包含当前版本
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "❌ CHANGELOG.md 不存在"
             exit 1
-          else
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "  ✅ Release Check 通过"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
 
-  # L2B Check - 可复核证据（PR to develop 也需要）
+          if grep -q "## \[$VERSION\]" CHANGELOG.md || grep -q "## $VERSION" CHANGELOG.md; then
+            echo "✅ CHANGELOG.md 包含 $VERSION 版本条目"
+          else
+            echo "❌ CHANGELOG.md 缺少 $VERSION 版本条目"
+            echo ""
+            echo "请在 CHANGELOG.md 中添加本次发布的变更记录"
+            exit 1
+          fi
+
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  ✅ Release Check 通过"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # L2B Check - 可复核证据（只对 PR to develop，release 不需要）
   l2b-check:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.base_ref != 'main'
     needs: [test]
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -677,13 +639,6 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
 
-          # PR to develop: L2B-min
-          # PR to main: L2B-full (在 release-check 中已检查)
-          if [ "${{ github.base_ref }}" = "main" ]; then
-            echo "ℹ️ PR to main - L2B-full 在 release-check 中检查，此处跳过"
-            exit 0
-          fi
-
           if [ -f "scripts/devgate/l2b-check.sh" ]; then
             bash scripts/devgate/l2b-check.sh pr || exit 1
           else
@@ -695,33 +650,8 @@ jobs:
   # 注意：此 job 只在 pull_request 事件时运行，push 事件时跳过
   # v10.5.0: 修复条件 needs，正确处理 regression-pr 和 release-check
   # v10.6.0: 增加 l2b-check 依赖
-  cleanup-prd-dod:
-    # 在 develop/main 分支的 push 事件后自动清理 PRD/DoD
-    if: |
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run cleanup script
-        run: bash scripts/cleanup-prd-dod.sh
-
-      - name: Commit cleanup if needed
-        run: |
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "chore: auto-cleanup PRD/DoD residue [skip ci]"
-            git push origin ${{ github.ref_name }}
-            echo "✅ Cleanup committed and pushed"
-          else
-            echo "✅ No cleanup needed"
-          fi
+  # cleanup-prd-dod job 已删除
+  # PRD/DoD 现在通过 PR Gate 阻止进入 develop/main，不再需要 push 后清理
 
   ci-passed:
     needs: [version-check, test, contract-drift-check, impact-check, l2b-check, regression-pr, release-check]
@@ -750,16 +680,16 @@ jobs:
           echo "PR #${{ github.event.pull_request.number }} CI 检查通过"
           echo ""
           echo "已通过的检查："
-          echo "  ✅ test (L1 + L2A + DevGate)"
+          echo "  ✅ test (L1 + DevGate)"
           if [ "${{ needs.l2b-check.result }}" = "success" ]; then
-            echo "  ✅ l2b-check (L2B-min 证据)"
+            echo "  ✅ l2b-check (L2B 证据)"
           fi
           echo "  ✅ contract-drift-check"
           if [ "${{ needs.regression-pr.result }}" = "success" ]; then
             echo "  ✅ regression-pr (L3 子集)"
           fi
           if [ "${{ needs.release-check.result }}" = "success" ]; then
-            echo "  ✅ release-check (L3 全量 + L4)"
+            echo "  ✅ release-check (L3 全量 + CHANGELOG)"
           fi
           echo ""
           echo "下一步："

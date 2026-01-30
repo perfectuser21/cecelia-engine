@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.39.0"
-updated: "2026-01-30"
+version: "2.40.0"
+updated: "2026-01-31"
 changelog:
+  - 2.40.0: v11.13.1 - H1 支持 monorepo 子目录 PRD/DoD 文件检测
   - 2.39.0: v11.12.4 - 本地版本检查（警告模式）+ P2/P3 一致性分析
   - 2.38.0: v11.11.0 - 并发安全修复（P0-2 Stop Hook flock锁 + P0-3 超时保护 + P0-4 CI白名单 + P1-6 正则修复）
   - 2.37.0: v11.10.0 - Gate v3 安全机制（TTL 过期 + tree_sha/repo_id 绑定 + 验证器软警告 + Stop Hook 自动清理）
@@ -68,10 +69,11 @@ platform_features:
     name: Branch Protection
     status: Committed
     priority: P0
-    version: "11.11.0"
-    updated: "2026-01-30"
+    version: "11.13.1"
+    updated: "2026-01-31"
     description: |
       防止在 main/develop 分支直接写代码，强制使用 cp-*/feature/* 工作分支
+      v11.13.1: 支持 monorepo 子目录 PRD/DoD 文件检测（如 apps/core/.prd.md）
       v11.11.0: P1-6 修复 - 使用 grep -Eq 替代 bash regex 进行 skills 路径匹配（修复分组失败问题）
       v11.5.0: 放宽 skills 保护（只保护 Engine skills：dev, qa, audit, semver，其他 skills 可从任何 repo 部署）
       v11.4.0: 添加 Task Checkpoint 检查（.dev-mode 必须包含 tasks_created: true）

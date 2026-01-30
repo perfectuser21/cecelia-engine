@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "11.12.6"
+version: "11.13.1"
 updated: "2026-01-30"
 
 # ============================================================================
@@ -1660,6 +1660,23 @@ n8n:
     evidence:
       type: manual
       desc: "验证视图生成无 git diff"
+
+  - id: N1-002
+    feature: N1
+    name: "sync-version.sh 版本同步"
+    scope: infrastructure
+    priority: P2
+    trigger: [PR]
+    method: manual
+    tags: [version, v11.13.0]
+    owner: infra
+    steps:
+      given: "package.json 版本已更新"
+      when: "运行 scripts/sync-version.sh"
+      then: "VERSION, hook-core/VERSION, regression-contract.yaml 版本同步"
+    evidence:
+      type: manual
+      desc: "验证 --check 模式无差异"
 
 # ============================================================================
 # Golden Paths (E2E 关键链路)

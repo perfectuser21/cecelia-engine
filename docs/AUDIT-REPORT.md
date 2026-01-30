@@ -1,77 +1,50 @@
-# Audit Report: CI 一致性修复（第三批）
+# Audit Report
 
-Branch: cp-0130-consistency-fixes
-Date: 2026-01-30
-Scope: hooks/pr-gate-v2.sh
+Branch: cp-H1-monorepo-fix-v2
+Date: 2026-01-31
+Scope: hooks/branch-protect.sh
 Target Level: L2
 
 ## Summary
 
-| Layer | Count | Status |
-|-------|-------|--------|
-| L1 | 0 | PASS |
-| L2 | 0 | PASS |
-| L3 | 0 | - |
-| L4 | 0 | - |
+| Layer | Count |
+|-------|-------|
+| L1 (Blocker) | 0 |
+| L2 (Functional) | 0 |
+| L3 (Best Practice) | 0 |
+| L4 (Over-engineering) | 0 |
 
 Decision: PASS
 
-## 审计范围
+## Changes Review
 
-| 文件 | 变更类型 | 说明 |
-|------|---------|------|
-| hooks/pr-gate-v2.sh | 功能增强 | 添加本地版本检查（警告模式） |
+### hooks/branch-protect.sh
 
-## L1 检查（阻塞性）
+**修改内容**：
+1. 更新版本号 v18 → v19
+2. 8 处正则修改，支持 monorepo 子目录路径：
+   - PRD_IN_BRANCH: `^$PRD_BASENAME$` → `(^|/)$PRD_BASENAME$`
+   - PRD_STAGED: `^$PRD_BASENAME$` → `(^|/)$PRD_BASENAME$`
+   - PRD_MODIFIED: `^$PRD_BASENAME$` → `(^|/)$PRD_BASENAME$`
+   - PRD_UNTRACKED: `^?? $PRD_BASENAME$` → `^\?\? (.*\/)?$PRD_BASENAME$`
+   - DOD_IN_BRANCH: `^$DOD_BASENAME$` → `(^|/)$DOD_BASENAME$`
+   - DOD_STAGED: `^$DOD_BASENAME$` → `(^|/)$DOD_BASENAME$`
+   - DOD_MODIFIED: `^$DOD_BASENAME$` → `(^|/)$DOD_BASENAME$`
+   - DOD_UNTRACKED: `^?? $DOD_BASENAME$` → `^\?\? (.*\/)?$DOD_BASENAME$`
 
-| 项目 | 状态 | 说明 |
-|------|------|------|
-| Shell 语法 | PASS | bash 语法正确 |
-| 变量引用 | PASS | 正确引用变量 |
-| 功能正常 | PASS | 版本检查逻辑正确 |
+**安全性**：
+- 无新增命令执行
+- 无新增权限提升
+- 正则修改仅扩展匹配范围，不影响安全性
 
-## L2 检查（功能性）
+**兼容性**：
+- 向后兼容：根目录的 `.prd.md` / `.dod.md` 仍能匹配
+- 向前兼容：子目录路径（如 `apps/core/.prd.md`）现在可以匹配
 
-| 项目 | 状态 | 说明 |
-|------|------|------|
-| 版本比较 | PASS | 正确比较 package.json 版本 |
-| 跳过条件 | PASS | chore:/docs:/test: 正确跳过 |
-| 错误处理 | PASS | 无法获取版本时仅警告 |
-| 输出格式 | PASS | 符合现有输出风格 |
+## Findings
 
-## 问题分析
-
-### P2-1: Gate 文件检查不一致
-- **结论**: 无需修复
-- 本地 gate 文件（.gate-*-passed）和 CI evidence（quality-evidence.json）是独立互补机制
-- 本地：实时检查，快速反馈
-- CI：SHA 签名验证，防伪造
-
-### P2-2: PRD/DoD 验证规则不一致
-- **结论**: 无需修复
-- 设计意图：本地轻量，CI 严格
-- 本地：3 行 + 关键字段（快速反馈）
-- CI：sections + Test: 映射（深度验证）
-
-### P2-3: 版本检查缺失
-- **修复**: 添加本地版本检查
-- 仅警告不阻止（CI 强制检查）
-- 比较当前 package.json 与 develop 分支
-
-### P3-1: RCI 自动化覆盖率
-- **结论**: 现状合理
-- 41 个 manual RCIs 大多需要人工验证 UX 效果
-- 无法自动化验证的场景：Hook 输出格式、用户交互流程
-
-### P3-2: metrics 时间窗口测试
-- **结论**: skip 合理
-- 原因：临时目录残留导致不稳定
-- 已有 TODO 注释，可在未来重构时修复
+无发现。修改范围小且符合最小变更原则。
 
 ## Blockers
 
-None
-
-## Conclusion
-
-一致性修复完成。P2-3 版本检查已添加，P2-1/P2-2/P3-1/P3-2 经分析确认现状合理无需修改。
+无阻塞问题。
