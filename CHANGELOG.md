@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.9.1] - 2026-01-30
+
+### Security
+
+- **CI 强制检查 PR 来源分支**
+  - PR to main 只接受来自 develop 分支
+  - 防止绕过 /dev 工作流直接合并到 main
+  - 修复安全漏洞：`git checkout origin/develop -- .` 不触发 hooks
+
 ## [11.8.1] - 2026-01-30
 
 ### Fixed

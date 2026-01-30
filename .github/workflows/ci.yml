@@ -452,6 +452,34 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Check PR source branch
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "  PR 来源分支检查"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo ""
+          echo "目标分支: main"
+          echo "来源分支: ${{ github.head_ref }}"
+          echo ""
+
+          if [[ "${{ github.head_ref }}" != "develop" ]]; then
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "  ❌ PR to main 只能来自 develop 分支"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "当前来源: ${{ github.head_ref }}"
+            echo ""
+            echo "正确流程:"
+            echo "  1. 功能分支 (cp-*/feature/*) → develop"
+            echo "  2. develop → main (release)"
+            echo ""
+            echo "请先将代码合并到 develop，再从 develop 创建 PR 到 main"
+            exit 1
+          fi
+
+          echo "✅ 来源分支正确: develop → main"
+          echo ""
+
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
