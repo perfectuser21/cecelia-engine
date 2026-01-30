@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.13.1] - 2026-01-31
+
+### Fixed
+
+- **branch-protect.sh v19**: 支持 monorepo 子目录的 PRD/DoD 文件检测
+  - 修复正则只匹配根目录的问题（如 `apps/core/.prd.md` 无法识别）
+  - 8 处正则修改：PRD_IN_BRANCH, PRD_STAGED, PRD_MODIFIED, PRD_UNTRACKED,
+    DOD_IN_BRANCH, DOD_STAGED, DOD_MODIFIED, DOD_UNTRACKED
+
 ## [11.13.0] - 2026-01-30
 
 ### Changed

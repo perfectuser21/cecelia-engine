@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# ZenithJoy Engine - 分支保护 Hook v18
+# ZenithJoy Engine - 分支保护 Hook v19
+# v19: 支持 monorepo 子目录的 PRD/DoD 文件（如 apps/core/.prd.md）
 # v18: 放宽 skills 目录保护，只保护 Engine 相关 skills (dev, qa, audit, semver)
 # v17: 支持分支级别 PRD/DoD 文件 (.prd-{branch}.md, .dod-{branch}.md)
 # 保护：代码文件 + 重要目录（skills/, hooks/, .github/）+ 全局配置目录（部分）
@@ -290,10 +291,10 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     fi
 
     # v17: 检查新旧两种格式的 PRD 文件
-    PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
-    PRD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
-    PRD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cE "^$PRD_BASENAME$" || echo 0)")
-    PRD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c "^?? $PRD_BASENAME$" || echo 0)")
+    PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "(^|/)$PRD_BASENAME$" || echo 0)")
+    PRD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cE "(^|/)$PRD_BASENAME$" || echo 0)")
+    PRD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cE "(^|/)$PRD_BASENAME$" || echo 0)")
+    PRD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -cE "^\?\? (.*\/)?$PRD_BASENAME$" || echo 0)")
 
     if [[ "$PRD_IN_BRANCH" -eq 0 && "$PRD_STAGED" -eq 0 && "$PRD_MODIFIED" -eq 0 && "$PRD_UNTRACKED" -eq 0 ]]; then
         echo "" >&2
@@ -309,10 +310,10 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     fi
 
     # v17: 检查新旧两种格式的 DoD 文件
-    DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
-    DOD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
-    DOD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cE "^$DOD_BASENAME$" || echo 0)")
-    DOD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -c "^?? $DOD_BASENAME$" || echo 0)")
+    DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cE "(^|/)$DOD_BASENAME$" || echo 0)")
+    DOD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cE "(^|/)$DOD_BASENAME$" || echo 0)")
+    DOD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cE "(^|/)$DOD_BASENAME$" || echo 0)")
+    DOD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -cE "^\?\? (.*\/)?$DOD_BASENAME$" || echo 0)")
 
     if [[ "$DOD_IN_BRANCH" -eq 0 && "$DOD_STAGED" -eq 0 && "$DOD_MODIFIED" -eq 0 && "$DOD_UNTRACKED" -eq 0 ]]; then
         echo "" >&2
