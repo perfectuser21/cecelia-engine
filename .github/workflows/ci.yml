@@ -331,10 +331,6 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  Evidence 生成（CI-only）"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo ""
-          echo "[DEBUG] ci/out/checks 目录内容："
-          ls -la ci/out/checks/ || echo "[DEBUG] 目录不存在"
-          echo ""
           bash ci/scripts/generate-evidence.sh
 
       - name: Evidence Gate

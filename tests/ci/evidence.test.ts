@@ -10,35 +10,69 @@
  * 4. evidence-gate.sh 验证文件 hash 防篡改
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
+import * as os from 'os'
 import { execSync } from 'child_process'
 
 const PROJECT_ROOT = process.cwd()
-const CHECKS_DIR = path.join(PROJECT_ROOT, 'ci/out/checks')
+// 使用临时目录隔离测试，避免干扰 CI 实际的 checks 目录
+const TEST_TMPDIR = path.join(os.tmpdir(), `evidence-test-${process.pid}`)
+const CHECKS_DIR = path.join(TEST_TMPDIR, 'ci/out/checks')
 const WRITE_CHECK_SCRIPT = path.join(PROJECT_ROOT, 'ci/scripts/write-check-result.sh')
 const GENERATE_EVIDENCE_SCRIPT = path.join(PROJECT_ROOT, 'ci/scripts/generate-evidence.sh')
 const EVIDENCE_GATE_SCRIPT = path.join(PROJECT_ROOT, 'ci/scripts/evidence-gate.sh')
 
-// 辅助函数：清理测试产物
+// 设置测试环境（在所有测试前创建临时目录）
+function setupTestEnv() {
+  fs.mkdirSync(TEST_TMPDIR, { recursive: true })
+  fs.mkdirSync(path.join(TEST_TMPDIR, 'ci/out/checks'), { recursive: true })
+  // 复制脚本到临时目录（因为脚本使用相对路径）
+  fs.mkdirSync(path.join(TEST_TMPDIR, 'ci/scripts'), { recursive: true })
+  fs.copyFileSync(WRITE_CHECK_SCRIPT, path.join(TEST_TMPDIR, 'ci/scripts/write-check-result.sh'))
+  fs.copyFileSync(GENERATE_EVIDENCE_SCRIPT, path.join(TEST_TMPDIR, 'ci/scripts/generate-evidence.sh'))
+  fs.copyFileSync(EVIDENCE_GATE_SCRIPT, path.join(TEST_TMPDIR, 'ci/scripts/evidence-gate.sh'))
+  // 初始化 git（脚本需要 git rev-parse HEAD）
+  execSync('git init', { cwd: TEST_TMPDIR, encoding: 'utf-8', stdio: 'pipe' })
+  execSync('git config user.email "test@test.com"', { cwd: TEST_TMPDIR, encoding: 'utf-8', stdio: 'pipe' })
+  execSync('git config user.name "Test"', { cwd: TEST_TMPDIR, encoding: 'utf-8', stdio: 'pipe' })
+  fs.writeFileSync(path.join(TEST_TMPDIR, 'dummy.txt'), 'test')
+  execSync('git add . && git commit -m "init"', { cwd: TEST_TMPDIR, encoding: 'utf-8', stdio: 'pipe' })
+}
+
+// 辅助函数：清理测试产物（只清理临时目录内的内容）
 function cleanup() {
   try {
-    execSync(`rm -rf ${CHECKS_DIR}`, { encoding: 'utf-8' })
-    // 删除 evidence 文件
-    const files = fs.readdirSync(PROJECT_ROOT).filter(f => f.startsWith('.quality-evidence.') && f.endsWith('.json'))
+    // 只清理 checks 目录内容
+    if (fs.existsSync(CHECKS_DIR)) {
+      execSync(`rm -rf ${CHECKS_DIR}/*`, { encoding: 'utf-8' })
+    }
+    // 删除 evidence 文件（在临时目录中）
+    const files = fs.readdirSync(TEST_TMPDIR).filter(f => f.startsWith('.quality-evidence.') && f.endsWith('.json'))
     for (const file of files) {
-      fs.unlinkSync(path.join(PROJECT_ROOT, file))
+      fs.unlinkSync(path.join(TEST_TMPDIR, file))
     }
   } catch {
     // 忽略
   }
 }
 
-// 辅助函数：执行脚本并返回结果
+// 清理整个测试环境
+function teardownTestEnv() {
+  try {
+    execSync(`rm -rf ${TEST_TMPDIR}`, { encoding: 'utf-8' })
+  } catch {
+    // 忽略
+  }
+}
+
+// 辅助函数：执行脚本并返回结果（在临时目录中运行）
 function runScript(script: string, args: string[] = []): { stdout: string; exitCode: number } {
   try {
-    const stdout = execSync(`bash ${script} ${args.join(' ')}`, { encoding: 'utf-8', cwd: PROJECT_ROOT })
+    // 使用临时目录中的脚本副本
+    const localScript = path.join(TEST_TMPDIR, 'ci/scripts', path.basename(script))
+    const stdout = execSync(`bash ${localScript} ${args.join(' ')}`, { encoding: 'utf-8', cwd: TEST_TMPDIR })
     return { stdout, exitCode: 0 }
   } catch (e: any) {
     return { stdout: e.stdout || '', exitCode: e.status || 1 }
@@ -46,8 +80,9 @@ function runScript(script: string, args: string[] = []): { stdout: string; exitC
 }
 
 describe('ci/scripts/write-check-result.sh', () => {
-  beforeAll(cleanup)
-  afterAll(cleanup)
+  beforeAll(setupTestEnv)
+  afterAll(teardownTestEnv)
+  beforeEach(cleanup)
 
   it('should create check JSON file with correct structure', () => {
     // 使用引号包裹带空格的参数
@@ -79,13 +114,20 @@ describe('ci/scripts/write-check-result.sh', () => {
 })
 
 describe('ci/scripts/generate-evidence.sh', () => {
-  beforeAll(cleanup)
-  afterAll(cleanup)
+  beforeAll(setupTestEnv)
+  afterAll(teardownTestEnv)
+  beforeEach(cleanup)
 
   it('should fail when checks directory does not exist', () => {
+    // 删除 checks 目录来测试
+    execSync(`rm -rf ${CHECKS_DIR}`, { encoding: 'utf-8' })
+
     const result = runScript(GENERATE_EVIDENCE_SCRIPT)
     expect(result.exitCode).toBe(1)
     expect(result.stdout).toContain('checks 目录不存在')
+
+    // 恢复目录供后续测试使用
+    fs.mkdirSync(CHECKS_DIR, { recursive: true })
   })
 
   it('should fail when required checks are missing', () => {
@@ -141,11 +183,11 @@ describe('ci/scripts/generate-evidence.sh', () => {
 
     runScript(GENERATE_EVIDENCE_SCRIPT)
 
-    // 找到生成的 evidence 文件
-    const evidenceFiles = fs.readdirSync(PROJECT_ROOT).filter(f => f.startsWith('.quality-evidence.') && f.endsWith('.json'))
+    // 找到生成的 evidence 文件（在临时目录中）
+    const evidenceFiles = fs.readdirSync(TEST_TMPDIR).filter(f => f.startsWith('.quality-evidence.') && f.endsWith('.json'))
     expect(evidenceFiles.length).toBeGreaterThan(0)
 
-    const evidence = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, evidenceFiles[0]), 'utf-8'))
+    const evidence = JSON.parse(fs.readFileSync(path.join(TEST_TMPDIR, evidenceFiles[0]), 'utf-8'))
     expect(evidence).toHaveProperty('checks')
     expect(evidence.checks.length).toBe(4)
 
@@ -157,8 +199,9 @@ describe('ci/scripts/generate-evidence.sh', () => {
 })
 
 describe('ci/scripts/evidence-gate.sh', () => {
-  beforeAll(cleanup)
-  afterAll(cleanup)
+  beforeAll(setupTestEnv)
+  afterAll(teardownTestEnv)
+  beforeEach(cleanup)
 
   it('should fail when evidence file does not exist', () => {
     const result = runScript(EVIDENCE_GATE_SCRIPT)
@@ -219,8 +262,8 @@ describe('ci/scripts/evidence-gate.sh', () => {
   it('should verify version is 2.0.0', () => {
     cleanup()
 
-    // 创建伪造的 v1 evidence
-    const headSha = execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim()
+    // 创建伪造的 v1 evidence（在临时目录中获取 HEAD SHA）
+    const headSha = execSync('git rev-parse HEAD', { encoding: 'utf-8', cwd: TEST_TMPDIR }).trim()
     const fakeEvidence = {
       version: '1.0.0',
       sha: headSha,
@@ -230,7 +273,7 @@ describe('ci/scripts/evidence-gate.sh', () => {
       audit_decision: 'PASS',
       checks: []
     }
-    fs.writeFileSync(path.join(PROJECT_ROOT, `.quality-evidence.${headSha}.json`), JSON.stringify(fakeEvidence))
+    fs.writeFileSync(path.join(TEST_TMPDIR, `.quality-evidence.${headSha}.json`), JSON.stringify(fakeEvidence))
 
     const result = runScript(EVIDENCE_GATE_SCRIPT)
     expect(result.exitCode).toBe(1)
