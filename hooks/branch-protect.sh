@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# ZenithJoy Engine - 分支保护 Hook v17
+# ZenithJoy Engine - 分支保护 Hook v18
+# v18: 放宽 skills 目录保护，只保护 Engine 相关 skills (dev, qa, audit, semver)
 # v17: 支持分支级别 PRD/DoD 文件 (.prd-{branch}.md, .dod-{branch}.md)
-# 保护：代码文件 + 重要目录（skills/, hooks/, .github/）+ 全局配置目录
+# 保护：代码文件 + 重要目录（skills/, hooks/, .github/）+ 全局配置目录（部分）
 
 set -euo pipefail
 
@@ -53,7 +54,7 @@ if [[ -z "$FILE_PATH" ]]; then
 fi
 
 # ===== 全局配置目录保护 =====
-# 阻止直接修改 ~/.claude/hooks/ 和 ~/.claude/skills/
+# v18: hooks 全部保护，skills 只保护 Engine 相关的 (dev, qa, audit, semver)
 HOME_DIR="${HOME:-/home/$(whoami)}"
 REAL_FILE_PATH="$FILE_PATH"
 
@@ -71,25 +72,46 @@ if command -v realpath &>/dev/null; then
     REAL_FILE_PATH="$FILE_PATH"
 fi
 
+# hooks 目录：全部保护
 if [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
-   [[ "$REAL_FILE_PATH" == "$HOME_DIR/.claude/skills/"* ]] || \
-   [[ "$FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]] || \
-   [[ "$FILE_PATH" == "$HOME_DIR/.claude/skills/"* ]]; then
+   [[ "$FILE_PATH" == "$HOME_DIR/.claude/hooks/"* ]]; then
     echo "" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    echo "  [ERROR] 禁止直接修改全局配置目录" >&2
+    echo "  [ERROR] 禁止直接修改全局 hooks 目录" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     echo "" >&2
     echo "文件: $FILE_PATH" >&2
     echo "" >&2
     echo "请在 zenithjoy-engine 仓库修改后部署到全局：" >&2
     echo "  1. 克隆/进入 zenithjoy-engine 仓库" >&2
-    echo "  2. 走 /dev 工作流修改 hooks/ 或 skills/" >&2
-    echo "  3. PR 合并到 main 后运行 deploy.sh" >&2
+    echo "  2. 走 /dev 工作流修改 hooks/" >&2
+    echo "  3. PR 合并后运行 deploy.sh" >&2
     echo "" >&2
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
     exit 2
 fi
+
+# skills 目录：只保护 Engine 相关的 skills (dev, qa, audit, semver)
+PROTECTED_ENGINE_SKILLS="dev|qa|audit|semver"
+if [[ "$REAL_FILE_PATH" =~ $HOME_DIR/.claude/skills/($PROTECTED_ENGINE_SKILLS)/ ]] || \
+   [[ "$FILE_PATH" =~ $HOME_DIR/.claude/skills/($PROTECTED_ENGINE_SKILLS)/ ]]; then
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "  [ERROR] 禁止直接修改 Engine 核心 skills" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "" >&2
+    echo "文件: $FILE_PATH" >&2
+    echo "受保护的 skills: dev, qa, audit, semver" >&2
+    echo "" >&2
+    echo "请在 zenithjoy-engine 仓库修改后部署到全局：" >&2
+    echo "  1. 克隆/进入 zenithjoy-engine 仓库" >&2
+    echo "  2. 走 /dev 工作流修改 skills/" >&2
+    echo "  3. PR 合并后运行 deploy.sh" >&2
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    exit 2
+fi
+# 其他 skills (如 script-manager, credentials 等) 不受保护，可从任何 repo 部署
 
 # ===== 判断是否需要保护 =====
 NEEDS_PROTECTION=false
