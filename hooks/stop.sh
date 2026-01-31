@@ -13,6 +13,7 @@
 #   未满足 → 输出提示 → exit 2（阻止结束，继续执行）
 #
 # v11.11.0: P0-2 修复 - 添加 flock 并发锁 + 原子写入防止竞态条件
+# v11.15.0: P0-3 修复 - 会话隔离，检查 .dev-mode 中的分支是否与当前分支匹配
 # ============================================================================
 
 set -euo pipefail
@@ -78,17 +79,26 @@ fi
 
 # ===== 读取 .dev-mode 内容 =====
 DEV_MODE=$(head -1 "$DEV_MODE_FILE" 2>/dev/null || echo "")
-BRANCH_NAME=$(grep "^branch:" "$DEV_MODE_FILE" 2>/dev/null | cut -d' ' -f2 || echo "")
+BRANCH_IN_FILE=$(grep "^branch:" "$DEV_MODE_FILE" 2>/dev/null | cut -d' ' -f2 || echo "")
 
 # 如果不是 dev 模式，直接退出
 if [[ "$DEV_MODE" != "dev" ]]; then
     exit 0
 fi
 
-# ===== 获取当前分支（fallback） =====
-if [[ -z "$BRANCH_NAME" ]]; then
-    BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+# ===== P0-3 修复：会话隔离 - 检查分支是否匹配 =====
+# 获取当前分支
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+
+# 如果 .dev-mode 中的分支与当前分支不匹配，忽略这个 .dev-mode
+# 这防止多个 Claude 会话"串线"（一个会话被迫接手另一个会话的任务）
+if [[ -n "$BRANCH_IN_FILE" && "$BRANCH_IN_FILE" != "$CURRENT_BRANCH" ]]; then
+    # 不是当前会话的任务，直接允许结束
+    exit 0
 fi
+
+# 使用文件中的分支名（如果有），否则使用当前分支
+BRANCH_NAME="${BRANCH_IN_FILE:-$CURRENT_BRANCH}"
 
 echo "" >&2
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2

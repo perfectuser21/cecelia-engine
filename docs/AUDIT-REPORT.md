@@ -1,8 +1,8 @@
 # Audit Report
 
-Branch: cp-H1-monorepo-fix-v2
+Branch: cp-stop-hook-session-isolation
 Date: 2026-01-31
-Scope: hooks/branch-protect.sh
+Scope: hooks/stop.sh
 Target Level: L2
 
 ## Summary
@@ -18,32 +18,30 @@ Decision: PASS
 
 ## Changes Review
 
-### hooks/branch-protect.sh
+### hooks/stop.sh
 
 **修改内容**：
-1. 更新版本号 v18 → v19
-2. 8 处正则修改，支持 monorepo 子目录路径：
-   - PRD_IN_BRANCH: `^$PRD_BASENAME$` → `(^|/)$PRD_BASENAME$`
-   - PRD_STAGED: `^$PRD_BASENAME$` → `(^|/)$PRD_BASENAME$`
-   - PRD_MODIFIED: `^$PRD_BASENAME$` → `(^|/)$PRD_BASENAME$`
-   - PRD_UNTRACKED: `^?? $PRD_BASENAME$` → `^\?\? (.*\/)?$PRD_BASENAME$`
-   - DOD_IN_BRANCH: `^$DOD_BASENAME$` → `(^|/)$DOD_BASENAME$`
-   - DOD_STAGED: `^$DOD_BASENAME$` → `(^|/)$DOD_BASENAME$`
-   - DOD_MODIFIED: `^$DOD_BASENAME$` → `(^|/)$DOD_BASENAME$`
-   - DOD_UNTRACKED: `^?? $DOD_BASENAME$` → `^\?\? (.*\/)?$DOD_BASENAME$`
+1. 更新版本注释，添加 v11.15.0 说明
+2. 重命名变量：`BRANCH_NAME` → `BRANCH_IN_FILE`（读取 .dev-mode 中的值）
+3. 新增 `CURRENT_BRANCH` 获取当前分支
+4. 新增分支匹配检查：
+   - 如果 `.dev-mode` 中有 `branch:` 字段
+   - 且与当前分支不匹配
+   - 则 exit 0（不是当前会话的任务）
+5. 使用 `${BRANCH_IN_FILE:-$CURRENT_BRANCH}` 确保兼容性
 
 **安全性**：
 - 无新增命令执行
 - 无新增权限提升
-- 正则修改仅扩展匹配范围，不影响安全性
+- 失败模式是 exit 0（允许结束），不会卡住
 
 **兼容性**：
-- 向后兼容：根目录的 `.prd.md` / `.dod.md` 仍能匹配
-- 向前兼容：子目录路径（如 `apps/core/.prd.md`）现在可以匹配
+- 向后兼容：如果 `.dev-mode` 没有 `branch:` 字段，使用当前分支
+- 向前兼容：匹配时行为完全不变
 
 ## Findings
 
-无发现。修改范围小且符合最小变更原则。
+无发现。修改逻辑简单，只增加一个条件判断。
 
 ## Blockers
 

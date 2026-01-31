@@ -18,8 +18,8 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "11.13.1"
-updated: "2026-01-30"
+version: "11.14.2"
+updated: "2026-01-31"
 
 # ============================================================================
 # Hooks 回归契约
@@ -179,6 +179,25 @@ hooks:
       type: code
       file: "hooks/stop.sh"
       contains: "exit 2"
+
+  - id: H7-005
+    feature: H7
+    name: "Stop Hook 会话隔离（分支匹配检查）"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [stop, session, isolation]
+    owner: infra
+    steps:
+      given: ".dev-mode 中的 branch 与当前分支不匹配"
+      when: "Stop Hook 执行分支匹配检查"
+      then: "exit 0 忽略该 .dev-mode（不属于当前会话）"
+    evidence:
+      type: code
+      file: "hooks/stop.sh"
+      contains: "BRANCH_IN_FILE"
+    test: "tests/hooks/stop-hook.test.ts"
 
   # --------------------------------------------------------------------------
   # H2: pr-gate-v2

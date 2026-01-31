@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.42.0"
+version: "2.43.0"
 updated: "2026-01-31"
 changelog:
+  - 2.43.0: v11.14.2 - P0-3 Stop Hook 会话隔离（检查 .dev-mode 中的 branch 是否与当前分支匹配，防止多会话"串线"）
   - 2.42.0: v11.14.1 - 统一 Subagent Gate 命名和规则挂载（gate:prd/dod/qa/audit/test/learning 规则嵌入 prompt）
   - 2.41.0: v11.14.0 - P3 cleanup.sh v1.8 PRD/DoD 归档到 .history/ 目录
   - 2.40.0: v11.13.1 - H1 支持 monorepo 子目录 PRD/DoD 文件检测
@@ -113,8 +114,8 @@ platform_features:
     name: Stop Hook Loop Controller
     status: Committed
     priority: P0
-    version: "11.11.0"
-    updated: "2026-01-30"
+    version: "11.14.2"
+    updated: "2026-01-31"
     description: |
       Stop Hook 作为 /dev 工作流的循环控制器，替代 Ralph Loop 插件：
       - 检测 .dev-mode 文件决定是否为 /dev 会话
@@ -122,6 +123,7 @@ platform_features:
       - 未完成时 exit 2 阻止会话结束，Claude 继续执行
       - 完成时（cleanup_done: true）删除 .dev-mode 并 exit 0
       - 无头模式 (CECELIA_HEADLESS=true) 直接 exit 0，由外部循环控制
+      v11.14.2: P0-3 修复 - 会话隔离，检查 .dev-mode 中的 branch 是否与当前分支匹配，防止多会话"串线"
       v11.11.0: P0-2 修复 - 添加 flock 并发锁防止多个会话同时操作 .dev-mode 文件
       v11.10.0: PR 合并后自动执行 cleanup（删除 .dev-mode、切换分支、删除本地分支），不再悬空
       v11.4.1: 修复跳过 Cleanup bug（cleanup_done 检测 + PR 合并时 exit 2）

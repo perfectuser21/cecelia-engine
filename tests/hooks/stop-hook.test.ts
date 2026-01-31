@@ -107,4 +107,43 @@ started: 2026-01-30`;
       expect(result.trim()).toBe("not found");
     });
   });
+
+  describe("session isolation (H7-005)", () => {
+    it("should detect branch mismatch pattern in code", () => {
+      // Verify the session isolation code exists in stop.sh
+      const hookContent = execSync(`cat "${HOOK_PATH}"`, { encoding: "utf-8" });
+
+      // Check for the key session isolation logic
+      expect(hookContent).toContain("BRANCH_IN_FILE");
+      expect(hookContent).toContain("CURRENT_BRANCH");
+      expect(hookContent).toContain("P0-3");
+    });
+
+    it("should extract branch from .dev-mode correctly", () => {
+      const testContent = `dev
+branch: cp-other-session
+tasks_created: true`;
+
+      // Test branch extraction pattern
+      const result = execSync(
+        `echo '${testContent}' | grep "^branch:" | cut -d' ' -f2`,
+        { encoding: "utf-8" }
+      );
+
+      expect(result.trim()).toBe("cp-other-session");
+    });
+
+    it("should handle missing branch field gracefully", () => {
+      const testContent = `dev
+tasks_created: true`;
+
+      // When branch is missing, grep should return empty
+      const result = execSync(
+        `echo '${testContent}' | grep "^branch:" | cut -d' ' -f2 || echo ""`,
+        { encoding: "utf-8" }
+      );
+
+      expect(result.trim()).toBe("");
+    });
+  });
 });
