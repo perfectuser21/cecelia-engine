@@ -2230,3 +2230,43 @@ quality_enforcement:
     verification:
       type: manual
       description: "创建错误分支文件验证拒绝"
+
+  - id: G1-005
+    feature: G1
+    name: "Gate 令牌生成（PostToolUse hook）"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [gate, token, security]
+    owner: infra
+    steps:
+      given: "gate subagent 返回 Decision: PASS"
+      when: "PostToolUse[Task] hook (mark-subagent-done.sh) 执行"
+      then: "令牌写入 .git/.gate_tokens/subagent-{type}-{session_id}.token"
+    evidence:
+      type: test
+      file: tests/hooks/gate-token.test.ts
+    verification:
+      type: auto
+      command: "npx vitest run tests/hooks/gate-token.test.ts"
+
+  - id: G1-006
+    feature: G1
+    name: "Gate 令牌校验 + 一次性消费（PreToolUse hook）"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [gate, token, security]
+    owner: infra
+    steps:
+      given: "Bash 命令包含 generate-gate-file.sh"
+      when: "PreToolUse[Bash] hook (require-subagent-token.sh) 执行"
+      then: "无令牌时 exit 2 阻止；有令牌时验证并删除（一次性消费）"
+    evidence:
+      type: test
+      file: tests/hooks/gate-token.test.ts
+    verification:
+      type: auto
+      command: "npx vitest run tests/hooks/gate-token.test.ts"

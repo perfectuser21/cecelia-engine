@@ -1,35 +1,40 @@
-# QA Decision: Stop Hook 会话隔离
+---
+id: qa-decision-gate-enforce
+version: 1.0.0
+created: 2026-01-31
+updated: 2026-01-31
+changelog:
+  - 1.0.0: 初始版本
+---
 
-Decision: PASS
+# QA Decision
+
+Decision: MUST_ADD_RCI
 Priority: P0
 RepoType: Engine
 
-## 变更范围
-
-| 文件 | 类型 | 影响 |
-|------|------|------|
-| hooks/stop.sh | Hook | 添加分支匹配检查 |
-
-## 分析
-
-### 问题描述
-- 多个 Claude 会话在同一项目工作时发生"串线"
-- 一个会话创建的 `.dev-mode` 被另一个会话的 Stop Hook 检测到
-- 导致一个会话被迫接手另一个会话的任务
-
-### 修复方案
-- 读取 `.dev-mode` 中的 `branch:` 字段
-- 与当前分支比较
-- 不匹配则 exit 0（不属于当前会话的任务）
-
-## Tests
-
-| DoD Item | Method | Location |
-|----------|--------|----------|
-| 分支匹配检查 | manual:stop-hook-isolation | hooks/stop.sh |
+Tests:
+  - dod_item: "PostToolUse hook 写令牌"
+    method: auto
+    location: tests/hooks/gate-token.test.ts
+  - dod_item: "PreToolUse hook 拦截无令牌调用"
+    method: auto
+    location: tests/hooks/gate-token.test.ts
+  - dod_item: "防伪造令牌"
+    method: auto
+    location: tests/hooks/gate-token.test.ts
+  - dod_item: "令牌一次性消费"
+    method: auto
+    location: tests/hooks/gate-token.test.ts
+  - dod_item: "pr-gate-v2.sh gate 验签 bug 修复"
+    method: auto
+    location: tests/hooks/pr-gate.test.ts
+  - dod_item: "Branch Protection ci-passed"
+    method: manual
+    location: manual:检查脚本输出 JSON 包含 ci-passed
 
 RCI:
-  new: []
-  update: []
+  new: [G1-001, G1-002]
+  update: [H2-001]
 
-Reason: Hook 逻辑修复，不影响 RCI 覆盖范围。
+Reason: Gate 令牌机制是核心安全功能（P0），涉及 Hook 和 Gate 验签，必须新增 RCI 并更新 pr-gate 相关 RCI。

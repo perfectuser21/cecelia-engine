@@ -71,6 +71,14 @@ Full Regression（全量测试）
 
 ---
 
+## Gate (门禁能力)
+
+| ID | Feature | 状态 | 最小验收 | 说明 |
+|----|---------|------|----------|------|
+| G1 | Gate Subagent Token | **Committed** | `tests/hooks/gate-token.test.ts` | 令牌机制强制 subagent 必经路径（PostToolUse 写令牌 + PreToolUse 校验） |
+
+---
+
 ## Workflow (流程能力)
 
 | ID | Feature | 状态 | 最小验收 | 说明 |

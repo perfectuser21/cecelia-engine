@@ -64,6 +64,8 @@ const EXCLUDE_PATTERNS = [
   /^hooks\/branch-protect/,    // Gate Hook（在 GCI）
   /^hooks\/stop/,              // Gate Hook（在 GCI）- 循环控制器
   /^hooks\/credential-guard/,  // Gate Hook（在 GCI）- 凭据保护
+  /^hooks\/mark-subagent-done/,    // Gate Hook（在 GCI）- Gate 令牌生成
+  /^hooks\/require-subagent-token/, // Gate Hook（在 GCI）- Gate 令牌校验
 ];
 
 /**

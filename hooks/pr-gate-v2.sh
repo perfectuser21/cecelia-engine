@@ -797,8 +797,8 @@ if [[ "$MODE" == "pr" ]]; then
                 echo "[OK] (签名验证已跳过)" >&2
             else
                 # P0-3 修复：运行 verify 脚本并加超时保护（防止卡死）
-                GATE_OUTPUT=$(run_with_timeout 10 bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" 2>&1) || true
-                GATE_EXIT_CODE=$?
+                GATE_EXIT_CODE=0
+                GATE_OUTPUT=$(run_with_timeout 10 bash "$GATE_VERIFY_SCRIPT" "$GATE_FILE" 2>&1) || GATE_EXIT_CODE=$?
 
                 # 超时处理（exit code 124）
                 if [[ "$GATE_EXIT_CODE" -eq 124 ]]; then

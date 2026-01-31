@@ -281,15 +281,15 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ## GP-018: Gate Skill Family (G1)
 
 **Feature**: G1 - Gate Skill Family
-**Priority**: P1
+**Priority**: P0
 
 ### Golden Path
 
 ```
-主 Agent 产出 → Gate Subagent 审核 → FAIL → 返回修改 → 再审核 → PASS → 继续
+主 Agent 产出 → Gate Subagent 审核 → PASS → PostToolUse 写令牌 → PreToolUse 校验令牌 → generate-gate-file.sh → 继续
 ```
 
-**RCI 覆盖**: G1-001,G1-002,G1-003,G1-004
+**RCI 覆盖**: G1-001,G1-002,G1-003,G1-004,G1-005,G1-006
 
 ---
 

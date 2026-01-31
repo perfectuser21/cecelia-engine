@@ -30,7 +30,7 @@ BRANCHES=("main" "develop")
 STANDARD_CONFIG='{
     "required_status_checks": {
         "strict": true,
-        "checks": [{"context": "test"}]
+        "checks": [{"context": "ci-passed"}]
     },
     "enforce_admins": true,
     "required_pull_request_reviews": null,

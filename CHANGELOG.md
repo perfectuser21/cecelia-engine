@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.17.0] - 2026-01-31
+
+### Added
+
+- **Gate Subagent 硬门禁令牌机制** (`hooks/mark-subagent-done.sh`, `hooks/require-subagent-token.sh`)
+  - PostToolUse[Task] hook: gate subagent PASS 后自动写令牌到 `.git/.gate_tokens/`
+  - PreToolUse[Bash] hook: 校验令牌才放行 `generate-gate-file.sh`，一次性消费
+  - 防伪造: 阻止通过 Bash 直接操作 `.gate_tokens/` 目录
+  - 令牌绑定 session_id + nonce，防跨会话复用
+- **Gate Token 测试** (`tests/hooks/gate-token.test.ts`) - 14 个测试用例
+
+### Fixed
+
+- **pr-gate-v2.sh gate 验签 bug**: `|| true` 吞掉 exit code 导致签名验证是死代码
+- **Branch Protection ci-passed**: required status check 从 `test` 改为 `ci-passed`
+
 ## [11.16.0] - 2026-01-31
 
 ### Added
