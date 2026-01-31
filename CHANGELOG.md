@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.14.0] - 2026-01-31
+
+### Added
+
+- **cleanup.sh v1.8**: PRD/DoD 归档到 `.history/` 目录
+  - 新增 `archive_prd_dod()` 函数
+  - 步骤 7.5 在删除前先归档
+  - 归档格式：`{branch}-{date}.{prd|dod}.md`
+  - `.gitignore` 新增 `.history/` 和 `.dev-runs/`
+
 ## [11.13.1] - 2026-01-31
 
 ### Fixed

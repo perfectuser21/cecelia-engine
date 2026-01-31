@@ -40,6 +40,12 @@ skills/dev/VALIDATION.md
 .quality-report.json
 .test-level.json
 
+# Archived PRD/DoD (local history, never commit)
+.history/
+
+# Dev run reports (local, never commit)
+.dev-runs/
+
 # Workflow runtime files (per-branch, runtime)
 # v1.1: 支持分支级别 PRD/DoD 文件
 .prd.md

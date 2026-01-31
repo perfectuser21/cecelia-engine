@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - Cleanup 脚本
+# v1.8: PRD/DoD 归档到 .history/ 目录（而非直接删除）
 # v1.7: rm -rf 安全验证
 # v1.6: 跨仓库兼容（develop/main fallback）+ worktree 安全检查
 # v1.5: 支持分支级别状态文件 (.cecelia-run-id-{branch}, .quality-gate-passed-{branch})
@@ -63,6 +64,46 @@ safe_rm_rf() {
     fi
 
     rm -rf "$path"
+}
+
+# v1.8: PRD/DoD 归档函数
+archive_prd_dod() {
+    local branch="$1"
+    local project_root
+    project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+    local history_dir="$project_root/.history"
+    local date_str
+    date_str=$(date +%Y%m%d-%H%M)
+    local archived=0
+
+    # 创建 .history 目录
+    mkdir -p "$history_dir"
+
+    # 归档 PRD 文件
+    local prd_files=(".prd.md" ".prd-${branch}.md")
+    for prd in "${prd_files[@]}"; do
+        if [[ -f "$project_root/$prd" ]]; then
+            local archive_name="${branch}-${date_str}.prd.md"
+            if cp "$project_root/$prd" "$history_dir/$archive_name" 2>/dev/null; then
+                archived=$((archived + 1))
+            fi
+            break  # 只归档一个 PRD
+        fi
+    done
+
+    # 归档 DoD 文件
+    local dod_files=(".dod.md" ".dod-${branch}.md")
+    for dod in "${dod_files[@]}"; do
+        if [[ -f "$project_root/$dod" ]]; then
+            local archive_name="${branch}-${date_str}.dod.md"
+            if cp "$project_root/$dod" "$history_dir/$archive_name" 2>/dev/null; then
+                archived=$((archived + 1))
+            fi
+            break  # 只归档一个 DoD
+        fi
+    done
+
+    echo "$archived"
 }
 
 # 参数
@@ -283,6 +324,18 @@ if [[ -n "$UNCOMMITTED" ]]; then
     WARNINGS=$((WARNINGS + 1))
 else
     echo -e "   ${GREEN}[OK] 无未提交文件${NC}"
+fi
+
+# ========================================
+# 7.5 归档 PRD/DoD 到 .history/（v1.8）
+# ========================================
+echo ""
+echo "[7.5] 归档 PRD/DoD..."
+ARCHIVED_COUNT=$(archive_prd_dod "$CP_BRANCH")
+if [[ "$ARCHIVED_COUNT" -gt 0 ]]; then
+    echo -e "   ${GREEN}[OK] 已归档 $ARCHIVED_COUNT 个文件到 .history/${NC}"
+else
+    echo -e "   ${GREEN}[OK] 无 PRD/DoD 需要归档${NC}"
 fi
 
 # ========================================

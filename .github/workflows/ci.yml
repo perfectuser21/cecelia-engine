@@ -227,8 +227,8 @@ jobs:
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
 
-          # 检查 PR 中是否包含 PRD/DoD 文件
-          PRD_DOD_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.(prd|dod)(-[^/]+)?\.md$' || true)
+          # 检查 PR 中是否新增 PRD/DoD 文件（删除是允许的）
+          PRD_DOD_FILES=$(git diff --diff-filter=A --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.(prd|dod)(-[^/]+)?\.md$' || true)
 
           if [ -n "$PRD_DOD_FILES" ]; then
             echo "❌ PRD/DoD 文件不应出现在 PR to ${{ github.base_ref }} 中"
