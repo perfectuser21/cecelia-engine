@@ -113,21 +113,31 @@ echo "   Base: $BASE_BRANCH"
 **分支创建后，必须创建 .dev-mode 文件**，这是 Stop Hook 循环控制的信号：
 
 ```bash
+# 生成 session_id（会话隔离，防止多会话串线）
+# 优先使用 CLAUDE_SESSION_ID 环境变量，fallback 到随机 ID
+if [[ -n "${CLAUDE_SESSION_ID:-}" ]]; then
+    SESSION_ID="$CLAUDE_SESSION_ID"
+else
+    SESSION_ID=$(head -c 6 /dev/urandom | od -An -tx1 | tr -d ' \n')
+fi
+
 # 在项目根目录创建 .dev-mode（分支已创建，分支名正确）
 cat > .dev-mode << EOF
 dev
 branch: $BRANCH_NAME
+session_id: $SESSION_ID
 prd: .prd.md
 started: $(date -Iseconds)
 EOF
 
-echo "✅ .dev-mode 已创建（Stop Hook 循环控制已启用）"
+echo "✅ .dev-mode 已创建（session_id: $SESSION_ID）"
 ```
 
 **文件格式**：
 ```
 dev
 branch: H7-remove-ralph-loop
+session_id: a1b2c3d4e5f6
 prd: .prd.md
 started: 2026-01-29T10:00:00+00:00
 ```
@@ -171,6 +181,7 @@ echo "✅ Task Checkpoint 已创建（11 个步骤）"
 ```
 dev
 branch: H7-task-checkpoint
+session_id: a1b2c3d4e5f6
 prd: .prd.md
 started: 2026-01-29T10:00:00+00:00
 tasks_created: true
