@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.47.0"
+version: "2.48.0"
 updated: "2026-02-01"
 changelog:
+  - 2.48.0: v11.22.0 - Gate MAX_GATE_ATTEMPTS 调整（从 3 次到 20 次，提供充足修复机会）
   - 2.47.0: v11.21.0 - Gate 循环模式 B 优化（主 Agent 改 + 外部循环，职责分离架构，新建 qa.md/learning.md，统一循环控制模板）
   - 2.46.0: v11.20.0 - AI 自我检测硬规则（skills/dev + CLAUDE.md 添加禁止话术和关键词自检机制）
   - 2.45.0: v11.19.0 - G3 修复 dev 工作流 gate skill 调用方式（Task → Skill 调用，删除冗长内联 prompt）
@@ -850,13 +851,14 @@ product_features:
     name: Gate Skill Family
     status: Committed
     priority: P0
-    version: "11.21.0"
+    version: "11.22.0"
     updated: "2026-02-01"
     description: |
       独立质量审核 Skill 家族，每个 gate 是"守门 Subagent"：
       - gate:prd - PRD 完整性、需求可验收性审核
       - gate:dod - PRD↔DoD 覆盖率、Test 映射有效性审核
       - gate:qa - RCI 判断、测试方法决策审核
+      v11.22.0: MAX_GATE_ATTEMPTS 调整为 20（提高复杂问题通过率，保持有限循环）
       - gate:test - 测试↔DoD 覆盖率、边界用例审核
       - gate:audit - 审计证据真实性、风险点识别审核
       - gate:learning - 开发经验记录审核
