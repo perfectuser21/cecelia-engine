@@ -54,7 +54,7 @@ PRD 生成后，**必须**启动 gate:prd Subagent 审核。
 **主 Agent 负责循环控制，最大 3 轮**：
 
 ```javascript
-const MAX_GATE_ATTEMPTS = 3;
+const MAX_GATE_ATTEMPTS = 20;
 let attempts = 0;
 
 while (attempts < MAX_GATE_ATTEMPTS) {
@@ -82,7 +82,7 @@ while (attempts < MAX_GATE_ATTEMPTS) {
 }
 
 if (attempts >= MAX_GATE_ATTEMPTS) {
-  throw new Error("gate:prd 审核失败，已重试 3 次");
+  throw new Error("gate:prd 审核失败，已重试 20 次");
 }
 ```
 

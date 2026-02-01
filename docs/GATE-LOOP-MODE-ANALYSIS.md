@@ -54,7 +54,7 @@ Attempt 3: gate:prd PASS → 生成 gate 文件
 | 模式 | 循环次数控制 | 死循环风险 | 评分 |
 |------|--------------|-----------|------|
 | **A** | Subagent 内部控制 | ⚠️ 可能无限循环 | 2/5 |
-| **B** | 主 Agent 硬编码 MAX_GATE_ATTEMPTS=3 | ✅ 固定上限 | 5/5 |
+| **B** | 主 Agent 硬编码 MAX_GATE_ATTEMPTS=20 | ✅ 固定上限 | 5/5 |
 
 **分析**：
 - 模式 A：如果 Subagent 判断标准有 bug，可能一直 FAIL → 改 → FAIL，外部无法控制
@@ -62,7 +62,7 @@ Attempt 3: gate:prd PASS → 生成 gate 文件
 
 **代码示例**（模式 B）：
 ```javascript
-const MAX_GATE_ATTEMPTS = 3;  // 硬编码，不可突破
+const MAX_GATE_ATTEMPTS = 20;  // 硬编码，不可突破
 let attempts = 0;
 
 while (attempts < MAX_GATE_ATTEMPTS) {
@@ -71,7 +71,7 @@ while (attempts < MAX_GATE_ATTEMPTS) {
 }
 
 if (attempts >= MAX_GATE_ATTEMPTS) {
-  throw new Error("gate:prd 审核失败，已重试 3 次");
+  throw new Error("gate:prd 审核失败，已重试 20 次");
 }
 ```
 
@@ -356,7 +356,7 @@ Subagent：审核 → PASS
 ### 理由
 
 1. **职责清晰**：Subagent 只审核，主 Agent 负责修复，符合单一职责原则
-2. **可控性强**：主 Agent 硬编码 MAX_GATE_ATTEMPTS=3，绝不死循环
+2. **可控性强**：主 Agent 硬编码 MAX_GATE_ATTEMPTS=20，绝不死循环
 3. **可调试**：每轮审核和修复都在主 Agent 上下文，完整透明
 4. **Hook 兼容**：主 Agent 修改，与正常开发流程一致
 5. **长期可维护**：统一的循环模板，易于扩展新 Gate
@@ -380,7 +380,7 @@ Subagent：审核 → PASS
 ## 附录：循环控制代码模板
 
 ```javascript
-const MAX_GATE_ATTEMPTS = 3;  // 硬编码最大循环次数
+const MAX_GATE_ATTEMPTS = 20;  // 硬编码最大循环次数
 let attempts = 0;
 
 while (attempts < MAX_GATE_ATTEMPTS) {
