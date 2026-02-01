@@ -32,9 +32,9 @@ changelog:
 
 ---
 
-## GP-002: Stop Hook Loop Controller (H7)
+## GP-002: Stop Hook Loop Controller (JSON API) (H7)
 
-**Feature**: H7 - Stop Hook Loop Controller
+**Feature**: H7 - Stop Hook Loop Controller (JSON API)
 **Priority**: P0
 
 ### Golden Path

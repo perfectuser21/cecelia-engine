@@ -28,7 +28,7 @@ changelog:
 
 ---
 
-### H7: Stop Hook Loop Controller
+### H7: Stop Hook Loop Controller (JSON API)
 
 1. ✅ **无 .dev-mode → exit 0 (普通会话)**
 2. ✅ **有 .dev-mode + PR 未创建 → exit 2 (继续)**
