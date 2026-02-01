@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.25.0] - 2026-02-01
+
+### Added
+
+- **Stop Hook JSON API 强制循环机制** - 将 Stop Hook 从 `exit 2` 改为官方 JSON API 实现
+  - 所有 7 处 `exit 2` 改为 `jq -n '{"decision": "block", "reason": "..."}' + exit 0`
+  - 重试上限从 20 次降为 15 次，超限后调用 track.sh 上报失败
+  - 新增 SubagentStop Hook (`hooks/subagent-stop.sh`)，支持 Explore/Plan 等子 agent
+  - SubagentStop Hook 5 次重试上限，超限后允许 Subagent 退出（主 Agent 换方案）
+  - 更新 `.claude/settings.json` 增加 SubagentStop Hook 配置
+  - 更新 `regression-contract.yaml`：H7-001/002/003 改为 auto，H7-009 已存在
+  - 新增/更新测试：45 个测试全部通过（stop-hook, stop-hook-retry, stop-hook-exit, subagent-stop）
+  - 符合 PRD: .prd-cp-02011917-stop-hook-json-api.md
+  - DoD: .dod-cp-02011917-stop-hook-json-api.md
+  - Audit: Decision PASS (L1/L2 = 0)
+
 ## [11.24.3] - 2026-02-01
 
 ### Fixed
