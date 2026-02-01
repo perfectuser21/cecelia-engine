@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.24.2] - 2026-02-01
+
+### Added
+
+- **cleanup.sh 验证机制** - 添加 3 个关键验证确保清理流程完整性
+  - 验证所有 11 步完成后才删除 .dev-mode（防止过早删除循环控制文件）
+  - 验证 .dev-mode 删除成功（防止文件残留导致 Stop Hook 干扰）
+  - 验证 gate 文件存在（警告模式，提示缺失的 gate 文件）
+  - 新增 7 个自动化测试：`tests/scripts/cleanup-validation.test.ts`
+  - 更新 feature-registry.yml (P3: Quality Reporting v11.24.2)
+
+### Fixed
+
+- **版本号同步** - 修复多处版本号不一致问题
+  - 同步更新 VERSION、.hook-core-version、hook-core/VERSION 三处版本号
+  - 修复 CI 测试失败（版本号不匹配）
+
+### Documentation
+
+- **开发经验记录** - LEARNINGS.md 更新到 v1.8.0
+  - 记录版本号同步问题（4 处版本号必须同步）
+  - 记录 Impact Check 强制执行机制
+  - 记录 PRD/DoD 文件清理时机
+  - 记录临时文件残留问题和解决方案
+
 ## [11.24.1] - 2026-02-01
 
 ### Fixed
