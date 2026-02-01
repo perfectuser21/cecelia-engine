@@ -1,7 +1,0 @@
-dev
-branch: cp-max-gate-attempts-20
-prd: .prd-cp-max-gate-attempts-20.md
-started: 2026-02-01T05:49:37+00:00
-session_id: manual-session
-tty: no-tty
-tasks_created: true
