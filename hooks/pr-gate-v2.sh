@@ -739,7 +739,7 @@ if [[ "$MODE" == "pr" ]]; then
     else
         echo "[FAIL] (docs/QA-DECISION.md 不存在)" >&2
         echo "    -> 请调用 /qa skill 生成 QA 决策" >&2
-        FAILED=1
+        GATE_FAILED=1  # Bug #7 修复: QA Decision 缺失是硬阻塞
     fi
 
     # 检查 AUDIT-REPORT.md 存在且 Decision: PASS
@@ -768,7 +768,7 @@ if [[ "$MODE" == "pr" ]]; then
         fi
     else
         echo "[FAIL] (docs/AUDIT-REPORT.md 不存在)" >&2
-        FAILED=1
+        GATE_FAILED=1  # Bug #7 修复: Audit Report 缺失是硬阻塞
     fi
 
     # L2B-min 检查（PR to develop 也需要证据）

@@ -286,7 +286,16 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
         elif git rev-parse main >/dev/null 2>&1; then
             BASE_BRANCH="main"
         else
-            BASE_BRANCH="HEAD~10"  # 最后的 fallback
+            # Bug #2 修复: 安全 fallback，处理新仓库（<10 commits）
+            COMMIT_COUNT=$(git rev-list --count HEAD 2>/dev/null || echo "0")
+            if [[ $COMMIT_COUNT -gt 10 ]]; then
+                BASE_BRANCH="HEAD~10"
+            elif [[ $COMMIT_COUNT -gt 0 ]]; then
+                # 使用第一个 commit 作为 base
+                BASE_BRANCH=$(git rev-list --max-parents=0 HEAD 2>/dev/null || echo "HEAD")
+            else
+                BASE_BRANCH="HEAD"  # 空仓库，使用当前 HEAD
+            fi
         fi
     fi
 
@@ -331,6 +340,14 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     # v18: 检查 Task Checkpoint 是否已创建
     DEV_MODE_FILE="$PROJECT_ROOT/.dev-mode"
     if [[ -f "$DEV_MODE_FILE" ]]; then
+        # Bug #6 修复: 检查 Step 3 状态，如果正在执行则允许通过
+        STEP_3_STATUS=$(grep "^step_3_branch:" "$DEV_MODE_FILE" 2>/dev/null | awk '{print $2}' || echo "pending")
+        if [[ "$STEP_3_STATUS" == "in_progress" || "$STEP_3_STATUS" == "done" ]]; then
+            # Step 3 正在执行或已完成，允许通过（避免竞态条件）
+            exit 0
+        fi
+
+        # 否则检查 tasks_created
         TASKS_CREATED=$(grep "^tasks_created:" "$DEV_MODE_FILE" 2>/dev/null | cut -d' ' -f2 || echo "")
         if [[ "$TASKS_CREATED" != "true" ]]; then
             echo "" >&2

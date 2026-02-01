@@ -1,3 +1,25 @@
+## [11.26.1] - 2026-02-01
+
+### Fixed
+
+**P0 - 立即修复（阻塞工作流）**
+- Bug #1: Stop Hook 条件 3 永远失败 - PR 合并后仍然 block
+- Bug #6: .dev-mode 竞态条件 - Step 3 执行期间死锁
+- Bug #7: PR Gate QA/Audit 软阻塞 - 改为硬阻塞
+
+**P1 - 尽快修复（影响质量）**
+- Bug #2: HEAD~10 fallback 在新仓库中失败
+- Bug #3: retry_count 竞态条件
+
+**P2 - 重要修复（安全和稳定性）**
+- Bug #13: 命令注入漏洞 - 禁止嵌套 bash -c
+
+### Technical Details
+- hooks/stop.sh: 添加 PR_STATE 条件判断，支持 PR 合并后正确退出
+- hooks/branch-protect.sh: 修复 HEAD~10 fallback，处理新仓库场景；修复 Step 3 竞态条件
+- hooks/pr-gate-v2.sh: QA/Audit 缺失改为 GATE_FAILED（硬阻塞）
+- scripts/run-regression.sh: 禁止嵌套 bash -c，防止命令注入
+
 ## [11.26.0] - 2026-02-01
 
 ### Added

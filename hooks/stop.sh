@@ -157,9 +157,17 @@ if [[ $RETRY_COUNT -ge 15 ]]; then
     exit 0  # 允许会话结束（失败退出）
 fi
 
-# 更新重试次数
-sed -i "/^retry_count:/d" "$DEV_MODE_FILE" 2>/dev/null || true
-echo "retry_count: $((RETRY_COUNT + 1))" >> "$DEV_MODE_FILE"
+# 更新重试次数（Bug #3 修复: 使用 flock 原子更新）
+{
+    flock -x 200
+    grep -v "^retry_count:" "$DEV_MODE_FILE" > "$DEV_MODE_FILE.tmp" 2>/dev/null || true
+    echo "retry_count: $((RETRY_COUNT + 1))" >> "$DEV_MODE_FILE.tmp"
+    mv "$DEV_MODE_FILE.tmp" "$DEV_MODE_FILE"
+} 200>"$DEV_MODE_FILE.lock" 2>/dev/null || {
+    # flock 失败时的 fallback（不中断流程）
+    sed -i "/^retry_count:/d" "$DEV_MODE_FILE" 2>/dev/null || true
+    echo "retry_count: $((RETRY_COUNT + 1))" >> "$DEV_MODE_FILE"
+}
 
 # ===== 读取 .dev-mode 内容 =====
 DEV_MODE=$(head -1 "$DEV_MODE_FILE" 2>/dev/null || echo "")
@@ -310,11 +318,34 @@ case "$CI_STATUS" in
 esac
 
 # ===== 条件 3: PR 已合并？（CI 通过后检查） =====
-echo "  ❌ 条件 3: PR 未合并" >&2
-echo "" >&2
-echo "  下一步: 合并 PR" >&2
-echo "    gh pr merge $PR_NUMBER --squash --delete-branch" >&2
-echo "" >&2
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-jq -n --arg reason "PR #$PR_NUMBER CI 已通过但未合并，执行合并操作" --arg pr "$PR_NUMBER" '{"decision": "block", "reason": $reason, "pr_number": $pr}'
-exit 0
+if [[ "$PR_STATE" == "merged" ]]; then
+    echo "  ✅ 条件 3: PR 已合并" >&2
+
+    # 检查是否完成 Step 11 Cleanup
+    if grep -q "^step_11_cleanup: done" "$DEV_MODE_FILE" 2>/dev/null; then
+        echo "  ✅ Step 11 Cleanup 已完成" >&2
+        echo "" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        echo "  🎉 工作流完成！正在清理..." >&2
+        rm -f "$DEV_MODE_FILE"
+        jq -n '{"decision": "allow", "reason": "PR 已合并且 Step 11 完成，工作流结束"}'
+        exit 0  # 允许结束
+    else
+        echo "  ⚠️  Step 11 Cleanup 未完成" >&2
+        echo "" >&2
+        echo "  下一步: 执行 Step 11 Cleanup" >&2
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+        jq -n '{"decision": "block", "reason": "PR 已合并，执行 Step 11 Cleanup"}'
+        exit 0
+    fi
+else
+    # PR 未合并
+    echo "  ❌ 条件 3: PR 未合并" >&2
+    echo "" >&2
+    echo "  下一步: 合并 PR" >&2
+    echo "    gh pr merge $PR_NUMBER --squash --delete-branch" >&2
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    jq -n --arg reason "PR #$PR_NUMBER CI 已通过但未合并，执行合并操作" --arg pr "$PR_NUMBER" '{"decision": "block", "reason": $reason, "pr_number": $pr}'
+    exit 0
+fi

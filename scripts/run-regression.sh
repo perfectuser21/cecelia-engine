@@ -210,16 +210,19 @@ run_evidence() {
             # P0-1 修复: 移除 eval，使用 bash -c 执行（更安全，防止命令注入）
             # 注意：evidence_run 来自 regression-contract.yaml（受版本控制），但仍需防范
             # L1 fix: 严格的命令注入检查
-            # bash -c 本身可能被滥用来绕过检查，需要验证整个命令
-            # 只允许以下模式:
-            # 1. 简单命令（无 shell 元字符）
-            # 2. 明确的 bash -c '...' 结构（内容已被引号保护）
+            # Bug #13 修复: 禁止嵌套 bash -c，防止命令注入
             local cmd_safe=false
+
+            # 检查是否包含嵌套 bash（任何形式的 bash/sh -c）
+            if [[ "$evidence_run" =~ bash.*-c ]]; then
+                echo -e "${YELLOW}[SKIP]${NC} (nested bash -c not allowed)"
+                L3_SKIPPED=$((L3_SKIPPED + 1))
+                return
+            fi
+
+            # 只允许简单命令（无危险的 shell 元字符）
             if [[ ! "$evidence_run" =~ [\;\|\&\`\$\(] ]]; then
                 # 无危险元字符，安全
-                cmd_safe=true
-            elif [[ "$evidence_run" =~ ^(bash|sh)\ -c\ \'[^\']*\'$ ]]; then
-                # bash -c 'command' 格式，引号内无危险
                 cmd_safe=true
             fi
 
