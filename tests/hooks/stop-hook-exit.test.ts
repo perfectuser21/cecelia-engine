@@ -25,6 +25,13 @@ describe('Stop Hook 退出条件', () => {
     execSync('git init', { cwd: tempDir });
     execSync('git config user.email "test@example.com"', { cwd: tempDir });
     execSync('git config user.name "Test User"', { cwd: tempDir });
+
+    // 创建初始提交（需要有 HEAD 才能 checkout -b）
+    writeFileSync(join(tempDir, 'README.md'), '# Test');
+    execSync('git add README.md', { cwd: tempDir });
+    execSync('git commit -m "Initial commit"', { cwd: tempDir });
+
+    // 创建测试分支
     execSync('git checkout -b cp-test-branch', { cwd: tempDir });
   });
 
