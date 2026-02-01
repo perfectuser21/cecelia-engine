@@ -12,7 +12,7 @@ step_4_dod: done
 step_5_code: done
 step_6_test: done
 step_7_quality: done
-step_8_pr: pending
+step_8_pr: done
 step_9_ci: pending
 step_10_learning: pending
 step_11_cleanup: pending
