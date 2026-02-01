@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.45.0"
+version: "2.46.0"
 updated: "2026-02-01"
 changelog:
+  - 2.46.0: v11.20.0 - AI 自我检测硬规则（skills/dev + CLAUDE.md 添加禁止话术和关键词自检机制）
   - 2.45.0: v11.19.0 - G3 修复 dev 工作流 gate skill 调用方式（Task → Skill 调用，删除冗长内联 prompt）
   - 2.44.0: v11.16.0 - W6 Worktree 自动检测与创建（Step 0 前置 + 僵尸清理 + flock 锁 + Step 3 兜底）
   - 2.43.0: v11.14.2 - P0-3 Stop Hook 会话隔离（检查 .dev-mode 中的 branch 是否与当前分支匹配，防止多会话"串线"）

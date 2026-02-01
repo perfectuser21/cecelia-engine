@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [11.20.0] - 2026-02-01
+
+### Added
+
+- **AI 自我检测硬规则** - 防止 AI 建议手动操作绕过自动化流程
+  - `skills/dev/SKILL.md` 新增"⛔ 绝对禁止行为"章节（前 100 行内）
+  - `/home/xx/.claude/CLAUDE.md` 新增"⛔ AI 自我检测"章节（前 50 行内）
+  - 11 条禁止话术清单：手动创建 PR、手动运行、暂时禁用 Hook、需要用户确认、让用户手动做、绕过等
+  - 11 个关键词触发自检：手动、您可以、暂时禁用、等待用户、需要确认、绕过、临时、跳过、忽略、先不管、稍后
+  - 对比表格：AI 默认倾向 vs 正确行为
+  - 说明 Stop Hook 循环机制确保自动重试
+
 ## [11.19.0] - 2026-02-01
 
 ### Changed
