@@ -1,0 +1,15 @@
+{
+  "branch": "cp-test-stop-hook-flow",
+  "head_sha": "3a926c701e10347c604f3d58ef41d48c9fd215e9",
+  "timestamp": "2026-02-01T20:36:17+08:00",
+  "commands": {
+    "test": { "status": "pass", "duration": "465ms" }
+  },
+  "gates": {
+    "audit": { "status": "pass", "file": "docs/AUDIT-REPORT.md" }
+  },
+  "env": {
+    "node": "v20.20.0",
+    "platform": "Linux"
+  }
+}
