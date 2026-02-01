@@ -72,27 +72,6 @@ fi
 # ===== JSON 输入处理 =====
 INPUT=$(cat)
 
-# ===== 硬拦截 --admin 参数 =====
-# v4.4: 禁止使用 --admin 参数绕过分支保护和 CI
-# 检测 JSON 中是否包含 --admin 参数
-if echo "$INPUT" | grep -qE '"--admin[^"]*"'; then
-    echo "" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    echo "  [ERROR] 禁止使用 --admin 参数" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    echo "" >&2
-    echo "为什么禁止：" >&2
-    echo "  --admin 会绕过分支保护和 CI 检查，违反工程规范" >&2
-    echo "" >&2
-    echo "正确做法：" >&2
-    echo "  1. 等待 CI 通过" >&2
-    echo "  2. 如果 CI 失败，修复问题后重新提交" >&2
-    echo "  3. 如果确实需要合并，请先联系团队讨论" >&2
-    echo "" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    exit 2
-fi
-
 # JSON 预验证，防止格式错误或注入
 if ! echo "$INPUT" | jq empty >/dev/null 2>&1; then
     echo "[ERROR] 无效的 JSON 输入" >&2
@@ -109,6 +88,27 @@ fi
 
 # 提取 command
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // ""' 2>/dev/null || echo "")
+
+# ===== 硬拦截 --admin 参数 =====
+# v4.4: 禁止在 gh 命令中使用 --admin 参数绕过分支保护和 CI
+# 只检测 gh 命令，避免误报（如 commit message 中的文本）
+if [[ "$COMMAND" == *"gh "* ]] && [[ "$COMMAND" =~ (^|[[:space:]])--admin([[:space:]]|$) ]]; then
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "  [ERROR] 禁止使用 --admin 参数" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "" >&2
+    echo "为什么禁止：" >&2
+    echo "  --admin 会绕过分支保护和 CI 检查，违反工程规范" >&2
+    echo "" >&2
+    echo "正确做法：" >&2
+    echo "  1. 等待 CI 通过" >&2
+    echo "  2. 如果 CI 失败，修复问题后重新提交" >&2
+    echo "  3. 如果确实需要合并，请先联系团队讨论" >&2
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    exit 2
+fi
 
 # 拦截所有可能创建 PR 的命令
 # 1. gh pr create
