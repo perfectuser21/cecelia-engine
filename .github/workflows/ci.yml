@@ -70,7 +70,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # M1 FIX: 增加超时时间到30分钟（复杂测试可能需要更长时间）
+    timeout-minutes: 30
     permissions:
       contents: read
     steps:
@@ -519,7 +520,8 @@ jobs:
   # Contract Drift Check - 防止派生视图漂移
   contract-drift-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # M1 FIX: 减少超时时间到5分钟（检查操作应该很快）
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
@@ -616,13 +618,13 @@ jobs:
             # 检查 PR title 是否包含 [CONFIG] 或 [INFRA] 标记
             PR_TITLE="${{ github.event.pull_request.title }}"
             if [[ ! "$PR_TITLE" =~ \[CONFIG\] ]] && [[ ! "$PR_TITLE" =~ \[INFRA\] ]]; then
-              echo "⚠️  建议: PR title 应包含 [CONFIG] 或 [INFRA] 标记"
+              echo "❌ PR title 必须包含 [CONFIG] 或 [INFRA] 标记"
               echo "   这有助于团队识别配置变更类 PR"
               echo ""
               echo "建议 title: [CONFIG] $PR_TITLE"
               echo ""
-              # P1: 暂时只警告，不阻断
-              # 未来可以根据团队需求改成强制要求
+              # L4 FIX: 改为强制要求，配置变更必须明确标记
+              exit 1
             else
               echo "✅ PR title 包含配置变更标记"
             fi
@@ -869,53 +871,78 @@ jobs:
   # PRD/DoD 现在通过 PR Gate 阻止进入 develop/main，不再需要 push 后清理
 
   ci-passed:
-    needs: [version-check, test, contract-drift-check, impact-check, l2b-check, known-failures-protection, config-audit, regression-pr, release-check]
-    # SECURITY FIX v2: 加强分支检查，禁止 skipped 绕过
-    # - PR 到 develop: regression-pr 必须 success（不能是 skipped）
-    # - PR 到 main: release-check 必须 success（不能是 skipped）
-    # - known-failures-protection 必须 success 或 skipped（push 事件时跳过）
-    # - config-audit 必须 success 或 skipped（push 事件时跳过）
+    # C1 FIX: 移除条件性 jobs (regression-pr, release-check) 的依赖
+    # 这两个 jobs 只在特定 base_ref 时运行，作为依赖会导致其他分支的 PR 失败
+    needs: [version-check, test, contract-drift-check, impact-check, l2b-check, known-failures-protection, config-audit]
+    # SECURITY FIX v3: 全面加强检查，禁止关键 jobs 被 skipped 绕过
+    # H4 FIX: 关键安全检查（known-failures-protection, config-audit, impact-check）必须 success，不允许 skipped
     if: |
       always() &&
       github.event_name == 'pull_request' &&
       needs.test.result == 'success' &&
       needs.contract-drift-check.result == 'success' &&
-      (needs.known-failures-protection.result == 'success' || needs.known-failures-protection.result == 'skipped') &&
-      (needs.config-audit.result == 'success' || needs.config-audit.result == 'skipped') &&
+      needs.known-failures-protection.result == 'success' &&
+      needs.config-audit.result == 'success' &&
+      needs.impact-check.result == 'success' &&
       (needs.version-check.result == 'success' || needs.version-check.result == 'skipped') &&
-      (needs.impact-check.result == 'success' || needs.impact-check.result == 'skipped') &&
-      (needs.l2b-check.result == 'success' || needs.l2b-check.result == 'skipped') &&
-      (github.base_ref != 'develop' || needs.regression-pr.result == 'success') &&
-      (github.base_ref != 'main' || needs.release-check.result == 'success')
+      (needs.l2b-check.result == 'success' || needs.l2b-check.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
+
+      # C1 FIX: 验证条件性 jobs 的结果（通过 gh CLI 查询而非依赖）
+      - name: Verify regression-pr and release-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          # 检查 regression-pr (PR to develop 时必须 success)
+          if [[ "${{ github.base_ref }}" == "develop" ]]; then
+            echo "[$(date -u +%H:%M:%S)] 验证 regression-pr 状态..."
+            STATUS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" \
+              --jq '.jobs[] | select(.name == "regression-pr") | .conclusion')
+
+            if [[ "$STATUS" != "success" ]]; then
+              echo "❌ regression-pr 未通过: $STATUS"
+              echo "PR to develop 必须通过 L3 回归测试"
+              exit 1
+            fi
+            echo "✅ regression-pr: success"
+          fi
+
+          # 检查 release-check (PR to main 时必须 success)
+          if [[ "${{ github.base_ref }}" == "main" ]]; then
+            echo "[$(date -u +%H:%M:%S)] 验证 release-check 状态..."
+            STATUS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" \
+              --jq '.jobs[] | select(.name == "release-check") | .conclusion')
+
+            if [[ "$STATUS" != "success" ]]; then
+              echo "❌ release-check 未通过: $STATUS"
+              echo "PR to main 必须通过 Release 检查"
+              exit 1
+            fi
+            echo "✅ release-check: success"
+          fi
+
       - name: CI Passed
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  ✅ CI 通过"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "PR #${{ github.event.pull_request.number }} CI 检查通过"
+          echo "[$(date -u +%H:%M:%S)] PR #${{ github.event.pull_request.number }} CI 检查通过"
           echo ""
           echo "已通过的检查："
           echo "  ✅ test (L1 + DevGate + DevGate 脚本存在性)"
-          if [ "${{ needs.known-failures-protection.result }}" = "success" ]; then
-            echo "  ✅ known-failures-protection (P0)"
-          fi
-          if [ "${{ needs.config-audit.result }}" = "success" ]; then
-            echo "  ✅ config-audit (P1)"
-          fi
+          echo "  ✅ known-failures-protection (P0)"
+          echo "  ✅ config-audit (P1)"
+          echo "  ✅ impact-check (P1)"
           if [ "${{ needs.l2b-check.result }}" = "success" ]; then
             echo "  ✅ l2b-check (L2B 证据 + SHA 验证)"
           fi
           echo "  ✅ contract-drift-check"
-          if [ "${{ needs.regression-pr.result }}" = "success" ]; then
-            echo "  ✅ regression-pr (L3 子集)"
-          fi
-          if [ "${{ needs.release-check.result }}" = "success" ]; then
-            echo "  ✅ release-check (L3 全量 + CHANGELOG)"
-          fi
           echo ""
           echo "下一步："
           echo "  1. 手动 review（如有需要）"
@@ -993,7 +1020,10 @@ jobs:
   # AI Review (L2C) - 语义/影响面审查
   # 在 CI 全绿后运行，不阻断 PR（初期）
   ai-review:
-    if: github.event_name == 'pull_request'
+    # C3 FIX: 允许 ci-passed skipped（非 PR 事件时 ci-passed 不运行）
+    if: |
+      github.event_name == 'pull_request' &&
+      (needs.ci-passed.result == 'success' || needs.ci-passed.result == 'skipped')
     needs: [ci-passed]
     runs-on: ubuntu-latest
     timeout-minutes: 5

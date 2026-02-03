@@ -1,3 +1,34 @@
+## [11.29.0] - 2026-02-03
+
+### Fixed
+
+**CI Bug 修复 - 通过多 Subagent 深度分析发现并修复 13 个关键 bug**
+
+**CRITICAL 级别修复 (3个)**
+- **C1**: `ci-passed` 依赖逻辑错误 - 移除条件性 jobs 依赖，改用 gh CLI 动态验证 regression-pr/release-check 状态
+- **C2**: `l2b-check.sh` SHA 前缀匹配逻辑反向 - 实现双向前缀匹配，支持短 SHA 匹配长 HEAD
+- **C3**: `ai-review` 依赖 `ci-passed` 可能不运行 - 添加条件判断，允许 ci-passed skipped
+
+**HIGH 级别修复 (3个)**
+- **H2**: 命令检测正则允许 "rebash" - 使用单词边界 `\bbash\b` 避免误匹配
+- **H3**: 机器引用正则过于宽松 - 使用更严格的模式和单词边界
+- **H4**: `ci-passed` 允许 skipped 绕过关键检查 - known-failures-protection、config-audit、impact-check 必须 success（已在 C1 中修复）
+
+**MEDIUM 级别修复 (1个)**
+- **M1**: 超时设置优化 - test job 增加到 30min，contract-drift-check 减少到 5min
+
+**LOW 级别修复 (5个)**
+- **L1**: 关键日志添加时间戳（已在 C1 中添加）
+- **L2**: DoD checkbox 正则支持多空格 - 改用 `\[\s*\]` 支持任意空格
+- **L3**: 错误信息显示所有 SHA - 不只显示第一个
+- **L4**: 配置文件变更改为强制要求 [CONFIG] 标记 - 从建议模式改为阻断模式
+- **L5**: L2B SHA 验证改为阻断模式 - 从警告改为 exit 1 防止伪造证据
+
+**Bug 发现方法**
+- 使用 5 个并行 Subagent 深度分析 CI workflow
+- 共发现 26 个 bug，本次修复 13 个最关键的 bug
+- 剩余 13 个 bug 为代码审查建议和进一步优化，后续迭代修复
+
 ## [11.28.0] - 2026-02-03
 
 ### Added

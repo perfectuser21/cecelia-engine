@@ -46,12 +46,14 @@ if [[ "$MODE" == "pr" ]]; then
   HAS_MACHINE_REF=false
 
   # 检查可复现命令（在代码块内或列表项中）
-  if grep -qE '(npm run|bash |node |git |pytest |cargo |go test)' "$EVIDENCE_FILE"; then
+  # H2 FIX: 使用单词边界避免匹配 "rebash"
+  if grep -qE '(\bnpm\s+run\b|\bbash\b|\bnode\b|\bgit\b|\bpytest\b|\bcargo\b|\bgo\s+test\b)' "$EVIDENCE_FILE"; then
     HAS_COMMAND=true
   fi
 
   # 检查机器引用（SHA、run ID、hash 等）
-  if grep -qE '([0-9a-f]{7,40}|run[_-]?id|#[0-9]+|sha256)' "$EVIDENCE_FILE"; then
+  # H3 FIX: 使用单词边界和更严格的模式
+  if grep -qE '(\b[0-9a-f]{7,40}\b|run[_-]?id:\s*[0-9]+|#[0-9]+|\bsha256:[0-9a-f]+)' "$EVIDENCE_FILE"; then
     HAS_MACHINE_REF=true
   fi
 
@@ -74,8 +76,12 @@ if [[ "$MODE" == "pr" ]]; then
     echo "  [验证 commit SHA]"
     SHA_VALID=false
     while IFS= read -r sha; do
-      # 检查是否匹配当前 HEAD (完整或短格式)
-      if [[ "$sha" == "$CURRENT_HEAD" || "$sha" == "$CURRENT_HEAD_SHORT"* ]]; then
+      # C2 FIX: 双向前缀匹配，支持短SHA匹配长HEAD
+      # 检查是否匹配当前 HEAD (完整或短格式，双向前缀)
+      if [[ "$sha" == "$CURRENT_HEAD" ]] || \
+         [[ "$sha" == "$CURRENT_HEAD_SHORT"* ]] || \
+         [[ "$CURRENT_HEAD" == "$sha"* ]] || \
+         [[ "$CURRENT_HEAD_SHORT" == "$sha"* ]]; then
         echo "  ✅ SHA $sha 匹配当前 HEAD"
         SHA_VALID=true
         break
@@ -89,12 +95,16 @@ if [[ "$MODE" == "pr" ]]; then
     done <<< "$EVIDENCE_SHAS"
 
     if [[ "$SHA_VALID" == "false" ]]; then
-      echo "  ⚠️  警告: 证据中的 SHA 不匹配当前 HEAD 或历史提交"
+      echo "  ❌ 证据中的 SHA 不匹配当前 HEAD 或历史提交"
       echo "     这可能是复制粘贴的假证据"
-      echo "     证据中的 SHA: $(echo "$EVIDENCE_SHAS" | head -1)"
+      # L3 FIX: 显示所有 SHA，不只是第一个
+      echo "     证据中的 SHA:"
+      while IFS= read -r sha; do
+        echo "       - $sha"
+      done <<< "$EVIDENCE_SHAS"
       echo "     当前 HEAD: $CURRENT_HEAD_SHORT"
-      # P1: 暂时只警告，不阻断（给一个宽限期）
-      # 未来可以改成 exit 1
+      # L5 FIX: 从警告改为阻断模式，防止伪造证据
+      exit 1
     fi
   fi
 
@@ -116,7 +126,8 @@ if [[ "$MODE" == "release" ]]; then
   fi
   
   # 检查是否有未完成项（[ ]）
-  if grep -q '^\- \[ \]' "$EVIDENCE_FILE"; then
+  # L2 FIX: 支持多空格的 checkbox（[\s*]）
+  if grep -qE '^\- \[\s*\]' "$EVIDENCE_FILE"; then
     echo "❌ 存在未完成的 DoD 项"
     exit 1
   fi
