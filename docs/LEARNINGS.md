@@ -1982,3 +1982,160 @@ git push
 - 验证在不同类型错误下的循环修复能力（语法错误、逻辑错误、构建错误等）
 
 ---
+
+## 2026-02-03: CI 优化 - 删除 Nightly workflow 和提升并行度
+
+### 问题背景
+
+CI 深度调查发现：
+- Nightly workflow 持续失败且不再需要
+- CI 快速检查（version-check, known-failures, config-check 等）串行执行，浪费时间
+- setup-project 逻辑重复出现在多个 jobs，代码冗余 40%
+
+### Bug 1: Nightly workflow 持续失败
+
+**问题**：
+- `.github/workflows/nightly.yml` 持续失败
+- 最初设计用于夜间回归测试，但已被更好的机制替代
+- 保留它只会增加噪音和维护成本
+
+**解决方案**：
+- 直接删除 `.github/workflows/nightly.yml` (257 lines)
+- 删除对应的测试文件 `tests/workflows/nightly.test.ts` (87 lines)
+- 从 `regression-contract.yaml` 移除 Nightly trigger
+
+**影响程度**: Medium - 减少 CI 噪音，提升可维护性
+
+### 优化点 1: CI 快速检查改为并行执行
+
+**问题**：
+- 5 个快速检查串行执行（version-check → known-failures → config-check → impact-analysis → contract-drift-check）
+- 每个检查独立，无依赖关系
+- 串行执行浪费时间
+
+**解决方案**：
+使用 GitHub Actions matrix strategy 并行执行：
+```yaml
+quick-checks:
+  strategy:
+    matrix:
+      check:
+        - version-check
+        - known-failures
+        - config-check
+        - impact-analysis
+        - contract-drift-check
+  steps:
+    - uses: ./.github/actions/setup-project
+    - run: bash ci/scripts/${{ matrix.check }}.sh
+```
+
+**优化效果**：
+- 预期减少 50-60 秒 CI 运行时间
+- 并行度从 1 提升到 5
+- 更好利用 GitHub Actions 并发资源
+
+**影响程度**: Medium - 提升开发体验
+
+### 优化点 2: 创建 Composite Action 减少代码冗余
+
+**问题**：
+- setup-project 逻辑（Setup Node.js + npm ci）在多个 jobs 中重复
+- 修改 setup 逻辑需要改多处
+- 代码冗余约 40%
+
+**解决方案**：
+创建 `.github/actions/setup-project/action.yml` Composite Action：
+```yaml
+name: 'Setup Project'
+description: 'Setup Node.js and install dependencies'
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+```
+
+使用方式：
+```yaml
+- uses: ./.github/actions/setup-project
+```
+
+**优化效果**：
+- 减少 34 行重复代码
+- 统一 setup 逻辑，修改一处即可
+- 提升可维护性
+
+**影响程度**: Low - 可维护性改进
+
+### 遇到的 CI 失败问题
+
+#### 失败 1: 测试期望版本号不匹配
+
+**问题**：
+- 更新 `package.json` 版本号到 12.4.0
+- 但忘记更新 `hook-core/VERSION` 文件
+- 导致 `tests/hooks/install-hooks.test.ts` 版本检查失败
+
+**解决**：
+- 同步更新 `hook-core/VERSION` 文件
+
+**教训**：
+- 版本号更新需要检查所有版本文件
+- 可以考虑自动化版本号同步脚本
+
+**影响程度**: Low - 测试失败提醒
+
+#### 失败 2: PRD/DoD 文件包含在 PR 中
+
+**问题**：
+- `.prd-*.md` 和 `.dod-*.md` 文件被提交到 PR
+- PR Gate 检查拒绝包含这些工作文档
+
+**解决**：
+- 运行 `git rm .prd-*.md .dod-*.md`
+- 这些文件是功能分支的工作文档，不应进入 develop/main
+
+**教训**：
+- 工作文档应该在合并前清理
+- PR Gate 检查有效防止了文档污染
+
+**影响程度**: Low - Gate 有效拦截
+
+#### 失败 3: Config 变更 PR title 缺少标记
+
+**问题**：
+- PR 修改了 `ci.yml` 和 `regression-contract.yaml`
+- 但 PR title 缺少 `[CONFIG]` 标记
+- Config Audit 检查失败
+
+**解决**：
+- 更新 PR title 为 `[CONFIG] feat: CI 优化 - 删除 Nightly workflow 并提升并行度`
+
+**教训**：
+- 配置变更类 PR 必须有明确标记
+- 帮助团队识别配置变更风险
+
+**影响程度**: Low - 流程规范提醒
+
+### 流程顺畅的地方
+
+- `/dev` 工作流整体流畅
+- Gate 审核机制有效（prd/dod/qa/audit/test 全部 PASS）
+- 并行执行优化设计合理，无需调整
+- Composite Action 抽象恰当，复用性好
+
+### 影响程度总结
+
+- **High**: 1 个（L2A/L2B 结构验证）
+- **Medium**: 2 个（删除 Nightly、并行执行优化）
+- **Low**: 3 个（Composite Action、版本同步、PR 规范）
+
+---
+
