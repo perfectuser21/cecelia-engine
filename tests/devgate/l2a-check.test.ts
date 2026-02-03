@@ -41,7 +41,7 @@ describe('L2A Check - P1-1 Structure Validation', () => {
 
       // 验证包含内容行数检查
       expect(content).toContain('CONTENT_LINES');
-      expect(content).toMatch(/grep -cv "^\$"/);
+      expect(content).toContain('grep -cv "^$"');
       expect(content).toMatch(/CONTENT_LINES.*-lt 2/);
     });
 
@@ -118,7 +118,7 @@ describe('L2A Check - P1-1 Structure Validation', () => {
 
       // 验证 Test 格式检查（auto: 或 manual:）
       expect(content).toContain('INVALID_TEST_MAPPINGS');
-      expect(content).toMatch(/\^(auto|manual):/);
+      expect(content).toContain('^(auto|manual):');
     });
 
     it('C12-002: DoD 应该通过 - 有效结构', () => {
