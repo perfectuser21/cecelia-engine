@@ -1,3 +1,22 @@
+## [11.27.1] - 2026-02-03
+
+### Fixed
+
+**CI 安全性修复 - 移除 PRD/DoD 检查混淆**
+- 删除 CI 中的 L2A Check（PRD/DoD 检查）
+- 删除 scripts/devgate/l2a-check.sh 和测试文件
+- 本地 branch-protect.sh Hook 保持不变（继续检查 PRD/DoD）
+
+**架构明确化**：
+- 本地 Hook：保证工作流（分支保护 + PRD/DoD 检查）
+- CI：只检查代码质量（TypeCheck + Tests + Build）
+- PRD/DoD 是本地工作文档，不在 CI 中检查
+
+**好处**：
+- CI 日志更清晰（不再有测试的 L2A_FAIL 混淆）
+- 职责分离明确（本地流程 vs CI 质量门禁）
+- 符合行业实践（CI 检查代码，不检查文档）
+
 ## [11.27.0] - 2026-02-03
 
 ### Changed
