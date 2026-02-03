@@ -122,7 +122,21 @@ describe('L2A Check - P1-1 Structure Validation', () => {
     });
 
     it('C12-002: DoD 应该通过 - 有效结构', () => {
-      const validPRD = `## 背景\n\ntest\ntest2\n\n## 问题\n\ntest\ntest2\n\n## 方案\n\ntest\ntest2`;
+      const validPRD = `## 背景
+
+test content line 1
+test content line 2
+
+## 问题
+
+problem line 1
+problem line 2
+
+## 方案
+
+solution line 1
+solution line 2
+`;
       const validDoD = `# DoD
 
 - [ ] 功能 A 正常工作
