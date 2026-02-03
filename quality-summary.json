@@ -1,16 +1,13 @@
 {
-  "branch": "cp-ci-optimization",
+  "branch": "cp-ci-stress-test-fixes",
   "checks": {
     "typecheck": {"status": "pass"},
-    "test": {"status": "pass", "total": 384, "passed": 384},
+    "test": {"status": "pass", "total": 395, "passed": 395, "skipped": 2},
     "build": {"status": "pass"},
     "shell": {"status": "pass"}
   },
   "gates": {
-    "prd": {"status": "pass", "file": ".gate-prd-passed"},
-    "dod": {"status": "pass", "file": ".gate-dod-passed"},
-    "qa": {"status": "pass", "file": ".gate-qa-passed"},
-    "audit": {"status": "pass", "file": ".gate-audit-passed"},
-    "test": {"status": "pass", "file": ".gate-test-passed"}
-  }
+    "quality": {"status": "pass"}
+  },
+  "timestamp": "2026-02-03T12:22:22Z"
 }
