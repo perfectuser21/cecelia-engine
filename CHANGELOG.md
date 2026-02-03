@@ -1,3 +1,20 @@
+## [12.4.1] - 2026-02-03
+
+### Fixed (P2)
+
+- **CI 压力测试问题修复**:
+  - 白名单过期检查: ci.yml 新增 `expires` 字段过期验证，防止使用过期的 known-failures 条目
+  - Config 监控扩展: 扩展 `CRITICAL_CONFIGS` 数组，新增 package.json, .claude/settings.json, hooks/, skills/ 监控
+  - Gate 过期测试: 新增 `tests/gate/gate-expiry.test.ts`，覆盖 Gate 文件 30 分钟过期机制和 Mock 时间戳测试
+  - 分支保护验证改进: 新增 `scripts/devgate/check-branch-protection.sh` 手动验证脚本，API 返回 404 时提供 Web UI 检查指引
+  - back-merge 触发条件强化: 增强 `.github/workflows/back-merge-main-to-develop.yml` 触发检查，额外验证 `github.ref` 防止误触发
+
+### Added
+
+- 新测试: tests/gate/gate-expiry.test.ts (5 tests)
+- 新测试: tests/ci/known-failures-expiry.test.ts (6 tests)
+- 新脚本: scripts/devgate/check-branch-protection.sh（分支保护手动验证）
+
 ## [12.4.0] - 2026-02-03
 
 ### Added
