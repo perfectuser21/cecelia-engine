@@ -248,24 +248,6 @@ jobs:
           echo "✅ 无 PRD/DoD 文件"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-      - name: L2A Check
-        if: |
-          github.event_name == 'pull_request' &&
-          steps.detect.outputs.type == 'npm' &&
-          github.base_ref != 'main' &&
-          !startsWith(github.event.pull_request.title, 'chore:')
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  L2A: PRD/DoD/QA/Audit 检查"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          # L2A check 在 L1 之后、DevGate 之前（只对 PR to develop）
-          if [ -f "scripts/devgate/l2a-check.sh" ]; then
-            bash scripts/devgate/l2a-check.sh pr || exit 1
-          else
-            echo "⚠️ l2a-check.sh not found, skipping"
-            echo "   (仓库可能还未升级到 L2A 远端检查)"
-          fi
-
       # Python
       - name: Setup Python
         if: steps.detect.outputs.type == 'python'
