@@ -848,6 +848,8 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # M6 FIX: 需要完整历史来验证 evidence 中的 SHA
 
       - name: L2B Evidence Check
         run: |
