@@ -1,3 +1,20 @@
+## [12.4.0] - 2026-02-03
+
+### Added
+
+- **CI 优化 - 删除 Nightly workflow 和提升性能**:
+  - 删除持续失败的 `.github/workflows/nightly.yml` workflow
+  - CI job 快速检查改为并行执行（version-check, known-failures, config-check, impact-analysis, contract-drift-check）
+  - 创建 Composite Action `.github/actions/setup-project/action.yml` 提取重复的 setup 逻辑
+  - `ci.yml` 使用 Composite Action，减少 40% 代码冗余
+  - `regression-contract.yaml` 移除 Nightly trigger
+  - 预期 CI 运行时间减少 50-60 秒
+
+### Removed
+
+- `.github/workflows/nightly.yml` - 不再需要的 Nightly 回归测试 workflow
+- `tests/workflows/nightly.test.ts` - 废弃的 nightly workflow 测试文件
+
 ## [12.3.1] - 2026-02-03
 
 ### Fixed (P2)
