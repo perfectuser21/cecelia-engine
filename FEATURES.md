@@ -63,11 +63,11 @@ Full Regression（全量测试）
 | ID | Feature | 状态 | 最小验收 | 说明 |
 |----|---------|------|----------|------|
 | H1 | Branch Protection | **Committed** | `tests/hooks/branch-protect.test.ts` | 分支保护（main/develop 禁写） |
-| H2 | PR Gate (Dual Mode) | **Committed** | `tests/hooks/pr-gate.test.ts` | PR 前质检（PR 模式：L1+L2A / Release 模式：L1+L2A+L2B+L3） |
-| H7 | Stop Hook Quality Gate | **Committed** | `tests/hooks/stop-hook.test.ts` (TODO) | **v2.0.0 核心** - 两阶段质检强制门禁（p0: 质检+PR / p1: CI 状态） |
-| ~~H3~~ | ~~project-detect~~ | **Deprecated** | - | v8.0.2 删除，死代码（检测结果无人使用） |
-| ~~H4~~ | ~~session-init~~ | **Deprecated** | - | v8.0.1 删除，只显示一次无实际用途 |
-| ~~H5~~ | ~~stop-gate~~ | **Deprecated** | - | v8.0.1 删除，功能已合并到 pr-gate-v2 |
+| H7 | Stop Hook Quality Gate | **Committed** | `tests/hooks/stop-hook.test.ts` | 循环控制（不达目的不罢休） |
+| ~~H2~~ | ~~PR Gate (Dual Mode)~~ | **Deprecated** | - | v12.5.4 删除，质检交给 CI |
+| ~~H3~~ | ~~project-detect~~ | **Deprecated** | - | v8.0.2 删除 |
+| ~~H4~~ | ~~session-init~~ | **Deprecated** | - | v8.0.1 删除 |
+| ~~H5~~ | ~~stop-gate~~ | **Deprecated** | - | v8.0.1 删除 |
 | ~~H6~~ | ~~pr-gate~~ | **Deprecated** | - | 被 pr-gate-v2 替代 |
 
 ---
@@ -76,7 +76,7 @@ Full Regression（全量测试）
 
 | ID | Feature | 状态 | 最小验收 | 说明 |
 |----|---------|------|----------|------|
-| G1 | Gate Subagent Token | **Committed** | `tests/hooks/gate-token.test.ts` | 令牌机制强制 subagent 必经路径（PostToolUse 写令牌 + PreToolUse 校验） |
+| ~~G1~~ | ~~Gate Subagent Token~~ | **Deprecated** | - | v12.5.3 删除，不再使用 Subagent |
 
 ---
 

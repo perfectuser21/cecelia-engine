@@ -1,3 +1,15 @@
+## [12.5.7] - 2026-02-04
+
+### Changed
+
+- **CLAUDE.md OKR**: 改为"帮助 Cecelia 完成开发任务"
+- **FEATURES.md**: H2 和 G1 标记为 Deprecated
+- **skills/gate/SKILL.md**: 移除 Subagent 术语
+
+### Removed
+
+- **skills/audit/**: 删除 audit skill（只保留 /dev）
+
 ## [12.5.6] - 2026-02-04
 
 ### Changed
