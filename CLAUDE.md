@@ -1,51 +1,81 @@
 # ZenithJoy Engine
 
-AI 开发工作流引擎。
+AI 开发工作流引擎 - 让 AI 自主、可靠地完成开发任务。
 
 ---
 
-## 唯一真实源
+## OKR
 
-| 内容 | 位置 |
-|------|------|
+**目标：Cecelia 24/7 自主运行**
+
+| 关键结果 | 状态 |
+|----------|------|
+| 信息保持最新（SSOT）| 进行中 |
+| CI 100% 覆盖 | ✅ |
+| 无人值守开发 | 进行中 |
+
+---
+
+## 核心理念
+
+### 1. 信息保持最新（唯一目标）
+
+所有文档、配置、代码必须保持同步。过时的信息是最大的敌人。
+
+| 唯一真实源 | 位置 |
+|------------|------|
 | 版本号 | `package.json` |
 | 变更历史 | `CHANGELOG.md` |
-| 功能清单 | `FEATURES.md` |
 | 回归契约 | `regression-contract.yaml` |
 | 工作流定义 | `skills/dev/SKILL.md` |
-| 知识架构 | `docs/ARCHITECTURE.md` |
-| 开发经验 | `docs/LEARNINGS.md` |
 
----
+### 2. CI 是唯一防线
 
-## 核心规则
+本地 Hook 只是**辅助**，CI 才是**真正的门卫**。
 
-1. **只在 cp-* 或 feature/* 分支写代码** - Hook 引导
-2. **每个 PR 更新版本号** - semver
-3. **完成度检查必须跑** - □ 必要项全部完成
-4. **CI 绿是唯一完成标准**
-5. **❌ 禁止使用 `--admin` 绕过分支保护和 CI** - 永远遵守规则
+```
+本地 Hook (辅助) → PR 创建 → CI 检查 (唯一防线) → 合并
+```
 
-### 关于 --admin 权限
+- ❌ 禁止使用 `--admin` 绕过 CI
+- ❌ 禁止 force push 到 main/develop
+- ✅ CI 失败 = 必须修复，没有例外
 
-**绝对禁止使用 `gh pr merge --admin` 或任何绕过分支保护的操作。**
+### 3. 每次开发 = 一个 PR
 
-**原因**：
-- ❌ 绕过 CI 检查会失去安全保障
-- ❌ 绕过分支保护会破坏历史稳定性
-- ❌ 制造"特殊通道"会让规则失效
-- ❌ 导致未来更大的冲突和不可预期的行为
+不直接在 main/develop 写代码。所有开发都是：
 
-**正确做法**：
-- ✅ 遇到合并冲突 → 创建 release/* 分支解决冲突
-- ✅ release/* 包含 develop → 通过祖先关系检查
-- ✅ CI 失败 → 修复问题，不要绕过
-- ✅ 规则阻塞 → 改进规则本身，不要开后门
+```
+创建分支 (cp-*/feature/*) → 写代码 → 创建 PR → CI 通过 → 合并
+```
 
-**分支流程已优化**：
-- main 推送后自动 back-merge 到 develop（防止长期分叉）
-- release/* 分支合法（但必须包含 develop 的所有提交）
-- 所有合并都有自然路径，不需要 admin 权限
+### 4. Stop Hook = 不达目的不罢休
+
+`hooks/stop.sh` 实现循环控制：
+
+- 检测任务是否完成（CI 绿、PR 合并）
+- 未完成 → `exit 2` → 阻止会话结束 → 继续尝试
+- 最多 15 次重试，防止无限循环
+
+### 5. Worktree = 并行隔离
+
+多任务同时进行时，使用 Git Worktree 隔离：
+
+```bash
+git worktree add ../task-a cp-task-a
+git worktree add ../task-b cp-task-b
+```
+
+每个任务独立目录，互不干扰。
+
+### 6. PRD/DoD = 质量保障
+
+**没有 PRD/DoD 不能写代码**（`branch-protect.sh` 强制）。
+
+| 文件 | 作用 |
+|------|------|
+| `.prd-*.md` | 功能描述 + 成功标准 |
+| `.dod-*.md` | 验收清单（checkbox） |
 
 ---
 
@@ -53,8 +83,52 @@ AI 开发工作流引擎。
 
 | 命令 | 说明 |
 |------|------|
-| `/dev` | 开始开发流程 |
-| `/audit` | 代码审计与修复（有边界） |
+| `/dev` | 开始开发流程（自动创建 PRD/DoD） |
+| `/audit` | 代码审计与修复 |
+
+---
+
+## 分支策略
+
+```
+main (稳定发布)
+  └── develop (主开发线)
+        └── cp-* / feature/* (功能分支)
+```
+
+- 只在 `cp-*` 或 `feature/*` 分支写代码
+- PR 合并到 develop，里程碑时 develop 合并到 main
+- main 推送后自动 back-merge 到 develop
+
+---
+
+## Hooks
+
+| Hook | 作用 |
+|------|------|
+| `branch-protect.sh` | 分支检查 + PRD/DoD 验证 |
+| `stop.sh` | 循环控制（不达目的不罢休）|
+| `credential-guard.sh` | 凭据泄露检测 |
+
+---
+
+## GitHub 分支保护
+
+```yaml
+required_status_checks:
+  strict: true
+  checks:
+    - context: test
+enforce_admins: true    # Admin 也必须遵守
+allow_force_pushes: false
+allow_deletions: false
+```
+
+检查/修复命令：
+```bash
+bash scripts/setup-branch-protection.sh --check
+bash scripts/setup-branch-protection.sh --fix
+```
 
 ---
 
@@ -63,125 +137,9 @@ AI 开发工作流引擎。
 ```
 zenithjoy-engine/
 ├── hooks/           # Claude Code Hooks
-│   ├── branch-protect.sh      # 分支保护（检查 branch/PRD/DoD）
-│   ├── stop.sh                # 循环控制（15 次重试上限）
-│   └── credential-guard.sh    # 凭据保护
-├── skills/
-│   ├── dev/         # /dev 开发工作流
-│   ├── audit/       # /audit 代码审计
-│   └── qa/          # /qa QA 总控
-├── docs/            # 详细文档
-│   ├── ARCHITECTURE.md    # 知识分层架构
-│   └── LEARNINGS.md       # 开发经验
-├── templates/       # 文档模板
-├── scripts/         # 部署脚本
-│   └── deploy.sh    # 部署到 ~/.claude/
+├── skills/          # /dev, /audit, /qa
+├── docs/            # 架构、经验文档
+├── scripts/         # 部署、检查脚本
 ├── .github/         # CI 配置
-├── n8n/             # n8n 工作流
 └── src/             # 代码
 ```
-
----
-
-## 项目级配置 (.claude/settings.json)
-
-**skills 和 hooks 的配置格式不同**：
-
-| 配置项 | 支持 `paths` 简写 | 项目级覆盖 |
-|--------|------------------|-----------|
-| skills | ✅ 支持 | ✅ |
-| hooks  | ❌ 不支持 | ✅（需完整写） |
-
-### skills 配置（简写）
-```json
-{
-  "skills": {
-    "paths": ["./skills"]
-  }
-}
-```
-
-### hooks 配置（必须完整写事件）
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {"matcher": "Write|Edit", "hooks": [{"type": "command", "command": "./hooks/branch-protect.sh"}]}
-    ]
-  }
-}
-```
-
-**注意**：
-- 质量检查已交给 CI 处理（pr-gate-v2.sh 在 v12.5.4 删除）
-- Subagent 相关 hooks 已在 v12.5.3 移除（不再使用 Subagent）
-
-**开发流程**：
-- 项目内 `./hooks/` 和 `./skills/` → develop 分支开发版
-- 全局 `~/.claude/hooks/` 和 `~/.claude/skills/` → main 分支稳定版（deploy.sh 部署）
-- 在项目内测试新功能，稳定后 merge 到 main 并 deploy 到全局
-
----
-
-## 分支策略（develop 缓冲）
-
-```
-main (稳定发布，里程碑时更新)
-  └── develop (主开发线，日常开发)
-        ├── cp-* (小任务，直接回 develop)
-        └── feature/* (大功能，可选，最终也回 develop)
-```
-
-**核心原则**：
-- main 始终稳定，只在里程碑时从 develop 合并
-- develop 是主开发线，所有日常开发都在这里
-- 只在 cp-* 或 feature/* 分支写代码（Hook 引导）
-- cp-* 完成后回 develop，积累够了 develop 回 main
-
-详细文档见 `docs/`。
-
----
-
-## GitHub 分支保护
-
-### 标准配置
-
-所有核心仓库的 main/develop 分支必须启用以下保护：
-
-```yaml
-required_status_checks:
-  strict: true
-  checks:
-    - context: test
-enforce_admins: true          # 关键：Admin 也必须遵守 CI
-allow_force_pushes: false
-allow_deletions: false
-```
-
-### 保护的仓库
-
-| 仓库 | main | develop |
-|------|------|---------|
-| zenithjoy-engine | ✅ | ✅ |
-| zenithjoy-autopilot | ✅ | ✅ |
-| zenithjoy-core | ✅ | ✅ |
-
-### 检查/修复命令
-
-```bash
-# 检查所有仓库
-bash scripts/setup-branch-protection.sh --check
-
-# 修复所有仓库
-bash scripts/setup-branch-protection.sh --fix
-
-# 检查/修复指定仓库
-bash scripts/setup-branch-protection.sh --check owner/repo
-bash scripts/setup-branch-protection.sh --fix owner/repo
-```
-
-### 为什么 enforce_admins 必须是 true
-
-- **问题**：如果 `enforce_admins: false`，Admin 可以绕过 CI 强行合并 PR
-- **后果**：CI 失去最后防线的意义，bug 代码可能直接进入 main/develop
-- **解决**：`enforce_admins: true` 确保即使是 Admin 也必须等 CI 绿才能合并
