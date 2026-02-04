@@ -1,6 +1,0 @@
-dev
-branch: cp-fix-skill-md-duplicates
-prd: .prd-cp-fix-skill-md-duplicates.md
-started: 2026-02-04T10:00:00+00:00
-tasks_created: true
-retry_count: 3
