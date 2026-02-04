@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.59.0"
+version: "2.60.0"
 updated: "2026-02-04"
 changelog:
+  - 2.60.0: v12.4.10 - CJS 脚本共享常量提取
   - 2.59.0: v12.4.9 - 版本同步修复（package-lock.json 同步 + SKILL.md 版本更新流程文档）
   - 2.58.0: v12.4.8 - 低优先级清理（session-end.sh/STOP-HOOK-SPEC.md 归档 + src/index.ts 注释更新）
   - 2.57.0: v12.4.7 - 深度审计修复（skills 重试次数 20→15 + README.md 更新）
