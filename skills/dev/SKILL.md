@@ -319,6 +319,19 @@ TaskList()
 | feat: | minor (+0.1.0) |
 | feat!: / BREAKING: | major (+1.0.0) |
 
+**版本更新流程**：
+```bash
+# 1. 更新 package.json（选择 patch/minor/major）
+npm version patch --no-git-tag-version
+
+# 2. 同步 VERSION 文件
+cat package.json | jq -r .version > VERSION
+
+# 3. 验证 package-lock.json 已同步
+# （npm version 会自动更新，但手动改 package.json 时必须运行）
+npm install --package-lock-only
+```
+
 ---
 
 ## 加载策略
