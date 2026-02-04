@@ -7,14 +7,10 @@
 
 set -euo pipefail
 
-# ===== 工具函数 =====
-
-# 清理数值：移除非数字字符，空值默认为 0
-clean_number() {
-    local val="${1:-0}"
-    val="${val//[^0-9]/}"
-    echo "${val:-0}"
-}
+# ===== 共享工具函数 =====
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/hook-utils.sh
+source "$SCRIPT_DIR/../lib/hook-utils.sh"
 
 # ===== jq 检查 =====
 if ! command -v jq &>/dev/null; then
