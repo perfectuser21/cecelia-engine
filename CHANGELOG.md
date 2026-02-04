@@ -1,3 +1,19 @@
+## [12.5.3] - 2026-02-04
+
+### Removed
+
+- **Subagent 相关代码清理**:
+  - 删除 `hooks/mark-subagent-done.sh`
+  - 删除 `hooks/require-subagent-token.sh`
+  - 更新 `.claude/settings.json` 移除 subagent hooks 配置
+  - 更新 `CLAUDE.md` 移除过时的 subagent 引用和目录结构
+
+### Changed
+
+- **CLAUDE.md 文档同步**:
+  - 修复 hooks 目录结构（移除不存在的文件）
+  - 更新 hooks 配置示例（仅保留 branch-protect.sh）
+  - 修复 branch-protect.sh 描述（移除"步骤状态机"）
 
 ## [12.5.2] - 2026-02-04
 
