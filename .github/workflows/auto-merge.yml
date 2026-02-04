@@ -99,7 +99,8 @@ jobs:
           fi
 
       - name: Merge PR
-        if: steps.check.outputs.ready == 'true'
+        # Bug fix: 同时检查 ready=true 且 skip!=true，确保 skip 状态被正确处理
+        if: steps.check.outputs.ready == 'true' && steps.check.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

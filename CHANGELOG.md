@@ -1,3 +1,13 @@
+## [12.5.1] - 2026-02-04
+
+### Fixed
+
+- **剩余 Bug 修复**:
+  - `auto-merge.yml`: 修复 skip output 未使用问题，Merge PR 步骤添加 `skip!=true` 检查
+  - `generate-evidence.sh`: 清晰化 branch name fallback 逻辑，提取为 `get_branch_name` 函数并添加注释
+  - `branch-protect.sh`: TOCTOU 缓解，立即解析 BASE_BRANCH 为 commit SHA，防止分支变动
+  - `branch-protect.sh`: 完善 Monorepo 支持，添加 `find_prd_dod_dir` 函数从文件路径向上查找 PRD/DoD 目录
+
 ## [12.5.0] - 2026-02-04
 
 ### Fixed

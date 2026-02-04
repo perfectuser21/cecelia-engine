@@ -179,11 +179,40 @@ fi
 if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
    [[ "$CURRENT_BRANCH" =~ ^feature/[a-zA-Z0-9][-a-zA-Z0-9_/]*$ ]]; then
 
+    # v19: Monorepo 支持 - 从文件所在目录向上查找 PRD/DoD 目录
+    # 优先级: 子目录 PRD/DoD > 根目录 PRD/DoD
+    find_prd_dod_dir() {
+        local file_path="$1"
+        local project_root="$2"
+        local branch="$3"
+        local current_dir
+        current_dir=$(dirname "$file_path")
+
+        # 处理文件路径（可能不存在）
+        if [[ ! -d "$current_dir" ]]; then
+            current_dir=$(dirname "$current_dir")
+        fi
+
+        while [[ "$current_dir" != "$project_root" && "$current_dir" != "/" && "$current_dir" != "." ]]; do
+            # 检查当前目录是否有 PRD/DoD 文件（新格式或旧格式）
+            if [[ -f "$current_dir/.prd-${branch}.md" ]] || [[ -f "$current_dir/.prd.md" ]]; then
+                echo "$current_dir"
+                return 0
+            fi
+            current_dir=$(dirname "$current_dir")
+        done
+
+        # 没找到则返回项目根目录
+        echo "$project_root"
+    }
+
+    PRD_DOD_DIR=$(find_prd_dod_dir "$FILE_PATH" "$PROJECT_ROOT" "$CURRENT_BRANCH")
+
     # v17: 分支级别 PRD/DoD 文件（优先新格式，fallback 旧格式）
-    PRD_FILE_NEW="$PROJECT_ROOT/.prd-${CURRENT_BRANCH}.md"
-    PRD_FILE_OLD="$PROJECT_ROOT/.prd.md"
-    DOD_FILE_NEW="$PROJECT_ROOT/.dod-${CURRENT_BRANCH}.md"
-    DOD_FILE_OLD="$PROJECT_ROOT/.dod.md"
+    PRD_FILE_NEW="$PRD_DOD_DIR/.prd-${CURRENT_BRANCH}.md"
+    PRD_FILE_OLD="$PRD_DOD_DIR/.prd.md"
+    DOD_FILE_NEW="$PRD_DOD_DIR/.dod-${CURRENT_BRANCH}.md"
+    DOD_FILE_OLD="$PRD_DOD_DIR/.dod.md"
 
     # 选择 PRD 文件（优先新格式）
     if [[ -f "$PRD_FILE_NEW" ]]; then
@@ -295,6 +324,14 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
         fi
     fi
 
+    # Bug fix: TOCTOU 缓解 - 立即解析 BASE_BRANCH 为 commit SHA
+    # 这样即使分支在检测后被删除或移动，后续的 git log 仍能正确引用
+    BASE_REF=$(git rev-parse "$BASE_BRANCH" 2>/dev/null || echo "")
+    if [[ -z "$BASE_REF" ]]; then
+        # BASE_BRANCH 无法解析，使用 HEAD 作为 fallback（会导致 PRD 检查失败，但不会崩溃）
+        BASE_REF="HEAD"
+    fi
+
     # v19: 检查 PRD/DoD 是否 gitignored（gitignored 文件无法通过 git 跟踪，跳过更新检查）
     PRD_GITIGNORED=0
     if git check-ignore -q "$PRD_FILE" 2>/dev/null; then
@@ -305,7 +342,7 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     # Bug fix: 使用 grep -F (fixed string) 避免 regex 注入风险
     # 如果分支名包含 [、] 等特殊字符，-E 模式会错误解析
     if [[ "$PRD_GITIGNORED" -eq 0 ]]; then
-        PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cF "$PRD_BASENAME" || echo 0)")
+        PRD_IN_BRANCH=$(clean_number "$(git log "$BASE_REF"..HEAD --name-only 2>/dev/null | grep -cF "$PRD_BASENAME" || echo 0)")
         PRD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cF "$PRD_BASENAME" || echo 0)")
         PRD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cF "$PRD_BASENAME" || echo 0)")
         PRD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -cF "$PRD_BASENAME" || echo 0)")
@@ -334,7 +371,7 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
     # v17: 检查新旧两种格式的 DoD 文件（仅对非 gitignored 文件有效）
     # Bug fix: 使用 grep -F (fixed string) 避免 regex 注入风险
     if [[ "$DOD_GITIGNORED" -eq 0 ]]; then
-        DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_BRANCH"..HEAD --name-only 2>/dev/null | grep -cF "$DOD_BASENAME" || echo 0)")
+        DOD_IN_BRANCH=$(clean_number "$(git log "$BASE_REF"..HEAD --name-only 2>/dev/null | grep -cF "$DOD_BASENAME" || echo 0)")
         DOD_STAGED=$(clean_number "$(git diff --cached --name-only 2>/dev/null | grep -cF "$DOD_BASENAME" || echo 0)")
         DOD_MODIFIED=$(clean_number "$(git diff --name-only 2>/dev/null | grep -cF "$DOD_BASENAME" || echo 0)")
         DOD_UNTRACKED=$(clean_number "$(git status --porcelain 2>/dev/null | grep -cF "$DOD_BASENAME" || echo 0)")
