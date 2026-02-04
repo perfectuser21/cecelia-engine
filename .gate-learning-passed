@@ -2,14 +2,14 @@
   "version": 3,
   "gate": "learning",
   "decision": "PASS",
-  "created_at": "2026-02-03T11:56:26Z",
-  "expires_at": "2026-02-03T12:26:26Z",
-  "expires_at_epoch": 1770121586,
-  "branch": "develop",
-  "head_sha": "0490dba461bbf50f792a8116a8414d09747598d9",
-  "tree_sha": "a3a3b7497519e8dd7070537be87e533376a6130b",
+  "created_at": "2026-02-04T02:47:18Z",
+  "expires_at": "2026-02-04T03:17:18Z",
+  "expires_at_epoch": 1770175038,
+  "branch": "release/v12.4.3",
+  "head_sha": "7681e056e5eaa23207ee8e6c9dac1f322827ee50",
+  "tree_sha": "d6ce3f9ba386375ea5b8d4338c10aabeca3f636b",
   "repo_id": "056850e49c9f6e2ef4af447ffbd40f83ac7a0e9c5155352d72a366ab863d537a",
-  "task_id": "develop",
+  "task_id": "release/v12.4.3",
   "tool_version": "3.0.0",
-  "signature": "620845ef01d1a0e00de777d534e97e877a34ca164b4183ec4ae86bd5a5d75add"
+  "signature": "0c51759e14ff651110550737e47164dbdb7a5c5c514ac6c7ef33c5db22200cdb"
 }

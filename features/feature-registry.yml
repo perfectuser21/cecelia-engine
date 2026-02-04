@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.53.0"
-updated: "2026-02-01"
+version: "2.54.0"
+updated: "2026-02-04"
 changelog:
+  - 2.54.0: v12.4.3 - 强调 /dev 核心目标（成功合并 PR，不停止，自动修复一切问题）
   - 2.53.0: v11.26.1 - 修复 7 个 CRITICAL bug（Stop Hook PR合并退出 + branch-protect 新仓库fallback + retry_count竞态 + Step 3竞态 + PR Gate硬阻塞 + 命令注入防护）
   - 2.52.0: v11.26.0 - gate:quality - 本地 PR 前质量检查 Gate（TypeCheck + Build + Test + Shell 语法，Step 7 提前发现 95% 问题）
   - 2.51.0: v11.24.1 - H1 Stop Hook 循环机制修复（20次重试计数器 + 删除PR合并提前退出 + 11步Checklist追踪 + 分支不匹配泄漏修复）
@@ -223,14 +224,16 @@ platform_features:
     name: Unified Dev Workflow
     status: Committed
     priority: P0
-    version: "11.21.0"
-    updated: "2026-02-01"
+    version: "12.4.3"
+    updated: "2026-02-04"
     description: |
       v2.2.0 统一开发工作流（删除阶段检测 + 强制 Task Checkpoint）：
       - 统一完成条件：PR 创建 + CI 通过 + PR 合并 = DONE
       - Task Checkpoint：TaskCreate/TaskUpdate 追踪进度
       - 从头到尾一直执行，不在 PR 创建后停止
       - Ralph Loop: 用户直接在 Claude Code 会话内输入 /ralph-loop 命令
+      - v12.4.3: 强调核心目标 - 成功合并 PR，不停止，遇到问题自动修复
+      - v12.4.2: 添加 Step 11 任务列表清理逻辑（防止任务残留）
       - v11.21.0: 循环模式 B 优化（所有步骤文件使用统一循环控制模板，MAX_GATE_ATTEMPTS=3 硬编码上限）
       - v11.19.0: G3 修复 gate skill 调用方式（6 个 gates 从 Task(general-purpose) 改为 Skill() 调用，删除冗长内联 prompt）
       - v11.2.7: Promise 信号统一（DONE 替代 QUALITY_GATE_PASSED/CI_PASSED）
