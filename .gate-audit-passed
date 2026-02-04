@@ -2,14 +2,14 @@
   "version": 3,
   "gate": "audit",
   "decision": "PASS",
-  "created_at": "2026-02-04T03:42:46Z",
-  "expires_at": "2026-02-04T04:12:46Z",
-  "expires_at_epoch": 1770178366,
-  "branch": "cp-fix-skill-md-duplicates",
-  "head_sha": "0e15db89adbc07d5231e222429ee7e2aeed92a74",
-  "tree_sha": "5989c25843fb79594a804a67acb021e00c6c6ba8",
+  "created_at": "2026-02-04T07:25:19Z",
+  "expires_at": "2026-02-04T07:55:19Z",
+  "expires_at_epoch": 1770191719,
+  "branch": "cp-fix-cicd-hook-bugs",
+  "head_sha": "ae9459140ab9b64a4510be6a3175fb88daf2e0f0",
+  "tree_sha": "ff2bc43fdf28209be58914b4b4fa26f5c6104ce3",
   "repo_id": "056850e49c9f6e2ef4af447ffbd40f83ac7a0e9c5155352d72a366ab863d537a",
-  "task_id": "fix-skill-md-duplicates",
+  "task_id": "fix-cicd-hook-bugs",
   "tool_version": "3.0.0",
-  "signature": "d737aeaf398c159ecb89117ed4518393084e912a06ad25c29d7166e855c8666a"
+  "signature": "00b20570f212e4086a00a0c09276361992f59c65228a31ed47340a84346a25f2"
 }

@@ -1,3 +1,12 @@
+## [12.5.2] - 2026-02-04
+
+### Fixed
+
+- **back-merge workflow 跳过处理修复**:
+  - 添加无条件 entry job，解决 GitHub Actions "所有 jobs 跳过 = failure" 的问题
+  - 非 main 分支触发时 workflow 正确标记为 success（而非 failure）
+  - check-trigger 和 back-merge jobs 保持条件执行逻辑不变
+
 ## [12.5.1] - 2026-02-04
 
 ### Fixed
