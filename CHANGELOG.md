@@ -1,3 +1,12 @@
+## [12.4.6] - 2026-02-04
+
+### Fixed
+
+- **审计问题修复**:
+  - `regression-contract.yaml` 版本号更新（12.3.0 → 12.4.6）
+  - `CLAUDE.md` hooks 列表更新（标注项目/全局、废弃状态）
+  - `CLAUDE.md` hooks 配置示例更新（移除 pr-gate-v2.sh）
+
 ## [12.4.5] - 2026-02-04
 
 ### Changed
