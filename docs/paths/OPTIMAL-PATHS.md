@@ -1,12 +1,12 @@
 ---
 id: optimal-paths
-version: 2.70.0
-created: 2026-02-04
-updated: 2026-02-04
+version: 2.71.0
+created: 2026-02-06
+updated: 2026-02-06
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.70.0: 从 feature-registry.yml 自动生成
+  - 2.71.0: 从 feature-registry.yml 自动生成
 ---
 
 # Optimal Paths - 推荐体验路径
@@ -173,6 +173,15 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
+### H9: Bash Guard (Credential Leak + HK Deploy Protection)
+
+```
+Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
+未命中 → 放行 | 命中 HK → git 三连检 → 通过/阻止
+```
+
+---
+
 ### G1: Gate Skill Family
 
 ```
@@ -193,5 +202,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.70.0
-**生成时间**: 2026-02-04
+**版本**: 2.71.0
+**生成时间**: 2026-02-06
