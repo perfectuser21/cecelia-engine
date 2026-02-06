@@ -58,3 +58,30 @@ debug_log() {
         echo "[DEBUG] $*" >&2
     fi
 }
+
+# 共享凭据正则模式（credential-guard + bash-guard 共用）
+# 用法: for p in "${TOKEN_PATTERNS[@]}"; do grep -qE "$p" ...; done
+TOKEN_PATTERNS=(
+    'ntn_[a-zA-Z0-9]{20,}'                                          # Notion API Key
+    'github_pat_[a-zA-Z0-9_]{30,}'                                  # GitHub PAT
+    'sk-proj-[a-zA-Z0-9_-]{40,}'                                    # OpenAI API Key
+    'eyJ[a-zA-Z0-9_-]{50,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'       # JWT tokens
+    'dop_v1_[a-zA-Z0-9]{50,}'                                       # DigitalOcean
+    'cli_[a-zA-Z0-9]{16,}'                                          # Feishu App ID
+)
+
+# 检查文本是否包含真实凭据
+# 用法: if text_contains_token "$text"; then ... fi
+# 返回: 0=包含凭据, 1=无凭据
+text_contains_token() {
+    local text="$1"
+    for pattern in "${TOKEN_PATTERNS[@]}"; do
+        if echo "$text" | grep -qE "$pattern"; then
+            if echo "$text" | grep -qE '(YOUR_|example|placeholder|xxx)'; then
+                continue
+            fi
+            return 0
+        fi
+    done
+    return 1
+}

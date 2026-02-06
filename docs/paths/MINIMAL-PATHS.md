@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.70.0
-created: 2026-02-04
-updated: 2026-02-04
+version: 2.71.0
+created: 2026-02-06
+updated: 2026-02-06
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.70.0: 从 feature-registry.yml 自动生成
+  - 2.71.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -191,6 +191,18 @@ changelog:
 
 ---
 
+### H9: Bash Guard (Credential Leak + HK Deploy Protection)
+
+1. ✅ **命令含真实 token → 被阻止**
+2. ✅ **rsync 到 HK + git dirty → 被阻止**
+3. ✅ **rsync 到 HK + git clean + main → 放行**
+4. ✅ **日常命令 (git/npm/echo) → 放行**
+5. ✅ **ssh hk → 放行（不拦）**
+
+**RCI 覆盖**: H9-001,H9-002,H9-003
+
+---
+
 ### G1: Gate Skill Family
 
 1. ✅ **写完 DoD → CI 验证 → PASS**
@@ -212,5 +224,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.70.0
-**生成时间**: 2026-02-04
+**版本**: 2.71.0
+**生成时间**: 2026-02-06

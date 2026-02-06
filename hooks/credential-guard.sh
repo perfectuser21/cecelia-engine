@@ -1,8 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Credential Guard Hook
 # 拦截写入代码时包含真实凭据的操作
+# Token 正则来自 lib/hook-utils.sh（与 bash-guard.sh 共享）
 
-# 只检查代码文件，跳过 ~/.credentials/
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/hook-utils.sh
+source "$SCRIPT_DIR/../lib/hook-utils.sh"
+
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | jq -r '.tool_input.file_path // .tool_input.command // ""')
 
@@ -20,43 +26,27 @@ fi
 CONTENT=$(echo "$INPUT" | jq -r '.tool_input.content // .tool_input.new_string // ""')
 
 # 如果没有内容，放行
-if [ -z "$CONTENT" ]; then
+if [[ -z "$CONTENT" ]]; then
     exit 0
 fi
 
-# 检测真实凭据模式
-PATTERNS=(
-    'ntn_[a-zA-Z0-9]{20,}'                    # Notion API Key
-    'github_pat_[a-zA-Z0-9_]{30,}'            # GitHub PAT
-    'sk-proj-[a-zA-Z0-9_-]{40,}'              # OpenAI API Key
-    'eyJ[a-zA-Z0-9_-]{50,}\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+' # JWT tokens
-    'dop_v1_[a-zA-Z0-9]{50,}'                 # DigitalOcean
-    'cli_[a-zA-Z0-9]{16,}'                    # Feishu App ID
-)
-
-for pattern in "${PATTERNS[@]}"; do
-    if echo "$CONTENT" | grep -qE "$pattern"; then
-        # 检查是否是占位符
-        if echo "$CONTENT" | grep -qE "(YOUR_|example|placeholder|xxx)"; then
-            continue
-        fi
-
-        echo "CREDENTIAL_DETECTED"
-        cat << 'EOF'
-
-[CREDENTIAL GUARD] 检测到真实凭据！
-
-禁止将 API Key/Token 写入代码文件。
-
-正确做法：
-1. 凭据存储：~/.credentials/<service>.env
-2. 代码中用：process.env.XXX 或占位符
-3. .env.example 只放 YOUR_XXX_KEY 格式
-
-如需保存新凭据，使用 /credentials skill。
-EOF
-        exit 2
-    fi
-done
+# 检测真实凭据（使用共享函数）
+if text_contains_token "$CONTENT"; then
+    echo "" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "  [CREDENTIAL GUARD] 检测到真实凭据" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo "" >&2
+    echo "禁止将 API Key/Token 写入代码文件。" >&2
+    echo "" >&2
+    echo "正确做法：" >&2
+    echo "  1. 凭据存储到 ~/.credentials/<service>.env" >&2
+    echo "  2. 代码中用 process.env.XXX 或占位符" >&2
+    echo "  3. .env.example 只放 YOUR_XXX_KEY 格式" >&2
+    echo "" >&2
+    echo "使用 /credentials skill 管理凭据。" >&2
+    echo "" >&2
+    exit 2
+fi
 
 exit 0

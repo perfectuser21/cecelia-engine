@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.70.0"
-updated: "2026-02-04"
+version: "2.71.0"
+updated: "2026-02-06"
 changelog:
+  - 2.71.0: v12.6.0 - Bash Guard Hook（凭据泄露 + HK 部署防护）
   - 2.70.0: v12.5.8 - 恢复 audit skill（保留但不强制使用）
   - 2.67.0: v12.5.3 - 清理 Subagent hooks（mark-subagent-done.sh, require-subagent-token.sh 已删除）
   - 2.66.0: v12.5.1 - 剩余 4 个 bug 修复（auto-merge skip + evidence branch + TOCTOU + Monorepo）
@@ -871,6 +872,49 @@ product_features:
       - H8-001  # 检测真实凭据
       - H8-002  # 放行占位符
       - H8-003  # 放行 credentials 目录
+
+  # --------------------------------------------------------------------------
+  # H9: Bash Guard - Bash 工具安全防护
+  # --------------------------------------------------------------------------
+  - id: H9
+    name: Bash Guard (Credential Leak + HK Deploy Protection)
+    status: Committed
+    priority: P1
+    version: "12.6.0"
+    updated: "2026-02-06"
+    description: |
+      防止通过 Bash 工具绕过 Write/Edit 层的安全防护：
+      - 凭据泄露：检测命令行中的真实 token（复用 hook-utils.sh 共享正则）
+      - HK 部署防护：rsync/scp 到香港 IP 时强制 git 三连检（干净 + 已 push + 分支 allowlist）
+      - 不做分支保护（交给 Write/Edit Hook + GitHub 远端）
+      - 不拦 ssh hk（无法区分读写操作）
+      - 性能：99% 命令 ~2ms 通过，仅 HK 部署命中时 ~200ms
+
+    entrypoints:
+      - type: hook
+        event: PreToolUse:Bash
+        file: hooks/bash-guard.sh
+
+    golden_path: |
+      Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
+      未命中 → 放行 | 命中 HK → git 三连检 → 通过/阻止
+
+    minimal_paths:
+      - "命令含真实 token → 被阻止"
+      - "rsync 到 HK + git dirty → 被阻止"
+      - "rsync 到 HK + git clean + main → 放行"
+      - "日常命令 (git/npm/echo) → 放行"
+      - "ssh hk → 放行（不拦）"
+
+    tests:
+      - type: auto
+        file: tests/hooks/bash-guard.test.ts
+        coverage: H9-001, H9-002, H9-003
+
+    rcis:
+      - H9-001  # 凭据泄露检测
+      - H9-002  # HK 部署 git 检查
+      - H9-003  # 日常命令放行
 
   # --------------------------------------------------------------------------
   # G1: Gate Skill Family - 独立质量审核
