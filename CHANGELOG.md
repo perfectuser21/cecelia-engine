@@ -1,3 +1,14 @@
+## [12.5.9] - 2026-02-06
+
+### Added
+
+- **Platform Traffic Monitoring**: 完整的流量监控和基线报告系统
+  - `TrafficMonitor`: 流量数据采集和指标计算
+  - `BaselineCalculator`: 基线计算和异常检测
+  - `ReportGenerator`: 多格式报告生成（JSON/Markdown/HTML/CSV）
+  - 完整测试覆盖（单元测试、集成测试、端到端测试）
+  - PR: #XXX (KR4-9: 平台流量监控与基线报告)
+
 ## [12.5.8] - 2026-02-04
 
 ### Restored
