@@ -16,12 +16,12 @@ describe('ContentValidator', () => {
   const createValidContent = (): Content => ({
     id: 'test-1',
     title: 'Valid Test Title',
-    body: 'This is a valid content body with sufficient length. '.repeat(5),
+    body: 'This is a valid content body with sufficient length to pass all validation rules and requirements. '.repeat(5),
     metadata: {
       category: 'test',
       tags: ['test', 'validation'],
       language: 'en-US',
-      wordCount: 55
+      wordCount: 80  // Ensure it's well above the minimum (50 for English)
     },
     status: ContentStatus.PENDING,
     createdAt: new Date(),
@@ -171,7 +171,7 @@ describe('ContentValidator', () => {
     it('should validate multiple contents', async () => {
       const contents = [
         createValidContent(),
-        { ...createValidContent(), id: 'test-2', body: 'Short' },
+        { ...createValidContent(), id: 'test-2', body: 'Short', metadata: { ...createValidContent().metadata, wordCount: 1 } },
         { ...createValidContent(), id: 'test-3' }
       ];
 

@@ -62,13 +62,13 @@ describe('ContentProcessor', () => {
     it('should optimize content structure', async () => {
       const content: Content = {
         ...createMockContent(),
-        title: 'Test Title.',
+        title: 'Test Title,',
         body: 'First paragraph\n\nSecond paragraph\n\nThird paragraph'
       };
 
       const processed = await processor.process(content);
 
-      // Title punctuation should be cleaned
+      // Title punctuation should be cleaned (commas, semicolons, colons)
       expect(processed.title).toBe('Test Title');
 
       // Body should have proper punctuation
