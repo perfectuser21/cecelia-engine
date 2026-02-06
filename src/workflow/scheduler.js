@@ -3,9 +3,9 @@
  * Manages task scheduling and execution
  */
 
-const EventEmitter = require('events');
-const { logger } = require('../utils/logger');
-const { BatchProcessor } = require('../content-pipeline/batch');
+import EventEmitter from 'events';
+import { logger } from '../utils/logger.js';
+import { BatchProcessor } from '../content-pipeline/batch.js';
 
 class WorkflowScheduler extends EventEmitter {
   constructor(config = {}) {
@@ -301,4 +301,4 @@ class WorkflowScheduler extends EventEmitter {
   }
 }
 
-module.exports = { WorkflowScheduler };
+export { WorkflowScheduler };

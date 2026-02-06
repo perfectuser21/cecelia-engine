@@ -3,8 +3,9 @@
  * Centralized logging utility
  */
 
-const winston = require('winston');
-const path = require('path');
+import winston from 'winston';
+import path from 'path';
+import fs from 'fs';
 
 // Define log levels
 const levels = {
@@ -82,10 +83,9 @@ const logger = winston.createLogger({
 });
 
 // Create log directory if it doesn't exist
-const fs = require('fs');
 const logDir = 'logs';
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
 
-module.exports = { logger };
+export { logger };

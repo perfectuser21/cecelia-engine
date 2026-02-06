@@ -3,7 +3,7 @@
  * Evaluates and filters content based on quality metrics
  */
 
-const { logger } = require('../utils/logger');
+import { logger } from '../utils/logger.js';
 
 class QualityController {
   constructor(config = {}) {
@@ -327,4 +327,4 @@ class QualityController {
   }
 }
 
-module.exports = { QualityController };
+export { QualityController };

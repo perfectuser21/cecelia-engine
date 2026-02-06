@@ -3,7 +3,7 @@
  * Implements exponential backoff retry logic for failed tasks
  */
 
-const { logger } = require('../utils/logger');
+import { logger } from '../utils/logger.js';
 
 class RetryManager {
   constructor(config = {}) {
@@ -317,4 +317,4 @@ class RetryManager {
   }
 }
 
-module.exports = { RetryManager };
+export { RetryManager };

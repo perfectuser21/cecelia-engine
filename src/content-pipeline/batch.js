@@ -3,9 +3,9 @@
  * Handles concurrent content generation with rate limiting
  */
 
-const { ContentGenerator } = require('./generator');
-const { logger } = require('../utils/logger');
-const pLimit = require('p-limit');
+import { ContentGenerator } from './generator.js';
+import { logger } from '../utils/logger.js';
+import pLimit from 'p-limit';
 
 class BatchProcessor {
   constructor(config = {}) {
@@ -192,4 +192,4 @@ class BatchProcessor {
   }
 }
 
-module.exports = { BatchProcessor };
+export { BatchProcessor };

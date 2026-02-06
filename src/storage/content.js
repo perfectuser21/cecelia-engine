@@ -3,8 +3,9 @@
  * Manages content persistence and version control
  */
 
-const { Pool } = require('pg');
-const { logger } = require('../utils/logger');
+import pg from 'pg';
+const { Pool } = pg;
+import { logger } from '../utils/logger.js';
 
 class ContentStorage {
   constructor(config = {}) {
@@ -468,4 +469,4 @@ class ContentStorage {
   }
 }
 
-module.exports = { ContentStorage };
+export { ContentStorage };

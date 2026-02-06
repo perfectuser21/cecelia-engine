@@ -3,13 +3,13 @@
  * AI Content Pipeline Server
  */
 
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
-const { logger } = require('./utils/logger');
-const apiRoutes = require('./api/routes');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import { logger } from './utils/logger.js';
+import apiRoutes from './api/routes.js';
 
 // Create Express app
 const app = express();
@@ -126,4 +126,4 @@ const server = app.listen(PORT, () => {
   logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
-module.exports = app;
+export default app;

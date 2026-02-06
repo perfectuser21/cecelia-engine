@@ -3,7 +3,7 @@
  * Validates API requests
  */
 
-const { logger } = require('../utils/logger');
+import { logger } from '../utils/logger.js';
 
 const schemas = {
   generate: {
@@ -256,7 +256,7 @@ function sanitizeContent(content) {
   return content;
 }
 
-module.exports = {
+export {
   validateRequest,
   validateContentType,
   sanitizeContent,

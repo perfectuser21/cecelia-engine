@@ -3,9 +3,9 @@
  * Core module for generating AI content
  */
 
-const { OpenAI } = require('openai');
-const { validateContentType, sanitizeContent } = require('../utils/validation');
-const { logger } = require('../utils/logger');
+import { OpenAI } from 'openai';
+import { validateContentType, sanitizeContent } from '../utils/validation.js';
+import { logger } from '../utils/logger.js';
 
 class ContentGenerator {
   constructor(config = {}) {
@@ -236,4 +236,4 @@ class ContentGenerator {
   }
 }
 
-module.exports = { ContentGenerator };
+export { ContentGenerator };

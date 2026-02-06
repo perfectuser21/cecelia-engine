@@ -3,15 +3,15 @@
  * REST API endpoints for content pipeline
  */
 
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const { ContentGenerator } = require('../content-pipeline/generator');
-const { BatchProcessor } = require('../content-pipeline/batch');
-const { QualityController } = require('../content-pipeline/quality');
-const { WorkflowScheduler } = require('../workflow/scheduler');
-const { ContentStorage } = require('../storage/content');
-const { validateRequest } = require('./validation');
-const { logger } = require('../utils/logger');
+import { ContentGenerator } from '../content-pipeline/generator.js';
+import { BatchProcessor } from '../content-pipeline/batch.js';
+import { QualityController } from '../content-pipeline/quality.js';
+import { WorkflowScheduler } from '../workflow/scheduler.js';
+import { ContentStorage } from '../storage/content.js';
+import { validateRequest } from './validation.js';
+import { logger } from '../utils/logger.js';
 
 // Initialize services
 const generator = new ContentGenerator();
@@ -349,4 +349,4 @@ router.post('/workflow/stop', (req, res) => {
   });
 });
 
-module.exports = router;
+export default router;

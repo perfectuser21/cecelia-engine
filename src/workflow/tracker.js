@@ -3,8 +3,8 @@
  * Tracks workflow execution progress and provides real-time updates
  */
 
-const EventEmitter = require('events');
-const { logger } = require('../utils/logger');
+import EventEmitter from 'events';
+import { logger } from '../utils/logger.js';
 
 class ProgressTracker extends EventEmitter {
   constructor() {
@@ -356,4 +356,4 @@ class ProgressTracker extends EventEmitter {
   }
 }
 
-module.exports = { ProgressTracker };
+export { ProgressTracker };
