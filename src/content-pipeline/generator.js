@@ -4,7 +4,7 @@
  */
 
 import { OpenAI } from 'openai';
-import { validateContentType, sanitizeContent } from '../utils/validation.js';
+import { validateContentType, sanitizeContent } from '../api/validation.js';
 import { logger } from '../utils/logger.js';
 
 class ContentGenerator {
