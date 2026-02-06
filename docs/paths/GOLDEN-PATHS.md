@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.70.0
-created: 2026-02-04
-updated: 2026-02-04
+version: 2.71.0
+created: 2026-02-06
+updated: 2026-02-06
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.70.0: 从 feature-registry.yml 自动生成
+  - 2.71.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -278,18 +278,19 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 
 ---
 
-## GP-018: Gate Skill Family (G1)
+## GP-018: Bash Guard (Credential Leak + HK Deploy Protection) (H9)
 
-**Feature**: G1 - Gate Skill Family
-**Priority**: P0
+**Feature**: H9 - Bash Guard (Credential Leak + HK Deploy Protection)
+**Priority**: P1
 
 ### Golden Path
 
 ```
-主 Agent 产出 → CI Gate 检查 → PASS → 继续
+Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
+未命中 → 放行 | 命中 HK → git 三连检 → 通过/阻止
 ```
 
-**RCI 覆盖**: G1-001,G1-002,G1-003,G1-004
+**RCI 覆盖**: H9-001,H9-002,H9-003
 
 ---
 
@@ -305,5 +306,5 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.70.0
-**生成时间**: 2026-02-04
+**版本**: 2.71.0
+**生成时间**: 2026-02-06
