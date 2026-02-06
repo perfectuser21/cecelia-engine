@@ -73,10 +73,14 @@ export class AnomalyDetector {
         description = `Traffic drop detected: ${anomalousMetrics.join(', ')} are ${Math.abs(maxDeviation).toFixed(1)} standard deviations below normal`;
       }
 
-      // 检查模式异常（多个指标同时异常）
+      // 检查模式异常（多个指标异常且方向不一致）
       if (anomalousMetrics.length >= 2) {
-        type = 'pattern';
-        description = `Pattern anomaly detected: Multiple metrics (${anomalousMetrics.join(', ')}) are abnormal`;
+        const hasPositive = deviations.some(d => d > 0);
+        const hasNegative = deviations.some(d => d < 0);
+        if (hasPositive && hasNegative) {
+          type = 'pattern';
+          description = `Pattern anomaly detected: Multiple metrics (${anomalousMetrics.join(', ')}) are abnormal with mixed directions`;
+        }
       }
     }
 
