@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "12.5.8"
+version: "12.6.0"
 updated: "2026-02-04"
 
 # ============================================================================
@@ -583,6 +583,24 @@ hooks:
       run: "bash scripts/install-hooks.sh --version"
       contains: "hook-core version:"
     test: "tests/hooks/install-hooks.test.ts"
+
+  - id: H3-002
+    feature: H3
+    name: "bash-guard 凭据泄露 + HK 部署防护"
+    scope: hook
+    priority: P1
+    trigger: [PR]
+    method: auto
+    tags: [bash-guard, security, hook]
+    owner: infra
+    steps:
+      given: "Bash 命令通过 PreToolUse Hook 检查"
+      when: "命令包含真实 token 或 rsync/scp 到 HK IP"
+      then: "拦截命令（exit 2），日常命令不受影响"
+    evidence:
+      type: test
+      exact_path: "hooks/bash-guard.sh"
+    test: "tests/hooks/bash-guard.test.ts"
 
   # --------------------------------------------------------------------------
   # H4: Phase 4 - DevGate Metrics 指标面板
