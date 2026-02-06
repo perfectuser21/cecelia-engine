@@ -16,7 +16,11 @@ describe('ContentValidator', () => {
   const createValidContent = (): Content => ({
     id: 'test-1',
     title: 'Valid Test Title',
-    body: 'This is a valid content body with sufficient length to pass all validation rules and requirements. '.repeat(5),
+    body: 'This is the first sentence with unique content. ' +
+          'The second sentence provides additional information. ' +
+          'A third sentence adds more context to the content. ' +
+          'The fourth sentence continues the narrative flow. ' +
+          'Finally, the fifth sentence concludes this paragraph.',
     metadata: {
       category: 'test',
       tags: ['test', 'validation'],
