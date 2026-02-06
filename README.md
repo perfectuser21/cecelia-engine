@@ -7,6 +7,7 @@ AI 开发工作流核心组件。提供 Hooks、Skills 和 CI 模板，实现引
 - **分支保护 Hook**: 引导在 `cp-*` 或 `feature/*` 分支开发
 - **CI 自动合并**: PR 通过 CI 后自动合并
 - **统一开发 Skill**: `/dev` 一个对话完成整个开发流程
+- **AI 内容生产流水线**: 支持月产 240+ 条 AI 内容的生产管线
 
 ## Prerequisites
 
@@ -120,6 +121,20 @@ cp $ZENITHJOY_ENGINE/.github/workflows/ci.yml your-project/.github/workflows/
 | 命令 | 说明 |
 |------|------|
 | `/dev` | 启动开发流程（唯一入口） |
+
+### AI 内容生产流水线
+
+```typescript
+import { PipelineScheduler } from './src/content-pipeline';
+
+const scheduler = new PipelineScheduler();
+
+// 每日生产 8 条内容（月产 240 条）
+const result = await scheduler.scheduleDailyProduction(8);
+console.log(`今日生产: ${result.successful}/${result.totalItems} 成功`);
+```
+
+详细 API 文档请查看 [docs/API.md](docs/API.md)
 
 ## 分支保护
 

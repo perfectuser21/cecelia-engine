@@ -2,14 +2,14 @@
   "version": 3,
   "gate": "prd",
   "decision": "PASS",
-  "created_at": "2026-02-04T09:10:48Z",
-  "expires_at": "2026-02-04T09:40:48Z",
-  "expires_at_epoch": 1770198048,
-  "branch": "cp-0204-cleanup-subagent-and-docs",
-  "head_sha": "710ed5366b064e779755b205d1f8da9eacf54a5a",
-  "tree_sha": "22ac03c82828728cc9fdd092abee93f0b38aa20d",
+  "created_at": "2026-02-06T16:08:39Z",
+  "expires_at": "2026-02-06T16:38:39Z",
+  "expires_at_epoch": 1770395919,
+  "branch": "cp-02062355-0cdd9ff1-8409-4462-ba30-d1e4ce",
+  "head_sha": "409f382b30d5f547879ec013827e24b0b6d688bc",
+  "tree_sha": "7d3dbc9ea5a4be3f3d863e2c7e0f2f6caccfd909",
   "repo_id": "056850e49c9f6e2ef4af447ffbd40f83ac7a0e9c5155352d72a366ab863d537a",
-  "task_id": "0204-cleanup-subagent-and-docs",
+  "task_id": "02062355-0cdd9ff1-8409-4462-ba30-d1e4ce",
   "tool_version": "3.0.0",
-  "signature": "8d9dac1ad424d7b7137db80caaf3087011fb4c285061cce59e8cac074aa85ad2"
+  "signature": "8dd44af8de16684b9df3fc7c221c3deb5ad0eb0c109377177b9dd5315bec11ae"
 }

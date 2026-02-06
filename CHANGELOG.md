@@ -1,3 +1,25 @@
+## [12.6.0] - 2026-02-06
+
+### Added
+
+- **AI Content Production Pipeline**: 支持月产 240+ 条 AI 内容
+  - ContentGenerator: 内容生成器，支持批量生成
+  - ContentProcessor: 内容处理器，自动优化和格式化
+  - ContentValidator: 内容验证器，确保质量标准
+  - PipelineScheduler: 流水线调度器，管理批量处理
+- **完整测试覆盖**:
+  - 单元测试：ContentGenerator, ContentProcessor, ContentValidator, PipelineScheduler
+  - 集成测试：端到端流水线测试、批量处理测试、错误恢复测试、性能测试
+- **API 文档**: docs/API.md 包含完整使用说明
+
+### Technical Details
+
+- 支持每日 8 条内容生产（月产 240 条）
+- 并行批处理架构，高效处理大量内容
+- 可配置的验证规则和重试机制
+- 中英文内容支持，自动语言检测
+- 性能：单条 < 5秒，批量 20条 < 10秒
+
 ## [12.5.8] - 2026-02-04
 
 ### Restored
