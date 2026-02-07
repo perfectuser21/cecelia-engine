@@ -105,35 +105,15 @@ if grep -q "cleanup_done: true" "$DEV_MODE_FILE" 2>/dev/null; then
     exit 0
 fi
 
-# 新版本：检查 11 步 checklist 是否全部完成
-# Bug fix: step 状态检测逻辑修正
-# 原逻辑: grep "^step_${step}_" 匹配 step_1_ 开头的任意行，但 .dev-mode 格式是 step_1_prd: done
-# 修正: 使用更精确的模式匹配每个步骤的状态字段
-STEP_NAMES=("prd" "detect" "branch" "dod" "code" "test" "quality" "pr" "ci" "learning" "cleanup")
-STEPS_COMPLETE=true
-for i in {1..11}; do
-    step_name="${STEP_NAMES[$((i-1))]}"
-    # Bug fix: 使用 awk 替代 cut，避免多空格问题
-    STEP_STATUS=$(grep "^step_${i}_${step_name}:" "$DEV_MODE_FILE" 2>/dev/null | awk '{print $2}' || echo "pending")
-    if [[ "$STEP_STATUS" != "done" ]]; then
-        STEPS_COMPLETE=false
-        break
-    fi
-done
-
-if [[ "$STEPS_COMPLETE" == "true" ]]; then
-    echo "" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    echo "  [Stop Hook: 11 步流程完成]" >&2
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    echo "" >&2
-    echo "  ✅ Step 1-11 全部完成" >&2
-    echo "  🧹 删除 .dev-mode 文件" >&2
-    echo "" >&2
-    rm -f "$DEV_MODE_FILE"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
-    exit 0
-fi
+# v12.8.0: 删除了"11步全部done"的提前退出逻辑
+#
+# 问题：步骤状态可能被错误标记（如 CI 未通过但 step_9_ci 被标记为 done），
+#       导致 Stop Hook 在实际 CI 检查之前就认为"完成"并退出
+#
+# 修复：步骤状态（step_*）只用于进度展示（TaskList），不用于流程控制
+#       流程控制只依赖实际状态检查：PR 创建 → CI 通过 → PR 合并 → cleanup_done
+#
+# 详见：.prd-cp-02071917-stop-hook-fix.md
 
 # ===== 检查重试次数（15 次上限）=====
 # Bug fix: 使用 awk 替代 cut，避免多空格问题

@@ -1,13 +1,8 @@
 {
-  "branch": "cp-ci-stress-test-fixes",
-  "checks": {
-    "typecheck": {"status": "pass"},
-    "test": {"status": "pass", "total": 395, "passed": 395, "skipped": 2},
-    "build": {"status": "pass"},
-    "shell": {"status": "pass"}
-  },
-  "gates": {
-    "quality": {"status": "pass"}
-  },
-  "timestamp": "2026-02-03T12:22:22Z"
+  "branch": "cp-02071917-stop-hook-fix",
+  "head_sha": "888618e",
+  "timestamp": "2026-02-07T11:05:12Z",
+  "changes": "删除 Stop Hook 中的 '11步全部done' 提前退出逻辑",
+  "tests_added": ["tests/stop-hook-bypass-fix.test.ts"],
+  "note": "Quality 只汇总，不判定。CI 是最终裁判。"
 }

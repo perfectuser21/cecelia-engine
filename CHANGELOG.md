@@ -1,3 +1,17 @@
+## [12.7.1] - 2026-02-07
+
+### Fixed
+
+- **hooks/stop.sh**: 删除"11步全部done"的提前退出逻辑（line 108-136）
+  - **问题**：步骤状态可能被错误标记（如 CI 未通过但 `step_9_ci: done`），导致 Stop Hook 在实际 CI 检查之前就认为"完成"并退出
+  - **修复**：步骤状态（step_*）只用于进度展示（TaskList），流程控制只依赖实际 PR/CI/Merge 状态
+  - **测试**：新增 tests/stop-hook-bypass-fix.test.ts 验证修复
+
+### 设计决策
+
+即使所有步骤状态都标记为 done，Stop Hook 也必须检查实际 PR/CI 状态。
+步骤状态只是进度指示器，不是完成条件。
+
 ## [12.7.0] - 2026-02-06
 
 ### Removed

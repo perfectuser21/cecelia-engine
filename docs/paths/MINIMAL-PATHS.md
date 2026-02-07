@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.71.0
-created: 2026-02-06
-updated: 2026-02-06
+version: 2.72.0
+created: 2026-02-07
+updated: 2026-02-07
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.71.0: 从 feature-registry.yml 自动生成
+  - 2.72.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -215,5 +215,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.71.0
-**生成时间**: 2026-02-06
+**版本**: 2.72.0
+**生成时间**: 2026-02-07
