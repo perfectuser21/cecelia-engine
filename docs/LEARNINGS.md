@@ -1,9 +1,10 @@
 ---
 id: engine-learnings
-version: 1.10.0
+version: 1.11.0
 created: 2026-01-16
-updated: 2026-02-03
+updated: 2026-02-07
 changelog:
+  - 1.11.0: Stop Hook 被绕过问题修复（删除"11步全部done"提前退出逻辑）
   - 1.10.0: 添加 CI P1 结构验证强化经验（L2A/L2B 结构检查、RCI 精确匹配、测试用例编写技巧）
   - 1.9.0: 添加 CI P2 Evidence 系统安全强化经验（时间戳验证、文件存在性验证、metadata 验证）
   - 1.8.0: 添加 cleanup.sh 验证机制开发经验（版本号同步、Impact Check、PRD/DoD 清理、临时文件残留）
@@ -20,6 +21,84 @@ changelog:
 # Engine 开发经验记录
 
 > 记录开发 zenithjoy-engine 过程中学到的经验和踩的坑
+
+---
+
+## 2026-02-07: Stop Hook 被绕过问题修复
+
+### 问题背景
+
+用户发现 PR #191 (Cortex Quality Assessment) 在 CI 未通过时就被认为"完成"，Stop Hook 没有阻止会话结束。
+
+### 根本原因
+
+Stop Hook (`hooks/stop.sh`) 的检查逻辑顺序有问题：
+
+```bash
+# 原逻辑（line 108-136）
+1. 检查 cleanup_done: true → 如果是 → 删除 .dev-mode → exit 0
+2. 检查 11 步是否全部 done → 如果全部 done → 删除 .dev-mode → exit 0  ← 问题在这里！
+3. PR/CI/Merge 实际状态检查 (line 244+) ← 永远执行不到
+```
+
+**问题**：当 Step 9 (`step_9_ci: done`) 被错误标记时（比如因为 gh API 权限问题无法查看 CI，AI 就直接标记了），Stop Hook 检查到"11 步全部 done"就直接删除 `.dev-mode` 并退出，根本不检查 **CI 是否真的通过**。
+
+### 修复方案
+
+删除 line 108-136 的"11步全部done"检查逻辑：
+
+```bash
+# 修复后逻辑
+1. 检查 cleanup_done: true → 如果是 → 删除 .dev-mode → exit 0
+2. （删除步骤检查）
+3. PR 创建？→ 否 → block
+4. CI 通过？→ 否 → block  ← 现在能执行到了！
+5. PR 合并？→ 否 → block
+6. Step 11 cleanup_done？→ 否 → block
+7. 全部通过 → 删除 .dev-mode → exit 0
+```
+
+**核心改变**：
+- 步骤状态（`step_*`）只用于进度展示（TaskList），不用于流程控制
+- 流程控制只依赖实际状态检查：PR 创建 → CI 通过 → PR 合并 → cleanup_done
+
+### 测试验证
+
+新增 `tests/stop-hook-bypass-fix.test.ts` (4 个测试)：
+1. 验证即使所有步骤都是 done，CI 未通过时 Stop Hook 仍然 block
+2. 验证 .dev-mode 仍包含步骤状态字段（用于进度展示）
+3. 验证 Stop Hook 注释说明了修复原因
+4. 验证 cleanup_done 检查仍然保留（向后兼容）
+
+### CI 修复过程
+
+遇到两个 CI 失败：
+1. **Impact Check 失败**：修改了 `hooks/stop.sh` 但未更新 `feature-registry.yml`
+   - 解决：更新 H7 版本到 12.7.1，添加修复说明
+2. **Version Sync 失败**：`hook-core/VERSION`, `.hook-core-version`, `regression-contract.yaml` 未同步
+   - 解决：运行 `scripts/sync-version.sh` + 手动更新 `.hook-core-version`
+
+### 关键经验
+
+1. **步骤状态 ≠ 完成条件**
+   - 步骤状态只是进度指示器，可能被错误标记
+   - 完成条件必须基于实际可验证的状态（PR 存在、CI 通过、PR 合并）
+
+2. **检查顺序很重要**
+   - 提前退出逻辑会阻止后续检查执行
+   - 应该先检查关键条件（PR/CI），再检查辅助条件（步骤状态）
+
+3. **版本同步注意事项**
+   - `sync-version.sh` **不会**更新 `.hook-core-version`，需要手动更新
+   - CI 会检查 5 个文件：`package.json`, `VERSION`, `hook-core/VERSION`, `.hook-core-version`, `regression-contract.yaml`
+
+4. **Impact Check 强制要求**
+   - 修改核心能力文件（hooks/, skills/, scripts/）必须更新 `feature-registry.yml`
+   - 不仅要更新版本号，还要添加 changelog 说明
+
+### 影响程度
+
+High - 修复了核心循环控制机制的逻辑缺陷，确保 CI 检查不会被绕过。
 
 ---
 
