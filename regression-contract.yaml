@@ -18,8 +18,8 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "12.7.2"
-updated: "2026-02-07"
+version: "12.12.0"
+updated: "2026-02-08"
 
 # ============================================================================
 # Hooks 回归契约
@@ -166,6 +166,24 @@ hooks:
 
   - id: H7-003
     feature: H7
+    name: "Stop Hook - stop-okr.sh 完成条件检查"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [stop, okr, completion, feature-tracking]
+    owner: infra
+    steps:
+      given: ".okr-mode 文件存在且为 okr 模式"
+      when: "Stop Hook 检查秋米拆解完成条件"
+      then: "检查 5 个条件：Feature/Task/PRD/DoD/KR 状态，未满足时 exit 2"
+    evidence:
+      type: script
+      run: "bash hooks/stop-okr.sh"
+    test: "tests/hooks/test-stop-okr.sh"
+
+  - id: H7-004
+    feature: H7
     name: "Stop Hook JSON API 强制循环"
     scope: hook
     priority: P0
@@ -277,6 +295,63 @@ hooks:
       file: "hooks/subagent-stop.sh"
       contains: "decision.*block"
     test: "tests/hooks/subagent-stop.test.ts"
+
+  - id: H7-010
+    feature: H7
+    name: "Stop Hook exit 代码修复 - block 决策必须 exit 2"
+    scope: hook
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [stop, exit-code, bug-fix, loop]
+    owner: infra
+    steps:
+      given: "Stop Hook 检测到未完成条件（PR 未创建/CI 进行中/PR 未合并等）"
+      when: "输出 JSON API decision: block"
+      then: "必须返回 exit 2 阻止会话结束，而不是 exit 0"
+    evidence:
+      type: code
+      file: "hooks/stop-dev.sh"
+      contains: "exit 2"
+    test: "tests/hooks/stop-hook-exit-codes.test.ts"
+
+  - id: H7-011
+    feature: H7
+    name: "Worktree 多会话检测 - 自动隔离并发任务"
+    scope: skill
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [worktree, multi-session, isolation]
+    owner: infra
+    steps:
+      given: "检测到其他 Claude 会话在同一 repo 工作"
+      when: "Step 0 (Worktree Auto) 检测 /tmp/claude-engine-sessions/"
+      then: "自动创建 worktree 隔离当前会话，避免 git 冲突和文件覆盖"
+    evidence:
+      type: code
+      file: "skills/dev/steps/00-worktree-auto.md"
+      contains: "claude-engine-sessions"
+    test: "tests/skills/worktree-multi-session.test.ts"
+
+  - id: H7-012
+    feature: H7
+    name: "会话注册机制 - 跨会话并发检测基础设施"
+    scope: skill
+    priority: P0
+    trigger: [PR, Release]
+    method: auto
+    tags: [session, registration, lifecycle]
+    owner: infra
+    steps:
+      given: "/dev 启动并创建 .dev-mode"
+      when: "Step 3 (Branch) 创建会话注册文件"
+      then: "在 /tmp/claude-engine-sessions/ 创建 JSON 文件，包含 session_id/pid/cwd/branch，Step 11 清理，过期会话自动删除"
+    evidence:
+      type: code
+      file: "skills/dev/steps/03-branch.md"
+      contains: "session-$SESSION_ID.json"
+    test: "tests/skills/session-registration.test.ts"
 
   # --------------------------------------------------------------------------
   # H2: pr-gate-v2
@@ -2496,3 +2571,122 @@ quality_enforcement:
   # --------------------------------------------------------------------------
   # 决策：Gate 机制干扰 Stop Hook 自动循环，质量检查完全交给 CI
   # G1-001 ~ G1-007 全部删除
+
+# ============================================================================
+# Skills 回归契约
+# ============================================================================
+skills:
+  # --------------------------------------------------------------------------
+  # S1: OKR Skill - OKR 拆解工具
+  # --------------------------------------------------------------------------
+  - id: S1-001
+    feature: S1
+    name: "/okr 流程可启动"
+    scope: skill
+    priority: P2
+    trigger: [PR]
+    method: auto
+    tags: [okr, validation, quality]
+    owner: infra
+    steps:
+      given: "用户调用 /okr skill"
+      when: "提供 Key Result 描述"
+      then: "生成 Features 和 Tasks，质量分数 >= 90"
+    evidence:
+      type: file
+      path: "tests/okr/run-all-tests.sh"
+    test: "tests/okr/run-all-tests.sh"
+
+  - id: S1-002
+    feature: S1
+    name: "OKR Validation Loop"
+    scope: skill
+    priority: P2
+    trigger: [PR]
+    method: auto
+    tags: [okr, validation, anti-cheat]
+    owner: infra
+    steps:
+      given: "OKR 拆解生成 output.json"
+      when: "运行 validate-okr.py"
+      then: "形式验证 40 分 + SHA256 hash 生成"
+    evidence:
+      type: file
+      path: "tests/okr/test-validate-okr.sh"
+    test: "tests/okr/test-validate-okr.sh"
+
+  - id: S1-003
+    feature: S1
+    name: "OKR Anti-Cheat 机制"
+    scope: skill
+    priority: P2
+    trigger: [PR]
+    method: auto
+    tags: [okr, anti-cheat, stop-hook]
+    owner: infra
+    steps:
+      given: "OKR 验证报告生成"
+      when: "运行 stop-okr.sh"
+      then: "10 层防作弊检查，31 种攻击场景 100% 拦截"
+    evidence:
+      type: file
+      path: "tests/okr/test-cheating-prevention.sh"
+    test: "tests/okr/test-cheating-prevention.sh"
+
+  # ============================================================================
+  # S2: PRD/DoD Validation Loop
+  # ============================================================================
+
+  - id: S2-001
+    feature: S2
+    name: "PRD Validation Loop"
+    scope: workflow
+    priority: P0
+    trigger: [PR, commit]
+    method: auto
+    tags: [validation, prd, quality]
+    owner: workflow
+    steps:
+      given: "PRD 文件 (.prd-*.md) 存在"
+      when: "运行 validate-prd.py"
+      then: "生成验证报告，form_score + content_score >= 90"
+    evidence:
+      type: file
+      path: "tests/validation-loop/test-prd-validation.sh"
+    test: "tests/validation-loop/test-prd-validation.sh"
+
+  - id: S2-002
+    feature: S2
+    name: "DoD Validation Loop"
+    scope: workflow
+    priority: P0
+    trigger: [PR, commit]
+    method: auto
+    tags: [validation, dod, quality]
+    owner: workflow
+    steps:
+      given: "DoD 文件 (.dod-*.md) 存在"
+      when: "运行 validate-dod.py"
+      then: "生成验证报告，form_score + content_score >= 90"
+    evidence:
+      type: file
+      path: "tests/validation-loop/test-dod-validation.sh"
+    test: "tests/validation-loop/test-dod-validation.sh"
+
+  - id: S2-003
+    feature: S2
+    name: "PRD/DoD Anti-Cheat 机制"
+    scope: workflow
+    priority: P0
+    trigger: [PR]
+    method: auto
+    tags: [anti-cheat, validation, security]
+    owner: workflow
+    steps:
+      given: "验证报告生成"
+      when: "运行 anti-cheat-prd.sh 或 anti-cheat-dod.sh"
+      then: "10 层检查全部通过，SHA256 hash 匹配，分数 >= 90"
+    evidence:
+      type: file
+      path: "tests/validation-loop/test-anti-cheat.sh"
+    test: "tests/validation-loop/test-anti-cheat.sh"

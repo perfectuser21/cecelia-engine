@@ -1,12 +1,12 @@
 ---
 id: optimal-paths
-version: 2.72.0
-created: 2026-02-07
-updated: 2026-02-07
+version: 2.78.0
+created: 2026-02-08
+updated: 2026-02-08
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.72.0: 从 feature-registry.yml 自动生成
+  - 2.78.0: 从 feature-registry.yml 自动生成
 ---
 
 # Optimal Paths - 推荐体验路径
@@ -27,7 +27,7 @@ changelog:
 
 ---
 
-### H7: Stop Hook Loop Controller (JSON API)
+### H7: Stop Hook Router (v13.0.0)
 
 ```
 会话结束 → 检测 .dev-mode → 检查完成条件 → exit 2 (继续) | exit 0 (结束)
@@ -182,6 +182,26 @@ Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
 
 ---
 
+### S1: OKR Skill
+
+```
+/okr 调用 → 分析 KR → 生成 Features/Tasks → validate-okr.py（形式 40 分）→
+AI 自评内容质量（60 分）→ Validation Loop（< 90 分时自动改进）→
+stop-okr.sh（10 层防作弊检查）→ 通过（total >= 90）
+```
+
+---
+
+### S2: PRD/DoD Validation Loop
+
+```
+生成 PRD/DoD → validate-*.py 打分 → total < 90 →
+AI 读取 validation report → 改进文档 → 重新验证 →
+Loop until >= 90 → anti-cheat-*.sh 验证 → 通过
+```
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -194,5 +214,5 @@ Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.72.0
-**生成时间**: 2026-02-07
+**版本**: 2.78.0
+**生成时间**: 2026-02-08

@@ -1,9 +1,10 @@
 ---
 id: engine-learnings
-version: 1.10.0
+version: 1.11.0
 created: 2026-01-16
-updated: 2026-02-03
+updated: 2026-02-08
 changelog:
+  - 1.11.0: 添加 RCI 覆盖率检查与 bash 测试脚本规范经验
   - 1.10.0: 添加 CI P1 结构验证强化经验（L2A/L2B 结构检查、RCI 精确匹配、测试用例编写技巧）
   - 1.9.0: 添加 CI P2 Evidence 系统安全强化经验（时间戳验证、文件存在性验证、metadata 验证）
   - 1.8.0: 添加 cleanup.sh 验证机制开发经验（版本号同步、Impact Check、PRD/DoD 清理、临时文件残留）
@@ -20,6 +21,94 @@ changelog:
 # Engine 开发经验记录
 
 > 记录开发 zenithjoy-engine 过程中学到的经验和踩的坑
+
+---
+
+## 2026-02-08: RCI 覆盖率检查与 bash 测试脚本规范
+
+### 问题背景
+
+为 stop-okr.sh 添加测试脚本时，创建了 `tests/hooks/test-stop-okr.sh`（bash 测试脚本），并在 regression-contract.yaml 中添加了 H7-003 RCI 条目。但 CI 的 RCI 覆盖率检查失败，报告"未覆盖"。
+
+### 根因分析
+
+RCI 覆盖率扫描器 (`scripts/devgate/scan-rci-coverage.cjs`) 有以下限制：
+
+1. **测试文件命名规范**：扫描器从 `test` 字段提取被测文件路径时，只支持 `.test.ts` 和 `.test.js` 后缀（代码第 242 行）：
+   ```javascript
+   const testBasename = path.basename(testPath).replace(/\.test\.(ts|js)$/, "");
+   ```
+
+2. **evidence 字段处理**：扫描器只处理以下字段来提取覆盖路径：
+   - `name` → `extractPathsFromName()`
+   - `test` → `extractPathsFromTest()`
+   - `evidence.run` → `extractPathsFromRun()`
+
+   **不处理 `evidence.file` 字段**！
+
+3. **bash 测试脚本的问题**：
+   - `test: "tests/hooks/test-stop-okr.sh"` → `testBasename` = `test-stop-okr.sh`（不去掉 .sh）
+   - 推断的被测文件：`hooks/test-stop-okr.sh.sh`（错误！）
+   - 实际被测文件：`hooks/stop-okr.sh`
+
+### 解决方案
+
+修改 RCI 条目的 `evidence` 字段，从 `file` 改为 `run`：
+
+```yaml
+# ❌ 错误（RCI 扫描不处理 file 字段）
+evidence:
+  type: code
+  file: "hooks/stop-okr.sh"
+  contains: "feature_id"
+
+# ✅ 正确（RCI 扫描从 run 字段提取路径）
+evidence:
+  type: script
+  run: "bash hooks/stop-okr.sh"
+```
+
+`extractPathsFromRun()` 会匹配 `bash\s+(\S+)` 并提取路径 `hooks/stop-okr.sh`。
+
+### 最佳实践
+
+**为 hooks/scripts 添加测试时的规范**：
+
+1. **推荐：使用 TypeScript 测试**（`.test.ts`）
+   - 符合 RCI 扫描器规范
+   - 自动推断被测文件
+   - 示例：`tests/hooks/stop-hook.test.ts` → `hooks/stop-hook.sh`
+
+2. **Bash 测试脚本**（`.sh`）：
+   - 必须在 RCI 条目中使用 `evidence.run` 字段
+   - 不要依赖 `evidence.file`（扫描器不处理）
+   - 示例：
+     ```yaml
+     evidence:
+       type: script
+       run: "bash hooks/xxx.sh"
+     test: "tests/hooks/test-xxx.sh"
+     ```
+
+3. **测试文件命名**：
+   - TypeScript: `<name>.test.ts`（扫描器会去掉 `.test.ts` 推断被测文件）
+   - Bash: 任意命名（需要 evidence.run 明确指定）
+
+### 影响程度
+
+**Medium**：
+- 不影响功能，但会导致 CI 误报"RCI 覆盖率不足"
+- 开发者可能花时间调试为什么 RCI 条目"没生效"
+- 文档化后可避免重复踩坑
+
+### 改进建议
+
+**短期**：在 README 或 CONTRIBUTING.md 中说明测试文件命名规范
+
+**长期**（可选）：扩展 `scan-rci-coverage.cjs` 支持 `.test.sh` 后缀：
+```javascript
+const testBasename = path.basename(testPath).replace(/\.test\.(ts|js|sh)$/, "");
+```
 
 ---
 
@@ -2139,3 +2228,28 @@ runs:
 
 ---
 
+
+### [2026-02-08] OKR Skill v7.0.0 - 质量循环和防作弊机制实现
+
+- **Bug**:
+  - CI 多次失败：RCI 覆盖率、Feature Registry、版本同步、Contract Drift
+  - 测试脚本中 `jq -e` 对 `false` 值返回非零退出码
+  - RCI 扫描器需要 name 字段匹配特定模式（如 "/okr 流程可启动"）
+  - 需要更新多个版本文件：package.json, VERSION, hook-core/VERSION, .hook-core-version, regression-contract.yaml
+
+- **优化点**:
+  - Stop Hook 中 git diff 检查应该只针对仓库内的文件（修复了 Git bypass 漏洞）
+  - 测试脚本中使用 `jq 'has("field")'` 代替 `jq -e '.field'` 来检查字段存在性
+  - CI Requirements Checklist（from MEMORY.md）非常有用，但容易遗漏步骤
+  - 建议：开发新 Skill 时自动提示需要更新的文件列表
+
+- **收获**:
+  - Validation Loop 机制设计成功：自动循环 + 不暂停 + 质量保证
+  - Anti-patterns 文档有效：5 个错误示范清晰展示了什么不能做
+  - 测试覆盖全面：31 种攻击场景，100% 拦截率
+  - Hash 验证是防作弊的核心：防止改分不改内容
+
+- **影响程度**: Medium
+  - CI 失败多次导致开发时间延长
+  - 但所有问题都能自动修复，没有手动干预
+  - Stop Hook 确保了循环执行，符合设计目标

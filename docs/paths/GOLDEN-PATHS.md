@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.72.0
-created: 2026-02-07
-updated: 2026-02-07
+version: 2.78.0
+created: 2026-02-08
+updated: 2026-02-08
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.72.0: 从 feature-registry.yml 自动生成
+  - 2.78.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -32,9 +32,9 @@ changelog:
 
 ---
 
-## GP-002: Stop Hook Loop Controller (JSON API) (H7)
+## GP-002: Stop Hook Router (v13.0.0) (H7)
 
-**Feature**: H7 - Stop Hook Loop Controller (JSON API)
+**Feature**: H7 - Stop Hook Router (v13.0.0)
 **Priority**: P0
 
 ### Golden Path
@@ -43,7 +43,7 @@ changelog:
 会话结束 → 检测 .dev-mode → 检查完成条件 → exit 2 (继续) | exit 0 (结束)
 ```
 
-**RCI 覆盖**: H7-001,H7-002,H7-003,H7-006,H7-007,H7-008
+**RCI 覆盖**: H7-001,H7-002,H7-003,H7-004,H7-006,H7-007,H7-008
 
 ---
 
@@ -294,6 +294,40 @@ Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
 
 ---
 
+## GP-019: OKR Skill (S1)
+
+**Feature**: S1 - OKR Skill
+**Priority**: P2
+
+### Golden Path
+
+```
+/okr 调用 → 分析 KR → 生成 Features/Tasks → validate-okr.py（形式 40 分）→
+AI 自评内容质量（60 分）→ Validation Loop（< 90 分时自动改进）→
+stop-okr.sh（10 层防作弊检查）→ 通过（total >= 90）
+```
+
+**RCI 覆盖**: S1-001,S1-002,S1-003
+
+---
+
+## GP-020: PRD/DoD Validation Loop (S2)
+
+**Feature**: S2 - PRD/DoD Validation Loop
+**Priority**: P1
+
+### Golden Path
+
+```
+生成 PRD/DoD → validate-*.py 打分 → total < 90 →
+AI 读取 validation report → 改进文档 → 重新验证 →
+Loop until >= 90 → anti-cheat-*.sh 验证 → 通过
+```
+
+**RCI 覆盖**: S2-001,S2-002,S2-003
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -306,5 +340,5 @@ Bash 命令 → token 扫描 (~1ms) → rsync/scp + HK 检测 (~1ms) →
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.72.0
-**生成时间**: 2026-02-07
+**版本**: 2.78.0
+**生成时间**: 2026-02-08

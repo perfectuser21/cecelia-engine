@@ -1,8 +1,10 @@
 {
-  "branch": "cp-02071917-stop-hook-fix",
-  "head_sha": "888618e",
-  "timestamp": "2026-02-07T11:05:12Z",
-  "changes": "删除 Stop Hook 中的 '11步全部done' 提前退出逻辑",
-  "tests_added": ["tests/stop-hook-bypass-fix.test.ts"],
-  "note": "Quality 只汇总，不判定。CI 是最终裁判。"
+  "branch": "cp-02081312-stop-hook-hardlock",
+  "head_sha": "a6bc68f",
+  "timestamp": "2026-02-08T05:14:55Z",
+  "note": "Quality 只汇总，不判定。CI 是最终裁判。",
+  "changes": {
+    "stop-dev.sh": "修复写死逻辑：headless 不再旁路，锁失败 exit 2",
+    "tests": "添加 3 个测试脚本验证写死逻辑"
+  }
 }

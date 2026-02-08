@@ -1,3 +1,166 @@
+## [12.12.0] - 2026-02-08
+
+### Added
+
+- **Validation Loop for PRD/DoD**: 文档质量验证循环（#542）
+  - **功能**: 90 分制评分系统（form_score 40 + content_score 60）
+  - **核心机制**:
+    - Validation Loop: 自动循环改进，直到 total_score >= 90
+    - Anti-Cheat: 10 层防作弊检查，SHA256 hash 验证
+    - 测试覆盖 100%: 所有测试通过
+  - **新增脚本**:
+    - `skills/dev/scripts/validate-prd.py` - PRD 验证
+    - `skills/dev/scripts/validate-dod.py` - DoD 验证
+    - `skills/dev/scripts/anti-cheat-prd.sh` - PRD 防作弊
+    - `skills/dev/scripts/anti-cheat-dod.sh` - DoD 防作弊
+    - `tests/validation-loop/*.sh` - 测试套件
+  - **Feature Registry**: 注册 S2: PRD/DoD Validation Loop
+  - **RCI 覆盖**: S2-001 (PRD), S2-002 (DoD), S2-003 (Anti-Cheat)
+
+### Fixed
+
+- **OKR Skill v7.0.0**: Validation Loop 和防作弊机制（#540）
+  - **功能**: 90 分制验证（形式 40 + 内容 60）
+  - **10 层 Anti-Cheat**: 31 种攻击场景，100% 拦截率
+  - **测试覆盖**: tests/okr/test-cheating-prevention.sh
+
+- **Stop Hook 写死逻辑**: Headless 模式不再旁路（#541）
+  - **修复**: Headless 模式与有头模式使用同一套状态机
+  - **修复**: 锁获取失败返回 exit 2（不是 exit 0）
+  - **测试**: tests/stop-hook/test-headless-hardlock.sh
+
+## [12.10.0] - 2026-02-08
+
+### Fixed
+
+- **hooks/stop-dev.sh**: 修复 exit 代码错误（P0 Critical Bug）
+  - **问题**: v11.25.0 引入 JSON API 时，所有 "block" 决策错误地返回 `exit 0` 而不是 `exit 2`
+  - **影响**: Stop Hook 无法阻止会话结束，导致 /dev 工作流在 CI 提交后立即停止，无法完成 PR 合并
+  - **修复**: 6 处 `exit 0` 改为 `exit 2`：
+    - Line 250: PR 未创建 → exit 2
+    - Line 294: CI 失败 → exit 2
+    - Line 304: CI 进行中 → exit 2
+    - Line 314: CI 状态未知 → exit 2
+    - Line 339: Step 11 未完成 → exit 2
+    - Line 350: PR 未合并 → exit 2
+  - **测试**: tests/hooks/stop-hook-exit-codes.test.ts 验证所有场景
+
+- **skills/dev/steps/00-worktree-auto.md**: 添加多会话检测（P0 Critical Bug）
+  - **问题**: Step 0 只检测本地 .dev-mode，不检测其他 Claude 会话，导致多会话在同一 repo 工作时相互干扰
+  - **影响**: 两个会话同时运行 /dev，git branch 切换冲突，.dev-mode 文件被覆盖，任务串话
+  - **修复**: 检测 `/tmp/claude-engine-sessions/` 中的其他会话，自动创建 worktree 隔离
+  - **测试**: tests/skills/worktree-multi-session.test.ts
+
+### Added
+
+- **会话注册机制**: 跨会话并发检测基础设施
+  - **Step 3 (Branch)**: 在 `/tmp/claude-engine-sessions/` 创建会话注册文件（session-$SESSION_ID.json）
+  - **Step 11 (Cleanup)**: 清理会话注册文件，过期会话（>1 小时）自动清理
+  - **数据格式**: session_id, pid, tty, cwd, branch, started, last_heartbeat
+  - **用途**: 供 Step 0 检测其他会话，自动创建 worktree 隔离
+  - **测试**: tests/skills/session-registration.test.ts
+
+- **regression-contract.yaml**: 新增 3 个回归测试条目
+  - H7-010: Stop Hook exit 代码修复
+  - H7-011: Worktree 多会话检测
+  - H7-012: 会话注册机制
+
+## [12.9.0] - 2026-02-08
+
+### Added
+
+- **hooks/stop-okr.sh**: 完整实现 5 个完成条件检查
+  - **条件 1**: Feature 已创建（feature_id ≠ "(待填)"）
+  - **条件 2**: Task 已创建（task_ids ≠ "(待填)"）
+  - **条件 3**: PRD 已写入（prd_ids ≠ "(待填)"）
+  - **条件 4**: DoD 草稿已写入（dod_ids ≠ "(待填)"）
+  - **条件 5**: KR 状态已更新（kr_updated = "true"）
+  - **退出逻辑**: 未满足条件时 exit 2 阻止会话结束，全部满足时删除 .okr-mode 并 exit 0
+  - **测试覆盖**: 新增 tests/hooks/test-stop-okr.sh 验证所有 8 种场景
+
+- **tests/hooks/test-stop-okr.sh**: stop-okr.sh 完整测试脚本
+  - 测试 8 种场景：无文件、错误模式、5 个条件未满足、全部满足
+  - 验证退出码（exit 0 / exit 2）和文件清理逻辑
+  - 自动化测试，无需手动验证
+
+### Changed
+
+- **docs/STOP-HOOK-ARCHITECTURE.md**: 修正 .okr-mode 格式定义
+  - **旧格式**: session_id, started, features_count, tasks_count
+  - **新格式**: kr_id, feature_id, task_ids, prd_ids, dod_ids, kr_updated
+  - **对齐 PRD**: 与 /okr SKILL.md 保持一致
+  - **逐步追踪**: 每完成一步更新对应字段，Stop Hook 检查所有字段
+
+- **hooks/stop-okr.sh**: 设置执行权限（chmod +x）
+
+## [12.8.0] - 2026-02-08
+
+### Added
+
+- **hooks/stop.sh**: 重构为路由器架构（v13.0.0）
+  - **架构**：单一路由器检测 `.xxx-mode` 文件，分发到对应 handler（stop-dev.sh, stop-okr.sh）
+  - **职责分离**：stop.sh 只负责路由（~46 lines），具体逻辑在 handler 中
+  - **扩展性**：支持未来添加新 Skill 的 Stop Hook（如 stop-quality.sh）
+  - **无头模式**：检测 `CECELIA_HEADLESS` 环境变量，自动 exit 0 让外部循环控制
+
+- **hooks/stop-dev.sh**: /dev 工作流完成条件检查
+  - 提取自原 stop.sh 的 /dev 逻辑（~351 lines）
+  - 检查 PR 创建、CI 状态、PR 合并三个条件
+  - Session 隔离机制（session_id + tty 匹配）
+
+- **hooks/stop-okr.sh**: /okr 工作流完成条件检查（占位实现）
+  - 检查 PRD、DoD、Feature、Tasks 创建完成
+  - 当前为 TODO 占位，允许结束并输出警告
+
+- **hooks/branch-protect.sh**: 加强数据库检查（v20）
+  - **双重检查机制**：.dev-mode 存在时优先检查 Brain API 数据库，否则检查本地文件
+  - **数据库检查**：调用 Brain API 验证 PRD 和 DoD 初稿是否存在
+  - **错误提示**：缺少 PRD/DoD 时提示"请联系秋米补充"
+  - **向后兼容**：非 /dev 工作流仍使用本地文件检查
+
+- **scripts/devgate/check-dod-mapping.cjs**: 假测试检测
+  - **禁止模式**：echo 假测试、grep | wc -l 假测试、test -f 假测试、TODO 占位符
+  - **强制要求**：必须包含真实执行命令（node, npm, psql, curl, bash 等）
+  - **清晰错误**：提供具体原因和修复建议
+
+- **docs/STOP-HOOK-ARCHITECTURE.md**: Stop Hook 路由器架构文档
+  - 路由器工作原理
+  - Mode 文件格式
+  - Handler 模板
+  - 扩展指南
+
+- **tests/stop-hook-basic.test.sh**: Stop Hook 基本检查测试（14 passed）
+  - 文件存在性、语法检查、代码量检查
+  - 路由器内容检查、文档检查
+
+- **tests/devgate-fake-test-detection.test.cjs**: 假测试检测单元测试（21 passed）
+  - 真实测试命令通过
+  - 假测试模式被阻止
+  - 边界情况处理
+
+### Changed
+
+- **hooks/stop.sh**: 从 352 lines 重构为 46 lines 路由器
+- **.hook-core-version**: 更新到 12.8.0
+- **regression-contract.yaml**: 版本号更新到 12.8.0
+
+### Migration Notes
+
+**Stop Hook 路由器架构变更（v12.x → v13.0.0）**：
+
+- **旧版本**：单一 stop.sh 文件（352 lines）处理所有逻辑
+- **新版本**：路由器模式
+  - `stop.sh` - 路由器（~46 lines）
+  - `stop-dev.sh` - /dev 完成条件检查
+  - `stop-okr.sh` - /okr 完成条件检查（TODO）
+
+- **升级影响**：
+  - 现有 /dev 工作流：无影响，逻辑完全迁移到 stop-dev.sh
+  - 现有 .dev-mode 文件：无影响，格式不变
+  - 自定义 Skill：需要添加对应的 stop-xxx.sh handler
+
+- **备份**：旧版本已保存为 `hooks/stop.sh.before-refactor`
+
 ## [12.7.2] - 2026-02-07
 
 ### Fixed
@@ -11,7 +174,6 @@
 ### Changed
 
 - **regression-contract.yaml**: 新增 3 个 RCI 测试节点（W6-001-1/2/3）覆盖僵尸检测逻辑
-
 
 ## [12.7.1] - 2026-02-07
 
@@ -55,22 +217,6 @@
 Gate 机制会让 AI 停下来征求意见，破坏 Stop Hook 的自动循环。
 质量检查完全交给 CI，本地只保留 branch-protect.sh 检查文件存在性。
 唯一的流程控制 = Stop Hook。
-
-## [12.6.0] - 2026-02-06
-
-### Added
-
-- **hooks/bash-guard.sh**: Bash Guard - 凭据泄露 + HK 部署防护
-  - 拦截命令行中的真实 API Token（Notion/GitHub/OpenAI/JWT/DO/Feishu）
-  - 拦截未提交时 rsync/scp 到 HK 服务器
-  - 性能：99% 命令 ~2ms 放行，仅 HK 部署命中时跑 git 检查
-- **lib/hook-utils.sh**: 共享 TOKEN_PATTERNS + text_contains_token()
-  - credential-guard 和 bash-guard 共用，防止 regex 漂移
-- **tests/hooks/bash-guard.test.ts**: 25 项测试覆盖
-
-### Changed
-
-- **hooks/credential-guard.sh**: 重构使用共享 token regex
 
 ## [12.5.8] - 2026-02-04
 

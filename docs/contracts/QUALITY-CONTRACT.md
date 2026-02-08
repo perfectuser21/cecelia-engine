@@ -398,7 +398,7 @@ ci-passed:
     ✅ 全部通过 → 允许合并
 
 notify-failure (CI fail 时):
-    ❌ 失败 → 通知 Notion → 触发 p1 修复
+    ❌ 失败 → 记录到数据库 → 触发 p1 修复
 ```
 
 ---

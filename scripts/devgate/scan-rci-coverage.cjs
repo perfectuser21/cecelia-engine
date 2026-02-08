@@ -40,6 +40,7 @@ const ENTRY_PATTERNS = [
 // 排除模式（不计入 RCI 覆盖率）
 // 这些要么是 Gate 范畴（在 GCI），要么是内部实现
 const EXCLUDE_PATTERNS = [
+  /^tests\//,                  // 测试文件（不是业务入口）
   /\.archive\//,               // 归档目录
   /^hook-core\//,              // 部署产物目录
   /^skills\/[^/]+\/scripts\//, // Skill 内部脚本

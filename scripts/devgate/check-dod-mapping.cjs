@@ -140,6 +140,41 @@ function parseDodItems(content) {
 }
 
 /**
+ * 检查测试命令是否包含假测试模式
+ * @param {string} testCommand - 测试命令
+ * @returns {{valid: boolean, reason?: string}}
+ */
+function detectFakeTest(testCommand) {
+  // 禁止 echo 假测试
+  if (/\becho\b/.test(testCommand)) {
+    return { valid: false, reason: "禁止使用 echo 假测试（应使用真实执行命令）" };
+  }
+
+  // 禁止 grep | wc -l 假测试
+  if (/grep.*\|.*wc\s+-l/.test(testCommand)) {
+    return { valid: false, reason: "禁止使用 grep | wc -l 假测试（应使用真实执行命令）" };
+  }
+
+  // 禁止 test -f 假测试
+  if (/test\s+-f\b/.test(testCommand)) {
+    return { valid: false, reason: "禁止使用 test -f 假测试（应使用真实执行命令）" };
+  }
+
+  // 禁止 TODO 占位符
+  if (/TODO/.test(testCommand)) {
+    return { valid: false, reason: "禁止使用 TODO 占位符（应使用真实执行命令）" };
+  }
+
+  // 强制要求真实执行命令（node, npm, psql, curl, bash等）
+  const hasRealExecution = /\b(node|npm|npx|psql|curl|bash|python|pytest|jest|mocha|vitest)\b/.test(testCommand);
+  if (!hasRealExecution) {
+    return { valid: false, reason: "Test 命令必须包含真实执行命令（如 node, npm, psql, curl 等）" };
+  }
+
+  return { valid: true };
+}
+
+/**
  * 验证 Test 引用是否存在
  * @param {string} testRef - Test 引用
  * @param {string} projectRoot - 项目根目录
@@ -148,6 +183,24 @@ function parseDodItems(content) {
 function validateTestRef(testRef, projectRoot) {
   if (!testRef) {
     return { valid: false, reason: "缺少 Test 字段" };
+  }
+
+  // 检查是否为合法格式（tests/, contract:, manual:）
+  const isValidFormat = testRef.startsWith("tests/") ||
+                        testRef.startsWith("contract:") ||
+                        testRef.startsWith("manual:");
+
+  if (!isValidFormat) {
+    // 不是合法格式，检查是否为假测试
+    const fakeTestCheck = detectFakeTest(testRef);
+    if (!fakeTestCheck.valid) {
+      return fakeTestCheck;
+    }
+    // 即使通过假测试检查，也必须使用规定的格式
+    return {
+      valid: false,
+      reason: `Test 字段必须使用规定格式: tests/..., contract:..., 或 manual:...（当前: ${testRef}）`
+    };
   }
 
   if (testRef.startsWith("tests/")) {

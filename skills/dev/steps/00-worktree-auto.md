@@ -17,11 +17,11 @@ changelog:
 
 ## 检测条件
 
-只有同时满足以下条件时才需要创建 worktree：
+需要创建 worktree 的情况（满足任一条件）：
 
-1. **在主仓库**（不是 worktree）
-2. **存在 .dev-mode 文件**
-3. **.dev-mode 不是僵尸**（session 仍然活跃）
+1. **在主仓库**（不是 worktree）**且**：
+   - **其他会话在同一 repo 工作**（多会话并发）
+   - **或** **存在 .dev-mode 文件且不是僵尸**（活跃任务冲突）
 
 ```bash
 # 检测是否在 worktree 中
@@ -37,10 +37,48 @@ DEV_MODE_FILE="$PROJECT_ROOT/.dev-mode"
 
 ---
 
-## 决策逻辑
+## 多会话检测（新增）
+
+**在检测 .dev-mode 之前，先检测其他会话**：
+
+```bash
+SESSION_DIR="/tmp/claude-engine-sessions"
+CURRENT_REPO=$(git rev-parse --show-toplevel 2>/dev/null)
+NEED_WORKTREE=false
+
+# 检查是否有其他会话在同一 repo 工作
+if [[ -d "$SESSION_DIR" ]]; then
+    for session_file in "$SESSION_DIR"/session-*.json; do
+        [[ ! -f "$session_file" ]] && continue
+
+        session_repo=$(jq -r '.cwd' "$session_file" 2>/dev/null || echo "")
+        session_pid=$(jq -r '.pid' "$session_file" 2>/dev/null || echo "")
+
+        # 同一个 repo 且不是自己
+        if [[ "$session_repo" == "$CURRENT_REPO" ]] && [[ "$session_pid" != "$$" ]]; then
+            # 检查进程是否活跃
+            if ps -p "$session_pid" >/dev/null 2>&1; then
+                echo "🔀 检测到其他会话在同一 repo 工作（PID: $session_pid）"
+                echo "   → 自动创建 worktree 隔离..."
+                NEED_WORKTREE=true
+                break
+            fi
+        fi
+    done
+fi
+```
+
+---
+
+## 决策逻辑（更新）
 
 ```
 在 worktree 中？→ 跳过，继续 Step 1
+
+检测其他会话 →
+  → 有其他会话在同一 repo → 创建 worktree
+  → 无其他会话 → 继续检测 .dev-mode
+
 无 .dev-mode？ → 跳过，继续 Step 1
 有 .dev-mode？ → 僵尸检测
   → 僵尸 → 清理 .dev-mode，继续 Step 1（不需要 worktree）

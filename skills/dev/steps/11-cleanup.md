@@ -116,17 +116,33 @@ bash scripts/post-pr-checklist.sh
 
 ## 删除 .dev-mode 文件（CRITICAL）
 
-**在 Cleanup 开始时，必须删除 .dev-mode 文件**：
+**在 Cleanup 开始时，必须删除 .dev-mode 和会话注册**：
 
 ```bash
+# 读取 session_id（用于清理会话注册）
+SESSION_ID=$(grep "^session_id:" ".dev-mode" 2>/dev/null | awk '{print $2}' || echo "")
+
 # 删除 .dev-mode 文件（Stop Hook 循环控制信号）
 if [[ -f ".dev-mode" ]]; then
     rm -f .dev-mode
     echo "✅ .dev-mode 已删除（Stop Hook 循环控制已禁用）"
 fi
+
+# 清理会话注册（多会话检测）
+if [[ -n "$SESSION_ID" ]]; then
+    SESSION_FILE="/tmp/claude-engine-sessions/session-$SESSION_ID.json"
+    if [[ -f "$SESSION_FILE" ]]; then
+        rm -f "$SESSION_FILE"
+        echo "✅ 会话注册已清理（session_id: $SESSION_ID）"
+    fi
+fi
+
+# 清理过期会话（超过 1 小时无心跳）
+find /tmp/claude-engine-sessions/ -name "session-*.json" -mmin +60 -delete 2>/dev/null || true
+echo "✅ 过期会话已清理（超过 1 小时）"
 ```
 
-**注意**：如果 PR 已合并，Stop Hook 会自动删除 .dev-mode。但为了确保清理完整，Cleanup 步骤也要删除。
+**注意**：如果 PR 已合并，Stop Hook 会自动删除 .dev-mode。但为了确保清理完整，Cleanup 步骤也要删除。会话注册清理是新增功能，用于多会话检测。
 
 ---
 

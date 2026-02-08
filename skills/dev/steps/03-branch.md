@@ -150,6 +150,24 @@ step_11_cleanup: pending
 EOF
 
 echo "✅ .dev-mode 已创建（session_id: $SESSION_ID，含 11 步 checklist）"
+
+# 注册会话到 /tmp/claude-engine-sessions/（多会话检测）
+SESSION_DIR="/tmp/claude-engine-sessions"
+mkdir -p "$SESSION_DIR"
+
+cat > "$SESSION_DIR/session-$SESSION_ID.json" << INNER_EOF
+{
+  "session_id": "$SESSION_ID",
+  "pid": $$,
+  "tty": "$(tty 2>/dev/null | tr -d '\n' || echo 'not a tty')",
+  "cwd": "$(pwd)",
+  "branch": "$BRANCH_NAME",
+  "started": "$(date -Iseconds)",
+  "last_heartbeat": "$(date -Iseconds)"
+}
+INNER_EOF
+
+echo "✅ 会话已注册（PID: $$，用于多会话检测）"
 ```
 
 **文件格式**（含 11 步 checklist）：

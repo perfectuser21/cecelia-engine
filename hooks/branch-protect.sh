@@ -208,6 +208,54 @@ if [[ "$CURRENT_BRANCH" =~ ^cp-[a-zA-Z0-9][-a-zA-Z0-9_]*$ ]] || \
 
     PRD_DOD_DIR=$(find_prd_dod_dir "$FILE_PATH" "$PROJECT_ROOT" "$CURRENT_BRANCH")
 
+    # ===== 数据库检查（新增 v20）=====
+    # 检测是否在 /dev 工作流（有 .dev-mode 文件）
+    DEV_MODE_FILE="$PROJECT_ROOT/.dev-mode"
+
+    if [[ -f "$DEV_MODE_FILE" ]]; then
+        # 在 /dev 工作流中，从数据库检查 PRD 和 DoD 初稿
+        TASK_ID=$(grep "^task_id:" "$DEV_MODE_FILE" 2>/dev/null | cut -d' ' -f2 || echo "")
+
+        if [[ -n "$TASK_ID" ]]; then
+            # 检查 PRD
+            if command -v curl &>/dev/null && command -v jq &>/dev/null; then
+                TASK_INFO=$(curl -s "http://localhost:5221/api/brain/tasks/${TASK_ID}" 2>/dev/null || echo "")
+                PRD_ID=$(echo "$TASK_INFO" | jq -r '.prd_id // empty' 2>/dev/null || echo "")
+
+                if [[ -z "$PRD_ID" ]]; then
+                    echo "" >&2
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+                    echo "  [ERROR] 数据库中缺少 PRD" >&2
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+                    echo "" >&2
+                    echo "Task ID: $TASK_ID" >&2
+                    echo "请联系秋米为此任务补充 PRD" >&2
+                    echo "" >&2
+                    exit 2
+                fi
+
+                # 检查 DoD 初稿
+                DOD_DRAFT=$(curl -s "http://localhost:5221/api/brain/dods?task_id=${TASK_ID}" 2>/dev/null | jq -r '.draft // empty' 2>/dev/null || echo "")
+
+                if [[ -z "$DOD_DRAFT" ]]; then
+                    echo "" >&2
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+                    echo "  [ERROR] 数据库中缺少 DoD 初稿" >&2
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+                    echo "" >&2
+                    echo "Task ID: $TASK_ID" >&2
+                    echo "请联系秋米为此任务补充 DoD 初稿" >&2
+                    echo "" >&2
+                    exit 2
+                fi
+
+                # 数据库检查通过，允许写代码
+                exit 0
+            fi
+        fi
+    fi
+
+    # ===== 本地文件检查（兼容非 /dev 工作流）=====
     # v17: 分支级别 PRD/DoD 文件（优先新格式，fallback 旧格式）
     PRD_FILE_NEW="$PRD_DOD_DIR/.prd-${CURRENT_BRANCH}.md"
     PRD_FILE_OLD="$PRD_DOD_DIR/.prd.md"
