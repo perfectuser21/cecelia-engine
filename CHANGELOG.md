@@ -1,3 +1,71 @@
+## [12.8.0] - 2026-02-08
+
+### Added
+
+- **hooks/stop.sh**: 重构为路由器架构（v13.0.0）
+  - **架构**：单一路由器检测 `.xxx-mode` 文件，分发到对应 handler（stop-dev.sh, stop-okr.sh）
+  - **职责分离**：stop.sh 只负责路由（~46 lines），具体逻辑在 handler 中
+  - **扩展性**：支持未来添加新 Skill 的 Stop Hook（如 stop-quality.sh）
+  - **无头模式**：检测 `CECELIA_HEADLESS` 环境变量，自动 exit 0 让外部循环控制
+
+- **hooks/stop-dev.sh**: /dev 工作流完成条件检查
+  - 提取自原 stop.sh 的 /dev 逻辑（~351 lines）
+  - 检查 PR 创建、CI 状态、PR 合并三个条件
+  - Session 隔离机制（session_id + tty 匹配）
+
+- **hooks/stop-okr.sh**: /okr 工作流完成条件检查（占位实现）
+  - 检查 PRD、DoD、Feature、Tasks 创建完成
+  - 当前为 TODO 占位，允许结束并输出警告
+
+- **hooks/branch-protect.sh**: 加强数据库检查（v20）
+  - **双重检查机制**：.dev-mode 存在时优先检查 Brain API 数据库，否则检查本地文件
+  - **数据库检查**：调用 Brain API 验证 PRD 和 DoD 初稿是否存在
+  - **错误提示**：缺少 PRD/DoD 时提示"请联系秋米补充"
+  - **向后兼容**：非 /dev 工作流仍使用本地文件检查
+
+- **scripts/devgate/check-dod-mapping.cjs**: 假测试检测
+  - **禁止模式**：echo 假测试、grep | wc -l 假测试、test -f 假测试、TODO 占位符
+  - **强制要求**：必须包含真实执行命令（node, npm, psql, curl, bash 等）
+  - **清晰错误**：提供具体原因和修复建议
+
+- **docs/STOP-HOOK-ARCHITECTURE.md**: Stop Hook 路由器架构文档
+  - 路由器工作原理
+  - Mode 文件格式
+  - Handler 模板
+  - 扩展指南
+
+- **tests/stop-hook-basic.test.sh**: Stop Hook 基本检查测试（14 passed）
+  - 文件存在性、语法检查、代码量检查
+  - 路由器内容检查、文档检查
+
+- **tests/devgate-fake-test-detection.test.cjs**: 假测试检测单元测试（21 passed）
+  - 真实测试命令通过
+  - 假测试模式被阻止
+  - 边界情况处理
+
+### Changed
+
+- **hooks/stop.sh**: 从 352 lines 重构为 46 lines 路由器
+- **.hook-core-version**: 更新到 12.8.0
+- **regression-contract.yaml**: 版本号更新到 12.8.0
+
+### Migration Notes
+
+**Stop Hook 路由器架构变更（v12.x → v13.0.0）**：
+
+- **旧版本**：单一 stop.sh 文件（352 lines）处理所有逻辑
+- **新版本**：路由器模式
+  - `stop.sh` - 路由器（~46 lines）
+  - `stop-dev.sh` - /dev 完成条件检查
+  - `stop-okr.sh` - /okr 完成条件检查（TODO）
+
+- **升级影响**：
+  - 现有 /dev 工作流：无影响，逻辑完全迁移到 stop-dev.sh
+  - 现有 .dev-mode 文件：无影响，格式不变
+  - 自定义 Skill：需要添加对应的 stop-xxx.sh handler
+
+- **备份**：旧版本已保存为 `hooks/stop.sh.before-refactor`
+
 ## [12.7.2] - 2026-02-07
 
 ### Fixed
