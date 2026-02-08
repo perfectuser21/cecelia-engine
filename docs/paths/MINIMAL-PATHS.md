@@ -1,12 +1,12 @@
 ---
 id: minimal-paths
-version: 2.77.0
+version: 2.78.0
 created: 2026-02-08
 updated: 2026-02-08
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.77.0: 从 feature-registry.yml 自动生成
+  - 2.78.0: 从 feature-registry.yml 自动生成
 ---
 
 # Minimal Paths - 最小验收路径
@@ -213,6 +213,17 @@ changelog:
 
 ---
 
+### S2: PRD/DoD Validation Loop
+
+1. ✅ **PRD 验证: 生成 PRD → 验证 → 90+ 通过**
+2. ✅ **DoD 验证: 生成 DoD → 验证 → 90+ 通过**
+3. ✅ **质量循环: 85 分 → 改进 → 92 分通过**
+4. ✅ **防作弊: 手动改分 → SHA256 不匹配 → exit 2**
+
+**RCI 覆盖**: S2-001,S2-002,S2-003
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -225,5 +236,5 @@ changelog:
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.77.0
+**版本**: 2.78.0
 **生成时间**: 2026-02-08

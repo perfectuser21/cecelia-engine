@@ -1,12 +1,12 @@
 ---
 id: golden-paths
-version: 2.77.0
+version: 2.78.0
 created: 2026-02-08
 updated: 2026-02-08
 source: features/feature-registry.yml
 generation: auto-generated (scripts/generate-path-views.sh)
 changelog:
-  - 2.77.0: 从 feature-registry.yml 自动生成
+  - 2.78.0: 从 feature-registry.yml 自动生成
 ---
 
 # Golden Paths - 端到端成功路径
@@ -311,6 +311,23 @@ stop-okr.sh（10 层防作弊检查）→ 通过（total >= 90）
 
 ---
 
+## GP-020: PRD/DoD Validation Loop (S2)
+
+**Feature**: S2 - PRD/DoD Validation Loop
+**Priority**: P1
+
+### Golden Path
+
+```
+生成 PRD/DoD → validate-*.py 打分 → total < 90 →
+AI 读取 validation report → 改进文档 → 重新验证 →
+Loop until >= 90 → anti-cheat-*.sh 验证 → 通过
+```
+
+**RCI 覆盖**: S2-001,S2-002,S2-003
+
+---
+
 ## 更新规则
 
 **本文件自动生成，不要手动编辑**。
@@ -323,5 +340,5 @@ stop-okr.sh（10 层防作弊检查）→ 通过（total >= 90）
 ---
 
 **来源**: features/feature-registry.yml
-**版本**: 2.77.0
+**版本**: 2.78.0
 **生成时间**: 2026-02-08

@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "12.11.1"
+version: "12.12.0"
 updated: "2026-02-08"
 
 # ============================================================================
@@ -2632,3 +2632,61 @@ skills:
       type: file
       path: "tests/okr/test-cheating-prevention.sh"
     test: "tests/okr/test-cheating-prevention.sh"
+
+  # ============================================================================
+  # S2: PRD/DoD Validation Loop
+  # ============================================================================
+
+  - id: S2-001
+    feature: S2
+    name: "PRD Validation Loop"
+    scope: workflow
+    priority: P0
+    trigger: [PR, commit]
+    method: auto
+    tags: [validation, prd, quality]
+    owner: workflow
+    steps:
+      given: "PRD 文件 (.prd-*.md) 存在"
+      when: "运行 validate-prd.py"
+      then: "生成验证报告，form_score + content_score >= 90"
+    evidence:
+      type: file
+      path: "tests/validation-loop/test-prd-validation.sh"
+    test: "tests/validation-loop/test-prd-validation.sh"
+
+  - id: S2-002
+    feature: S2
+    name: "DoD Validation Loop"
+    scope: workflow
+    priority: P0
+    trigger: [PR, commit]
+    method: auto
+    tags: [validation, dod, quality]
+    owner: workflow
+    steps:
+      given: "DoD 文件 (.dod-*.md) 存在"
+      when: "运行 validate-dod.py"
+      then: "生成验证报告，form_score + content_score >= 90"
+    evidence:
+      type: file
+      path: "tests/validation-loop/test-dod-validation.sh"
+    test: "tests/validation-loop/test-dod-validation.sh"
+
+  - id: S2-003
+    feature: S2
+    name: "PRD/DoD Anti-Cheat 机制"
+    scope: workflow
+    priority: P0
+    trigger: [PR]
+    method: auto
+    tags: [anti-cheat, validation, security]
+    owner: workflow
+    steps:
+      given: "验证报告生成"
+      when: "运行 anti-cheat-prd.sh 或 anti-cheat-dod.sh"
+      then: "10 层检查全部通过，SHA256 hash 匹配，分数 >= 90"
+    evidence:
+      type: file
+      path: "tests/validation-loop/test-anti-cheat.sh"
+    test: "tests/validation-loop/test-anti-cheat.sh"

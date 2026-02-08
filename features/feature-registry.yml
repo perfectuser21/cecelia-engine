@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.77.0"
+version: "2.78.0"
 updated: "2026-02-08"
 changelog:
+  - 2.78.0: v12.12.0 - Validation Loop for PRD/DoD（90分制 + 10层防作弊 + 集成到 /dev）
   - 2.77.0: v12.11.1 - Stop Hook 写死逻辑修复（headless 不旁路 + 锁失败 exit 2）
   - 2.76.0: v12.11.0 - OKR Skill v7.0.0（Validation Loop + Anti-Cheat + 31种攻击场景100%拦截）
   - 2.75.0: v12.10.0 - Stop Hook exit 代码修复 + Worktree 多会话检测 + 会话注册机制
@@ -994,3 +995,65 @@ product_features:
       - S1-001  # OKR Skill 基本功能
       - S1-002  # Validation Loop
       - S1-003  # Anti-Cheat 机制
+
+  # --------------------------------------------------------------------------
+  # S2: PRD/DoD Validation Loop - /dev 文档质量保障
+  # --------------------------------------------------------------------------
+  - id: S2
+    name: PRD/DoD Validation Loop
+    status: Committed
+    priority: P1
+    version: "1.0.0"
+    updated: "2026-02-08"
+    description: |
+      PRD 和 DoD 文档质量验证循环 - 确保 /dev 工作流文档质量
+
+      核心机制:
+      - 90 分制评分系统（form_score 40 + content_score 60）
+      - Validation Loop: 低于 90 分自动循环改进
+      - Anti-Cheat: 10 层防作弊检查（SHA256 hash 验证）
+      - 集成到 /dev Step 1 (PRD) 和 Step 4 (DoD)
+
+    entrypoints:
+      - type: script
+        file: skills/dev/scripts/validate-prd.py
+        description: "PRD 验证（40+60 分制）"
+      - type: script
+        file: skills/dev/scripts/validate-dod.py
+        description: "DoD 验证（40+60 分制）"
+      - type: script
+        file: skills/dev/scripts/anti-cheat-prd.sh
+        description: "PRD 防作弊（10 层检查）"
+      - type: script
+        file: skills/dev/scripts/anti-cheat-dod.sh
+        description: "DoD 防作弊（10 层检查）"
+
+    golden_path: |
+      生成 PRD/DoD → validate-*.py 打分 → total < 90 →
+      AI 读取 validation report → 改进文档 → 重新验证 →
+      Loop until >= 90 → anti-cheat-*.sh 验证 → 通过
+
+    minimal_paths:
+      - "PRD 验证: 生成 PRD → 验证 → 90+ 通过"
+      - "DoD 验证: 生成 DoD → 验证 → 90+ 通过"
+      - "质量循环: 85 分 → 改进 → 92 分通过"
+      - "防作弊: 手动改分 → SHA256 不匹配 → exit 2"
+
+    tests:
+      - type: auto
+        file: tests/validation-loop/test-prd-validation.sh
+        coverage: S2-001
+      - type: auto
+        file: tests/validation-loop/test-dod-validation.sh
+        coverage: S2-002
+      - type: auto
+        file: tests/validation-loop/test-anti-cheat.sh
+        coverage: S2-003
+      - type: auto
+        file: tests/validation-loop/run-all.sh
+        description: "完整测试套件"
+
+    rcis:
+      - S2-001  # PRD Validation
+      - S2-002  # DoD Validation
+      - S2-003  # Anti-Cheat 机制

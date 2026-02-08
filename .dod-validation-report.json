@@ -1,0 +1,16 @@
+{
+  "dod_file": ".dod-validation-loop.md",
+  "form_score": 40,
+  "content_score": 58,
+  "total_score": 98,
+  "passing": true,
+  "checklist_count": 25,
+  "items_with_test": 25,
+  "form_issues": [],
+  "content_issues": [
+    "DoD 条目不够明确 (18/20分) - 需要更明确的动作动词"
+  ],
+  "content_sha256": "2e7446dca6be20e887474ecc127ef6f0f68c7ce23a418d5d308cdb1e13e6ece3",
+  "timestamp": "2026-02-08T13:34:18.430714",
+  "validation_version": "1.0.0"
+}

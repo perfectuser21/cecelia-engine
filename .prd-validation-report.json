@@ -1,0 +1,12 @@
+{
+  "prd_file": ".prd-validation-loop.md",
+  "form_score": 40,
+  "content_score": 60,
+  "total_score": 100,
+  "passing": true,
+  "form_issues": [],
+  "content_issues": [],
+  "content_sha256": "7e34e09a6b9b86897b6428b5c34d8af29f4ec8eccb4b1f62161b3a15c185bf63",
+  "timestamp": "2026-02-08T13:34:09.944972",
+  "validation_version": "1.0.0"
+}
