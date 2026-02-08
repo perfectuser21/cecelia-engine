@@ -155,32 +155,90 @@ else
     PRD_FILE=".prd.md"
 fi
 
-cat > .dev-mode << EOF
-dev
-branch: $BRANCH_NAME
-session_id: $SESSION_ID
-tty: $CURRENT_TTY
-prd: $PRD_FILE
-started: $(date -Iseconds)
-step_1_prd: done
-step_2_detect: done
-step_3_branch: done
-step_4_dod: pending
-step_5_code: pending
-step_6_test: pending
-step_7_quality: pending
-step_8_pr: pending
-step_9_ci: pending
-step_10_learning: pending
-step_11_cleanup: pending
-EOF
+# ===== 创建 .dev-lock（硬钥匙，必须成功）=====
+echo "🔒 创建 .dev-lock..."
 
-# 如果有 task_id，追加 task_id 字段
-if [[ -n "$task_id" ]]; then
-    echo "task_id: $task_id" >> .dev-mode
+# 原子写入：先写临时文件，再 mv（防止竞态）
+DEV_LOCK_TMP="$(mktemp .dev-lock.XXXXXX)"
+{
+  echo "dev_lock"
+  echo "branch: $BRANCH_NAME"
+  echo "session_id: ${SESSION_ID}"
+  echo "created_at: $(date -Iseconds)"
+} > "$DEV_LOCK_TMP"
+
+# 原子移动（覆盖旧文件，即使 git 中存在也能成功）
+mv -f "$DEV_LOCK_TMP" .dev-lock
+
+if [[ -f .dev-lock ]]; then
+    echo "✅ .dev-lock 创建成功（硬钥匙已设置）"
+else
+    echo "❌ .dev-lock 创建失败，无法继续" >&2
+    exit 1
 fi
 
-echo "✅ .dev-mode 已创建（session_id: $SESSION_ID，含 11 步 checklist）"
+# ===== 创建 sentinel file（三重保险）=====
+echo "🛡️  创建 sentinel file..."
+mkdir -p .git/hooks
+SENTINEL_TMP="$(mktemp .git/hooks/cecelia-dev.sentinel.XXXXXX)"
+{
+  echo "dev_workflow_active"
+  echo "branch: $BRANCH_NAME"
+  echo "started: $(date -Iseconds)"
+} > "$SENTINEL_TMP"
+mv -f "$SENTINEL_TMP" .git/hooks/cecelia-dev.sentinel
+
+if [[ -f .git/hooks/cecelia-dev.sentinel ]]; then
+    echo "✅ Sentinel 创建成功（三重保险）"
+else
+    echo "⚠️  Sentinel 创建失败，但可以继续" >&2
+fi
+
+# ===== 创建 .dev-mode（软状态，允许失败）=====
+echo "📝 创建 .dev-mode..."
+
+# 原子写入（同样方式）
+DEV_MODE_TMP="$(mktemp .dev-mode.XXXXXX)"
+{
+  echo "dev"
+  echo "branch: $BRANCH_NAME"
+  echo "session_id: ${SESSION_ID}"
+  echo "tty: $CURRENT_TTY"
+  echo "prd: $PRD_FILE"
+  echo "started: $(date -Iseconds)"
+  echo "retry_count: 0"
+  echo "step_1_prd: done"
+  echo "step_2_detect: done"
+  echo "step_3_branch: done"
+  echo "step_4_dod: pending"
+  echo "step_5_code: pending"
+  echo "step_6_test: pending"
+  echo "step_7_quality: pending"
+  echo "step_8_pr: pending"
+  echo "step_9_ci: pending"
+  echo "step_10_learning: pending"
+  echo "step_11_cleanup: pending"
+  # 如果有 task_id，追加 task_id 字段
+  if [[ -n "$task_id" ]]; then
+    echo "task_id: $task_id"
+  fi
+} > "$DEV_MODE_TMP"
+
+mv -f "$DEV_MODE_TMP" .dev-mode
+
+if [[ -f .dev-mode ]]; then
+    echo "✅ .dev-mode 创建成功（软状态已设置）"
+else
+    echo "⚠️  .dev-mode 创建失败，但 .dev-lock 已设置，可以继续" >&2
+    echo "   Stop Hook 会检测到这个情况并阻止退出" >&2
+fi
+
+echo ""
+echo "✅ 双钥匙状态机已初始化"
+echo "   .dev-lock: 硬钥匙（不可绕过）"
+echo "   .dev-mode: 软状态（11 步 checklist）"
+echo "   sentinel: 三重保险（防止同时删除）"
+echo "   session_id: $SESSION_ID"
 
 # 注册会话到 /tmp/claude-engine-sessions/（多会话检测）
 SESSION_DIR="/tmp/claude-engine-sessions"
