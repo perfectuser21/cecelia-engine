@@ -1,6 +1,6 @@
 {
-  "branch": "cp-implement-stop-okr",
-  "head_sha": "fd9dad5",
-  "timestamp": "2026-02-08T01:53:00Z",
+  "branch": "cp-okr-v7-validation-loop",
+  "head_sha": "aa00774",
+  "timestamp": "2026-02-08T04:18:08Z",
   "note": "Quality 只汇总，不判定。CI 是最终裁判。"
 }
