@@ -1,3 +1,24 @@
+## [12.18.0] - 2026-02-08
+
+### Added
+
+- **/dev 执行反馈报告（4 维度分析）**
+  - **新增脚本**: `skills/dev/scripts/record-step.sh` - 记录每步执行数据（时间/状态/重试/问题）
+  - **新增脚本**: `skills/dev/scripts/generate-feedback-report-v2.sh` - 生成 4 维度分析报告
+  - **新增定义**: `skills/dev/lib/step-expectations.json` - 每步质量期望和常见问题
+  - **集成到 Step 10**: 自动生成深度分析报告到 `docs/dev-reports/`
+  - **4 个维度**:
+    1. 质量维度：期望 vs 实际对比 + LLM 分析
+    2. 效率维度：每步耗时记录（用于改进前后对比）
+    3. 稳定性维度：重试次数、CI 通过率
+    4. 自动化维度：自动化程度评估
+  - **改进建议**: P0/P1/P2 优先级排序的改进建议
+  - **用途**: 持续改进 /dev 工作流，识别瓶颈和问题模式
+
+### Changed
+
+- **skills/dev/steps/10-learning.md**: 扩展反馈报告章节，支持 4 维度分析
+
 ## [12.10.0] - 2026-02-08
 
 ### Fixed

@@ -104,9 +104,11 @@ IS_TEST=$(git config branch."$BRANCH_NAME".is-test 2>/dev/null)
 
 ---
 
-## 生成反馈报告（新增 v12.15.0）
+## 生成反馈报告（新增 v12.15.0，4 维度分析 v12.18.0）
 
-**在 Learning 记录后，生成结构化反馈报告**：
+### 基础反馈报告
+
+**生成结构化反馈报告（Brain 集成）**：
 
 ```bash
 bash skills/dev/scripts/generate-feedback-report.sh
@@ -123,6 +125,46 @@ bash skills/dev/scripts/generate-feedback-report.sh
 - OKR 迭代拆解（Phase 3/4）
 - Brain 自动化决策
 - 项目历史追溯
+
+### 4 维度分析报告（新增 v12.18.0）
+
+**生成深度分析报告（质量/效率/稳定性/自动化）**：
+
+```bash
+bash skills/dev/scripts/generate-feedback-report-v2.sh
+```
+
+生成 `docs/dev-reports/YYYY-MM-DD-HH-MM-SS.md`，包含：
+
+**质量维度**：
+- 每步期望 vs 实际对比
+- LLM 质量分析和评分
+- 发现的主要问题
+
+**效率维度**：
+- 每步耗时记录表
+- 总耗时统计
+- 用于改进前后对比
+
+**稳定性维度**：
+- 重试次数统计
+- CI 通过率
+- Stop Hook 触发次数
+
+**自动化维度**：
+- 每步自动化程度
+- 人工干预次数
+- 自动化率计算
+
+**改进建议**：
+- P0 质量问题
+- P1 效率提升
+- P2 自动化增强
+
+**用途**：
+- 持续改进 /dev 工作流
+- 识别瓶颈和问题模式
+- 评估优化效果
 
 ---
 

@@ -1,46 +1,6 @@
 {
-  "phase": "Phase 4a - Dev Feedback Upload & Task Status Sync",
-  "version": "12.17.0",
-  "changes": [
-    {
-      "file": "skills/dev/scripts/upload-feedback.sh",
-      "type": "created",
-      "description": "上传反馈到 Brain API"
-    },
-    {
-      "file": "skills/dev/scripts/update-task-status.sh",
-      "type": "created",
-      "description": "更新 Task 状态到 Brain"
-    },
-    {
-      "file": "skills/dev/steps/01-prd.md",
-      "type": "modified",
-      "description": "添加状态同步（in_progress）"
-    },
-    {
-      "file": "skills/dev/steps/10-learning.md",
-      "type": "modified",
-      "description": "添加反馈上传和状态更新（completed）"
-    },
-    {
-      "file": "tests/dev/test-upload-feedback.sh",
-      "type": "created",
-      "description": "upload-feedback.sh 单元测试"
-    },
-    {
-      "file": "tests/dev/test-update-task-status.sh",
-      "type": "created",
-      "description": "update-task-status.sh 单元测试"
-    }
-  ],
-  "tests": {
-    "unit_tests": "创建完成，待运行",
-    "integration_tests": "需要 Brain 运行（手动验证）"
-  },
-  "next_steps": [
-    "版本号更新（12.16.0 → 12.17.0）",
-    "RCI 条目添加（S1-009, S1-010）",
-    "Feature Registry 更新",
-    "创建 PR"
-  ]
+  "branch": "cp-02081904-dev-feedback-report",
+  "head_sha": "573ec86",
+  "timestamp": "2026-02-08T11:09:32Z",
+  "note": "Quality 只汇总，不判定。CI 是最终裁判。"
 }
