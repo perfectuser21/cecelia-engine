@@ -475,3 +475,177 @@ python3 validate-okr.py output.json
 - Stop Hook 是防护网，不是敌人
 - Validation Loop 是帮手，不是负担
 - 诚实自评 → 发现不足 → 改进内容 → 真正进步 ✅
+
+---
+
+## 新增：迭代拆解模式（v12.14.0）
+
+### 使用模式
+
+#### 模式 A：单 Task（简单需求）
+
+**适用场景**：
+- 修复类："修复 XXX bug"
+- 优化类："优化 XXX 性能"
+- 小功能："添加 XXX 按钮"
+
+**使用方法**：
+```bash
+# 初始拆解
+bash skills/okr/scripts/decompose-feature.sh "修复登录 bug"
+
+输出：
+{
+  "feature": { "complexity": "single", ... },
+  "tasks": [
+    { "id": "task-001", "prd_status": "detailed", ... }
+  ]
+}
+
+# 直接执行（只有一个 Task）
+/dev --task-id=task-001
+# 完成
+```
+
+#### 模式 B：多 Task 迭代（复杂需求）
+
+**适用场景**：
+- 系统类："实现 XXX 系统"
+- 功能集："完整的 XXX 功能"
+- 多步骤："XXX + YYY + ZZZ"
+
+**使用方法**：
+```bash
+# 第一步：初始拆解
+bash skills/okr/scripts/decompose-feature.sh "实现用户认证系统"
+
+输出：
+{
+  "feature": {
+    "title": "实现用户认证系统",
+    "description": "大 PRD（总体规划）",
+    "complexity": "multiple"
+  },
+  "tasks": [
+    {
+      "id": "task-001",
+      "title": "第一步：基础实现",
+      "prd_status": "detailed",  ← 详细 PRD
+      "prd_content": "完整的实现方案...",
+      "order": 1
+    },
+    {
+      "id": "task-002",
+      "title": "第二步：功能完善",
+      "prd_status": "draft",  ← 草稿
+      "prd_content": "草稿：简短描述",
+      "order": 2
+    },
+    {
+      "id": "task-003",
+      "title": "第三步：集成测试",
+      "prd_status": "draft",
+      "prd_content": "草稿：简短描述",
+      "order": 3
+    }
+  ]
+}
+
+# 第二步：执行 Task 1
+/dev --task-id=task-001
+# Task 1 完成，生成反馈报告：.dev-runs/task-001-report.json
+
+# 第三步：基于反馈继续拆解
+bash skills/okr/scripts/continue-feature.sh feature-001 .dev-runs/task-001-report.json
+
+输出：
+{
+  "feedback_read": true,
+  "plan_adjusted": true,  ← 计划已调整（可能插入新 Task）
+  "tasks_inserted": 1,    ← 插入了 1 个新 Task
+  "next_task": {
+    "id": "task-002",
+    "title": "根据反馈调整：实现 token 刷新",
+    "prd_status": "detailed",  ← 草稿已细化为详细 PRD
+    "prd_content": "基于 Task 1 反馈的详细实现方案..."
+  },
+  "feature_completed": false
+}
+
+# 第四步：执行 Task 2
+/dev --task-id=task-002
+# Task 2 完成
+
+# 第五步：继续迭代...
+bash skills/okr/scripts/continue-feature.sh feature-001 .dev-runs/task-002-report.json
+# ...
+
+# 直到 Feature 完成：
+{
+  "feedback_read": true,
+  "feature_completed": true,
+  "completion_reason": "最后一个 Task 已完成，且反馈确认成功"
+}
+```
+
+### 核心机制
+
+#### 策略 C：混合规划
+
+**初始规划**：
+- 生成 3-5 个 Tasks 的草稿
+- 只详细写 Task 1 的 PRD
+- 其他 Tasks 保持草稿状态
+
+**迭代细化**：
+- Task N 完成 → 生成反馈报告
+- 秋米读取反馈 → 分析 → 调整计划
+- 细化 Task N+1 的 PRD（草稿 → 详细）
+- 可能插入新 Task、删除不需要的 Task
+
+#### 反馈报告格式
+
+**生成位置**：`.dev-runs/<task-id>-report.json`
+
+**包含字段**：
+```json
+{
+  "task_id": "task-001",
+  "feature_id": "feature-001",
+  "feedback": {
+    "summary": "登录 API 实现完成，支持 JWT 认证",
+    "issues_found": [
+      "发现需要处理 token 刷新机制"
+    ],
+    "next_steps_suggested": [
+      "实现 token 刷新机制",
+      "统一错误处理中间件"
+    ],
+    "technical_notes": [
+      "使用 JWT，有效期 24h",
+      "密钥存储在环境变量"
+    ]
+  },
+  "code_changes": {
+    "files_added": ["src/auth.ts"],
+    "files_modified": ["src/routes.ts"],
+    "lines_changed": 245
+  },
+  "quality": {
+    "tests_passed": true,
+    "coverage": "85%",
+    "ci_status": "success"
+  }
+}
+```
+
+### 与原有流程的兼容性
+
+**向后兼容**：
+- 原有的 OKR 拆解流程（Stage 1-4）保持不变
+- 新的迭代模式是可选的，不影响现有功能
+- 可以选择使用新模式或继续使用原有模式
+
+**集成点**：
+- Stage 4.5（Store to Database）之后可以选择使用迭代模式
+- Brain 调度时可以检测 Feature 类型，决定是否启用迭代循环

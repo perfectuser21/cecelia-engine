@@ -1,14 +1,13 @@
 {
-  "branch": "cp-02081414-okr-db-integration",
-  "head_sha": "2aa36d8",
-  "timestamp": "2026-02-08T14:30:00Z",
+  "branch": "cp-02081518-okr-iterative",
+  "head_sha": "2982127",
+  "timestamp": "2026-02-08T07:24:26Z",
   "note": "Quality 只汇总，不判定。CI 是最终裁判。",
   "changes": {
-    "skills/okr/SKILL.md": "添加 Stage 4.5 Store to Database",
-    "skills/okr/scripts/store-to-database.sh": "新脚本：调用 Brain API 创建 Goal/Feature/Tasks",
-    "tests/okr/test-database-integration.sh": "新测试：验证数据库集成基础功能",
-    "regression-contract.yaml": "添加 S1-004 RCI 覆盖：OKR Database Integration",
-    "features/feature-registry.yml": "版本升级到 2.79.0",
-    "version": "12.12.0 → 12.13.0"
+    "skills/okr/scripts/decompose-feature.sh": "新脚本：初始拆解（策略 C：混合规划）",
+    "skills/okr/scripts/continue-feature.sh": "新脚本：迭代拆解（基于反馈调整）",
+    "skills/okr/SKILL.md": "添加迭代拆解模式说明",
+    "tests/okr/test-decompose-feature.sh": "新测试：decompose-feature 功能测试",
+    "tests/okr/test-continue-feature.sh": "新测试：continue-feature 功能测试"
   }
 }
