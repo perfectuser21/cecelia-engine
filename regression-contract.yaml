@@ -18,7 +18,7 @@
 
 # NOTE: version 需要与 package.json 保持同步
 # 更新 package.json 时同步更新此处
-version: "12.12.0"
+version: "12.13.0"
 updated: "2026-02-08"
 
 # ============================================================================
@@ -2632,6 +2632,24 @@ skills:
       type: file
       path: "tests/okr/test-cheating-prevention.sh"
     test: "tests/okr/test-cheating-prevention.sh"
+
+  - id: S1-004
+    feature: S1
+    name: "OKR Database Integration"
+    scope: skill
+    priority: P1
+    trigger: [PR]
+    method: auto
+    tags: [okr, okr-database, brain-api]
+    owner: infra
+    steps:
+      given: "OKR output.json 生成完成"
+      when: "运行 store-to-database.sh"
+      then: "调用 Brain API 创建 Goal、Feature SubProjects、Tasks"
+    evidence:
+      type: file
+      path: "tests/okr/test-database-integration.sh"
+    test: "tests/okr/test-database-integration.sh"
 
   # ============================================================================
   # S2: PRD/DoD Validation Loop

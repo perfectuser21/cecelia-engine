@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.78.0"
+version: "2.79.0"
 updated: "2026-02-08"
 changelog:
+  - 2.79.0: v12.13.0 - OKR Skill 数据库集成（Stage 4.5 + store-to-database.sh + Brain API 调用）
   - 2.78.0: v12.12.0 - Validation Loop for PRD/DoD（90分制 + 10层防作弊 + 集成到 /dev）
   - 2.77.0: v12.11.1 - Stop Hook 写死逻辑修复（headless 不旁路 + 锁失败 exit 2）
   - 2.76.0: v12.11.0 - OKR Skill v7.0.0（Validation Loop + Anti-Cheat + 31种攻击场景100%拦截）

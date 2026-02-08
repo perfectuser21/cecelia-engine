@@ -142,6 +142,80 @@ description: OKR 拆解工具。从 KR 拆解到 Feature 和 Task。完全自动
 
 ---
 
+### Stage 4.5: Store to Database (Optional但推荐)
+
+**目的**：将 OKR 拆解结果存储到 Brain 数据库，供 Cecelia 自动调度使用。
+
+**前提条件**：
+- validation-report.json 显示 `passed = true`
+- Brain 服务运行中（localhost:5221）
+
+**步骤**：
+
+1. **调用存储脚本**：
+   ```bash
+   bash ~/.claude/skills/okr/scripts/store-to-database.sh output.json
+   ```
+
+2. **脚本自动执行**：
+   - 读取 output.json 的 Features 和 Tasks
+   - 查询 repository → project_id 映射
+   - 调用 Brain API 创建 Goal (如果需要)
+   - 调用 Brain API 创建 Feature SubProjects
+   - 调用 Brain API 创建 Tasks (关联到 Feature 和 Goal)
+   - 验证所有记录创建成功
+
+3. **成功输出示例**：
+   ```
+   🔄 Storing OKR to database...
+
+   ✅ Goal created: 550e8400-e29b-41d4-a716-446655440000
+   ✅ Feature 1 "实现 Validation Loop" → Project: 660e8400-...
+   ✅ Task 1.1 "创建 validate-prd.py" → Task ID: 770e8400-...
+   ✅ Task 1.2 "集成到 /dev" → Task ID: 880e8400-...
+
+   🎉 All tasks stored to database
+
+   Query tasks:
+   curl localhost:5212/api/tasks/tasks?goal_id=550e8400-...
+   ```
+
+4. **验证存储**（可选）：
+   ```bash
+   # 查看创建的任务
+   curl -s localhost:5212/api/tasks/tasks | jq '.[] | select(.metadata.from_okr == true) | {id, title, status}'
+
+   # 查看 Brain 能否看到
+   curl -s localhost:5221/api/brain/tasks | jq '.[] | select(.metadata.from_okr == true)'
+   ```
+
+**错误处理**：
+
+如果 API 调用失败（例如 Brain 服务未运行）：
+- 脚本会重试 3 次
+- 重试失败后，保存错误日志到 `okr-storage-errors.log`
+- OKR Skill **仍然视为成功**（优雅降级）
+- 提示信息：
+  ```
+  ⚠️  Database storage failed (Brain service unavailable)
+
+  Tasks saved to: pending-tasks.json
+
+  To retry later:
+  bash ~/.claude/skills/okr/scripts/store-to-database.sh pending-tasks.json
+
+  Or manually create tasks via Brain API
+  ```
+
+**跳过此步骤**：
+
+如果不需要自动调度，可以跳过 Stage 4.5：
+- output.json 仍然可用
+- 手动创建任务到 Brain
+- 或直接使用 output.json 启动 /dev
+
+---
+
 ## Anti-patterns to Avoid
 
 ### ❌ Anti-pattern 1: Changing Scores Without Improving Content

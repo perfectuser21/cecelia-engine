@@ -1,10 +1,14 @@
 {
-  "branch": "cp-02081312-stop-hook-hardlock",
-  "head_sha": "a6bc68f",
-  "timestamp": "2026-02-08T05:14:55Z",
+  "branch": "cp-02081414-okr-db-integration",
+  "head_sha": "2aa36d8",
+  "timestamp": "2026-02-08T14:30:00Z",
   "note": "Quality 只汇总，不判定。CI 是最终裁判。",
   "changes": {
-    "stop-dev.sh": "修复写死逻辑：headless 不再旁路，锁失败 exit 2",
-    "tests": "添加 3 个测试脚本验证写死逻辑"
+    "skills/okr/SKILL.md": "添加 Stage 4.5 Store to Database",
+    "skills/okr/scripts/store-to-database.sh": "新脚本：调用 Brain API 创建 Goal/Feature/Tasks",
+    "tests/okr/test-database-integration.sh": "新测试：验证数据库集成基础功能",
+    "regression-contract.yaml": "添加 S1-004 RCI 覆盖：OKR Database Integration",
+    "features/feature-registry.yml": "版本升级到 2.79.0",
+    "version": "12.12.0 → 12.13.0"
   }
 }
