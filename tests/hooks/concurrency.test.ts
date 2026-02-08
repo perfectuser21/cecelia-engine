@@ -22,6 +22,7 @@ import {
 import { resolve, join } from "path";
 import { tmpdir } from "os";
 
+const PROJECT_ROOT = resolve(__dirname, "../..");
 const LOCK_UTILS = resolve(__dirname, "../../lib/lock-utils.sh");
 const CI_STATUS = resolve(__dirname, "../../lib/ci-status.sh");
 const STOP_HOOK = resolve(__dirname, "../../hooks/stop.sh");
