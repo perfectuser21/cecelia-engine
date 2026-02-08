@@ -106,7 +106,7 @@ main() {
             jq -n \
                 --arg step "$step_id" \
                 --argjson start "$start_time" \
-                --argjson end "$end_time" \
+                --argjson end_time "$end_time" \
                 --argjson duration "$duration" \
                 --arg status "$status" \
                 --argjson issues "$issues" \
@@ -114,7 +114,7 @@ main() {
                 '{
                     step: $step,
                     start: $start,
-                    end: $end,
+                    end: $end_time,
                     duration: $duration,
                     status: $status,
                     issues: $issues,
