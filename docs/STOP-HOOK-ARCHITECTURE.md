@@ -98,16 +98,30 @@ exit 0
 
 ### 3. /okr 完成条件检查
 
-**stop-okr.sh** 检查（TODO）：
+**stop-okr.sh** 检查 5 个条件：
 
 ```
-1. PRD 写完了吗？
-2. DoD 初稿写完了吗？
-3. Feature 创建了吗？
-4. Tasks 创建了吗？
+1. Feature 已创建？
+   - feature_id ≠ "(待填)"
+   - ❌ → exit 2 → 继续执行到创建 Feature
+
+2. Task 已创建？
+   - task_ids ≠ "(待填)"
+   - ❌ → exit 2 → 继续执行到创建 Task
+
+3. PRD 已写入？
+   - prd_ids ≠ "(待填)"
+   - ❌ → exit 2 → 继续编写 PRD
+
+4. DoD 草稿已写入？
+   - dod_ids ≠ "(待填)"
+   - ❌ → exit 2 → 继续编写 DoD 草稿
+
+5. KR 状态已更新？
+   - kr_updated = "true"
+   - ❌ → exit 2 → 继续更新 KR 状态
 
 全部满足 → 删除 .okr-mode → exit 0（允许结束）
-未满足 → exit 2（强制循环，继续执行）
 ```
 
 ## Mode 文件格式
@@ -136,16 +150,26 @@ tasks_created: true
 
 ```
 okr
-session_id: <uuid>
-started: 2026-02-08T10:00:00+08:00
-kr_id: <kr_id>
-features_count: 3
-tasks_count: 12
+kr_id: <KR ID>
+feature_id: (待填)
+task_ids: (待填)
+prd_ids: (待填)
+dod_ids: (待填)
+kr_updated: false
 ```
 
+**字段说明**：
+- `kr_id`: 当前拆解的 KR ID
+- `feature_id`: 创建的 Feature ID（初始为 "(待填)"）
+- `task_ids`: 创建的 Task IDs，空格分隔（初始为 "(待填)"）
+- `prd_ids`: 写入的 PRD IDs，空格分隔（初始为 "(待填)"）
+- `dod_ids`: 写入的 DoD IDs，空格分隔（初始为 "(待填)"）
+- `kr_updated`: KR 状态是否已更新为 in_progress（初始为 false）
+
 **生命周期**：
-- /okr Skill 创建
-- stop-okr.sh 检查完成后删除
+- /okr Skill 创建（Step 0）
+- 每完成一步后更新对应字段
+- stop-okr.sh 检查所有字段完成后删除
 
 ## 运行模式
 

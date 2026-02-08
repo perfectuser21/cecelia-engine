@@ -1,15 +1,6 @@
 {
-  "branch": "cp-02080907-stop-hook-router",
-  "head_sha": "85d5299",
-  "timestamp": "2026-02-08T01:20:35Z",
-  "note": "Quality 只汇总，不判定。CI 是最终裁判。",
-  "changes": [
-    "Stop Hook 重构为路由器架构",
-    "Branch Protection 加强数据库检查",
-    "CI DevGate 加强假测试检测"
-  ],
-  "tests": [
-    "tests/stop-hook-basic.test.sh - 14 passed",
-    "tests/devgate-fake-test-detection.test.cjs - 21 passed"
-  ]
+  "branch": "cp-implement-stop-okr",
+  "head_sha": "fd9dad5",
+  "timestamp": "2026-02-08T01:53:00Z",
+  "note": "Quality 只汇总，不判定。CI 是最终裁判。"
 }
