@@ -1,35 +1,45 @@
 {
-  "phase": "Phase 3b - /dev --task-id Workflow Integration",
-  "version": "12.16.0",
+  "phase": "Phase 4a - Dev Feedback Upload & Task Status Sync",
+  "version": "12.17.0",
   "changes": [
     {
-      "file": "skills/dev/SKILL.md",
-      "type": "modified",
-      "description": "添加 --task-id 参数使用说明"
+      "file": "skills/dev/scripts/upload-feedback.sh",
+      "type": "created",
+      "description": "上传反馈到 Brain API"
+    },
+    {
+      "file": "skills/dev/scripts/update-task-status.sh",
+      "type": "created",
+      "description": "更新 Task 状态到 Brain"
     },
     {
       "file": "skills/dev/steps/01-prd.md",
       "type": "modified",
-      "description": "添加参数检测逻辑，自动调用 fetch-task-prd.sh"
+      "description": "添加状态同步（in_progress）"
     },
     {
-      "file": "skills/dev/steps/03-branch.md",
+      "file": "skills/dev/steps/10-learning.md",
       "type": "modified",
-      "description": "更新分支命名逻辑（task-<id>）和 .dev-mode 文件生成"
+      "description": "添加反馈上传和状态更新（completed）"
     },
     {
-      "file": "tests/dev/test-workflow-integration.sh",
+      "file": "tests/dev/test-upload-feedback.sh",
       "type": "created",
-      "description": "集成测试文件（手动测试占位符）"
+      "description": "upload-feedback.sh 单元测试"
+    },
+    {
+      "file": "tests/dev/test-update-task-status.sh",
+      "type": "created",
+      "description": "update-task-status.sh 单元测试"
     }
   ],
   "tests": {
-    "phase_3a_tests": "全部通过（10/10）",
-    "phase_3b_tests": "集成测试（需手动验证）"
+    "unit_tests": "创建完成，待运行",
+    "integration_tests": "需要 Brain 运行（手动验证）"
   },
   "next_steps": [
-    "版本号更新（12.15.0 → 12.16.0）",
-    "RCI 条目添加（S1-008）",
+    "版本号更新（12.16.0 → 12.17.0）",
+    "RCI 条目添加（S1-009, S1-010）",
     "Feature Registry 更新",
     "创建 PR"
   ]

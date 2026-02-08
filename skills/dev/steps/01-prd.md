@@ -55,6 +55,15 @@ echo ""
 echo "📌 Task 信息："
 head -n 20 "$prd_file"
 
+# 更新 Task 状态为 in_progress
+echo ""
+echo "🔄 更新 Task 状态..."
+if bash skills/dev/scripts/update-task-status.sh "$task_id" "in_progress" 2>/dev/null || true; then
+    echo "✅ Task 状态已更新为 in_progress"
+else
+    echo "⚠️  Task 状态更新失败（继续执行）"
+fi
+
 # 继续下一步（不需要用户确认）
 # 跳过手动 PRD 创建流程
 ```
