@@ -2393,3 +2393,71 @@ runs:
   - 未来所有 OKR 任务都会自动进入 Brain 数据库
   - 为 Cecelia 自动调度提供了基础设施
 
+
+## 2026-02-10: Skill Registry Mechanism 实现
+
+### 问题背景
+
+用户遇到跨仓库修改问题："修改一个功能要跨3个repository"
+- 修改脚本 → platform-scrapers repo
+- 更新 Skill → cecelia-engine repo
+- 更新 Database → Infrastructure
+
+### 解决方案
+
+实现了 Skill Registry 机制：
+1. 创建集中式注册表 `skills-registry.json`
+2. 实现加载器 `skill-loader.cjs` 支持 3 种类型（workspace, engine, absolute）
+3. 提供 3 个 CLI 命令（load, list, verify）
+
+### 关键技术点
+
+**Node.js ES Modules vs CommonJS**
+- 问题：cecelia-engine package.json 有 `"type": "module"`
+- 错误：`ReferenceError: require is not defined in ES module scope`
+- 解决：重命名 `skill-loader.js` → `skill-loader.cjs` 强制使用 CommonJS
+- 教训：在 ES module 项目中，使用 `.cjs` 扩展名可以强制 CommonJS 模式
+
+**CI Config Audit 检查**
+- 问题：修改 `regression-contract.yaml` 触发 config-audit 检查
+- 要求：PR title 必须包含 `[CONFIG]` 或 `[INFRA]` 标记
+- 解决：使用 `gh pr edit 564 --title "[CONFIG] feat: 实现 Skill 注册机制"`
+- 陷阱：修改 PR title 后需要重新触发 CI（push empty commit）
+- 原因：旧的 CI run 读取的是旧 PR title，新 run 才会读取新 title
+
+**版本同步检查**
+- 问题：regression-contract.yaml version 字段必须与 package.json/VERSION 同步
+- 修复：`npm version minor` 后手动更新 regression-contract.yaml
+- 教训：修改 package.json 版本号后，需要同步更新 regression-contract.yaml
+
+### 架构价值
+
+**Multi-repo → Monorepo 平滑迁移**
+- 当前配置：
+  ```json
+  {
+    "platform-scraper": {
+      "type": "workspace",
+      "path": "../workspace/apps/platform-scrapers/skill"
+    }
+  }
+  ```
+- 将来 Monorepo 配置（只改路径）：
+  ```json
+  {
+    "platform-scraper": {
+      "type": "workspace",
+      "path": "../packages/workspace/apps/platform-scrapers/skill"
+    }
+  }
+  ```
+- **代码不需要改！**只需要更新 registry 配置
+
+### 最佳实践
+
+1. **Registry Pattern** 适合需要灵活配置、支持多环境的系统
+2. **Soft Links** 适合简单、固定的引用关系
+3. 选择标准：看是否需要支持架构演进（如 Multi-repo → Monorepo）
+4. ES module 项目中需要 CommonJS 时，使用 `.cjs` 扩展名
+5. PR title 规范要在修改配置文件前就设置好，避免重复触发 CI
+
