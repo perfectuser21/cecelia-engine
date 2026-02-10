@@ -1,9 +1,10 @@
 ---
 id: engine-learnings
-version: 1.13.0
+version: 1.14.0
 created: 2026-01-16
-updated: 2026-02-08
+updated: 2026-02-10
 changelog:
+  - 1.14.0: 添加 OKR 三层拆解集成 PR Plans 经验（CI 系统化修复、版本同步、Feature Registry SSOT）
   - 1.13.0: Stop Hook sentinel 文件路径修复（.git 保护机制触发问题）
   - 1.12.0: 添加 /dev 反馈报告开发经验（4 维度分析、CI 旧测试问题）
   - 1.11.0: 添加 RCI 覆盖率检查与 bash 测试脚本规范经验
@@ -2497,3 +2498,77 @@ runs:
 - PR title 规范要在创建 PR 时就设置正确，避免后续 rerun 失败
 - `github.event.pull_request.title` 是快照，rerun 不会更新，需要新 commit
 
+
+### [2026-02-10] OKR 三层拆解集成 PR Plans（Layer 2）
+
+**背景**：实现三层拆解架构（Initiative → PR Plans → Tasks），让秋米能够生成工程规划层的 PR Plans，提升复杂项目的拆解质量。
+
+**实现**：
+1. **store-to-database.sh 增强**
+   - 添加格式自动检测（has("initiative") and has("pr_plans")）
+   - 三层格式：创建 Initiative + PR Plans (via Brain API) + Tasks with pr_plan_id
+   - 二层格式（向后兼容）：保持原有 Feature → Tasks 流程
+   - 添加 retry_api_call 函数处理 Brain API 调用失败
+
+2. **validate-okr.py 增强**
+   - 新增 validate_3layer_format() 函数验证 PR Plans 必需字段
+   - 新增 detect_circular_dependency() 函数检测 PR Plans 依赖循环
+   - 修复 KeyError：使用 .get('num_features', 0) 兼容两种格式
+   - 自动检测格式并路由到正确的验证器
+
+3. **SKILL.md 文档更新**
+   - 添加格式选择指南（Format A: 三层拆解 vs Format B: 二层拆解）
+   - 提供完整的 output.json 示例（两种格式都有）
+   - 说明何时使用哪种格式（复杂 KR vs 简单任务）
+
+**CI 系统化修复（3 轮）**：
+
+**Round 1 - Version Sync + Impact Check 失败**
+1. **Version Sync 失败**
+   - 问题：运行 `npm version minor` 更新了 package.json 和 package-lock.json，但忘记 VERSION 和 regression-contract.yaml
+   - 修复：`cat package.json | jq -r .version > VERSION` + 手动编辑 regression-contract.yaml
+   - 教训：版本更新需要同步 4 个文件（package.json, package-lock.json, VERSION, regression-contract.yaml）
+
+2. **Impact Check 失败**
+   - 问题：修改 skills/ 目录但未更新 feature-registry.yml
+   - 修复：更新 version 到 2.88.0 并添加 changelog 条目
+   - 教训：skills/ 是核心能力文件，修改必须同步更新 feature-registry.yml
+
+**Round 2 - Config Audit + Contract Drift Check 失败**
+3. **Config Audit 失败**
+   - 问题：修改 regression-contract.yaml 但 PR title 没有 [CONFIG] 标记
+   - 修复：`gh pr edit 570 --title "[CONFIG] feat: integrate PR Plans into OKR decomposition (Layer 2)"`
+   - 教训：修改关键配置文件时，PR title 必须包含 [CONFIG] 标记
+
+4. **Contract Drift Check 失败**
+   - 问题：更新 feature-registry.yml 但没有重新生成派生视图文件
+   - 修复：运行 `bash scripts/generate-path-views.sh` 生成 docs/paths/*.md
+   - 教训：feature-registry.yml 是单一事实源，修改后必须重新生成所有派生文档
+
+**Round 3 - CI Pass ✅**
+- 所有检查通过，PR 成功合并
+
+**优化点**：
+1. **Version 更新工具化**
+   - 当前：手动同步 4 个文件，容易遗漏
+   - 建议：创建 `scripts/version-bump.sh` 脚本自动同步所有版本文件
+   - 好处：避免 CI Version Sync 失败
+
+2. **PR title 预检查**
+   - 当前：CI 运行时才检查 [CONFIG] 标记
+   - 建议：Hook 在创建 PR 前检查，自动添加必需的标记
+   - 好处：减少 CI 失败次数，节省时间
+
+3. **派生视图自动生成**
+   - 当前：手动运行 generate-path-views.sh
+   - 建议：pre-commit hook 检测 feature-registry.yml 变更时自动重新生成
+   - 好处：确保派生视图始终同步，避免 Contract Drift Check 失败
+
+**影响程度**：High（核心架构升级，影响所有后续 OKR 拆解）
+
+**教训**：
+1. **系统化修复** - 多个 CI 失败时，逐个修复并推送，每轮验证一批问题
+2. **版本同步是 4 文件** - package.json, package-lock.json, VERSION, regression-contract.yaml 必须一致
+3. **Feature Registry 是 SSOT** - 修改后必须重新生成所有派生文档
+4. **配置文件修改需要标记** - PR title 包含 [CONFIG] 才能通过 Config Audit
+5. **向后兼容很重要** - 保持二层格式支持，让现有工作流不受影响
