@@ -1,6 +1,6 @@
 {
-  "branch": "cp-02101951-okr-pr-plans-integration",
-  "head_sha": "720fce5",
-  "timestamp": "2026-02-10T11:56:03Z",
+  "branch": "cp-02111439-exploratory-skill",
+  "head_sha": "b2663d1",
+  "timestamp": "2026-02-11T06:43:12Z",
   "note": "Quality 只汇总，不判定。CI 是最终裁判。"
 }
