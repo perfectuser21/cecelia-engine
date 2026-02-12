@@ -161,9 +161,9 @@ changelog:
 
 ### P5: Worktree Parallel Development
 
-1. ✅ **主仓库无冲突 → 跳过，正常流程**
-2. ✅ **主仓库有活跃 .dev-mode → 自动创建 worktree + cd**
-3. ✅ **僵尸 .dev-mode（>2h 或分支不存在）→ 自动清理**
+1. ✅ **已在 worktree → 跳过创建**
+2. ✅ **主仓库 → 强制创建 worktree + cd**
+3. ✅ **worktree-manage.sh 创建前自动更新 develop 分支**
 
 **RCI 覆盖**: W6-001
 

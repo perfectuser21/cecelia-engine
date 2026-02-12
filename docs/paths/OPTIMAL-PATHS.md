@@ -152,7 +152,7 @@ PR 创建 → CI 触发 → version-check + test + DevGate → 全部通过 → 
 ### P5: Worktree Parallel Development
 
 ```
-/dev 启动 → Step 0 检测 .dev-mode → 僵尸则清理 → 活跃则自动创建 worktree + cd → 继续正常流程
+/dev 启动 → Step 0 强制创建 worktree（更新 develop + 创建 + cd）→ 继续正常流程
 ```
 
 ---
