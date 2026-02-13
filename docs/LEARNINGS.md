@@ -1,9 +1,10 @@
 ---
 id: engine-learnings
-version: 1.14.0
+version: 1.15.0
 created: 2026-01-16
-updated: 2026-02-10
+updated: 2026-02-13
 changelog:
+  - 1.15.0: 添加 CI/CD 安全修复经验（PRD 文件命名、安全检查扩展、版本同步完善）
   - 1.14.0: 添加 OKR 三层拆解集成 PR Plans 经验（CI 系统化修复、版本同步、Feature Registry SSOT）
   - 1.13.0: Stop Hook sentinel 文件路径修复（.git 保护机制触发问题）
   - 1.12.0: 添加 /dev 反馈报告开发经验（4 维度分析、CI 旧测试问题）
@@ -24,6 +25,42 @@ changelog:
 # Engine 开发经验记录
 
 > 记录开发 zenithjoy-engine 过程中学到的经验和踩的坑
+
+---
+
+## 2026-02-13: CI/CD 安全检查修复
+
+### 修复内容
+
+基于安全检查报告修复了 5 个问题（P0×2 + P1×3）：
+1. **setup-branch-protection.sh** 错误处理：移除 `|| true`，改为 if-else 判断
+2. **Config Audit** 扩展检查：添加 hooks/, skills/, 关键脚本到检查范围
+3. **sync-version.sh** 完善：自动同步 .hook-core-version 和 package-lock.json
+
+### 遇到的问题
+
+**PRD 文件命名不匹配**：
+- **问题**：创建的 PRD 文件名为 `.prd-fix-ci-security-issues.md`，但 Hook 期望 `.prd-${BRANCH_NAME}.md`（即 `.prd-cp-02131631-fix-ci-security-issues.md`）
+- **原因**：Worktree 流程中，分支名在 Step 0 由 worktree-manage.sh 生成，但 Step 1 创建 PRD 时使用了简化的任务名
+- **影响**：Hook 阻止写代码，提示缺少 PRD 文件
+- **解决**：重命名 PRD/DoD 文件以匹配分支名，更新 .dev-mode 中的引用
+
+### 优化点
+
+1. **版本同步完善**：.hook-core-version 现在由 sync-version.sh 自动同步，不再需要手动更新
+2. **安全检查扩展**：hooks/ 和 skills/ 修改现在需要 [CONFIG] prefix，避免未标记的配置变更
+3. **错误处理改进**：setup-branch-protection.sh 现在正确报告 API 失败，不再吞噬错误
+
+### 建议改进
+
+- **Worktree + PRD 文件名规范**：
+  - 选项 1：Step 1 自动检测分支名，使用 `.prd-${BRANCH_NAME}.md` 格式
+  - 选项 2：worktree-manage.sh 接受 PRD 文件参数，创建 worktree 时同时创建 PRD
+  - 当前变通方案：创建后立即重命名（已在本次流程中实现）
+
+### 影响程度
+
+Medium - PRD 文件命名问题会阻止开发流程，需要手动介入修复
 
 ---
 
