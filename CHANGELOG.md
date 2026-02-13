@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [12.25.1] - 2026-02-13
+
+### Fixed
+- 修复 CI/CD 安全检查发现的 P0 和 P1 级问题
+  - **P0-1**: `scripts/setup-branch-protection.sh` - 移除 `|| true` 错误吞噬，改为 if-else 判断并正确返回错误码
+  - **P0-2**: `.github/workflows/ci.yml` - Config Audit 扩展检查范围，添加 `hooks/`, `skills/`, `scripts/setup-branch-protection.sh`, `scripts/sync-version.sh` 到关键配置文件列表
+  - **P1-1**: `scripts/sync-version.sh` - 自动同步 `.hook-core-version` 文件
+  - **P1-2**: `scripts/sync-version.sh` - 添加 package-lock.json 同步检查和提示
+  - **P1-3**: `.github/workflows/ci.yml` - PRD/DoD Gate 使用 `--diff-filter=AM` 检查新增和修改的文件
+
+### Added
+- `tests/scripts/setup-branch-protection.test.sh` - 测试脚本错误处理逻辑
+
 ## [12.25.0] - 2026-02-13
 
 ### Added
