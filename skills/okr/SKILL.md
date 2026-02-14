@@ -15,6 +15,73 @@ description: OKR 拆解工具。从 KR 拆解到 Feature 和 Task。完全自动
 
 ---
 
+## 🔑 开工前必问（CRITICAL - Capability 绑定）
+
+**在生成 initiatives 之前，必须先确定 capability 归属。**
+
+### 三问
+
+1. **这个 KR 是推进已有能力，还是创建新能力？**
+   - 推进已有（90%）→ 选择现有 capability_id
+   - 创建新能力（10%）→ 输出 capability_proposal
+
+2. **如果推进已有，是哪个 capability？**
+   - 调用 `GET /api/brain/capabilities` 查看 23 个已有能力
+   - 选择最匹配的 capability_id
+
+3. **从哪个 stage 推进到哪个 stage？**
+   - 查看该 capability 的 current_stage
+   - 设定 from_stage（当前）和 to_stage（目标）
+   - 必须满足：from_stage < to_stage
+
+### Capability 选择流程
+
+```
+KR 拆解开始
+    ↓
+调用 GET /api/brain/capabilities
+    ↓
+分析 KR 与 23 个能力的匹配度
+    ↓
+    ├─ 匹配到已有能力（90%）
+    │     ↓
+    │  设定 capability_id, from_stage, to_stage
+    │     ↓
+    │  生成 initiatives
+    │
+    └─ 无法匹配（10%）
+          ↓
+       生成 capability_proposal
+          ↓
+       等待人工审批
+          ↓
+       审批后调用 POST /api/brain/capabilities
+          ↓
+       再生成 initiatives
+```
+
+### Capability Proposal 格式
+
+如果无法匹配到已有 capability，输出：
+
+```json
+{
+  "capability_proposal": {
+    "id": "suggested-slug",
+    "name": "建议的能力名称",
+    "description": "为什么需要这个新能力",
+    "current_stage": 1,
+    "related_repos": ["/home/xx/perfect21/..."],
+    "related_skills": ["skill-name"],
+    "rationale": "为什么现有 23 个能力都不适用"
+  }
+}
+```
+
+**审批流程**：用户审查 proposal → 人工调用 `POST /api/brain/capabilities` → 返回 /okr 重新拆解
+
+---
+
 ## Output Format (Choose One)
 
 **两种格式可选**：
