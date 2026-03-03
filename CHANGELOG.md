@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [12.30.6] - 2026-03-03
+
+### Fixed
+- `cleanup.sh` v2.0：修复 worktree 场景下主仓库 PRD/DoD 孤儿文件积累问题
+  - `archive_prd_dod()` 通过 `git-common-dir` 检测主仓库路径，双路径清理
+  - Step 8 RUNTIME_FILES 步骤新增清理主仓库同名文件
+
+### Changed
+- `features/feature-registry.yml` 2.99.0：新增 cleanup.sh 主仓库清理能力记录
+- `ci/known-failures.json`：移除已过期条目 `test:flaky:integration`（2026-03-01 到期）
+
 ## [12.30.5] - 2026-02-25
 
 ### Removed
