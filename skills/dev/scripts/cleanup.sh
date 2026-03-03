@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ZenithJoy Engine - Cleanup 脚本
+# v2.0: 修复 worktree 场景下主仓库 PRD/DoD 孤儿文件问题（同步清理主仓库）
 # v1.9: 使用 lib/lock-utils.sh 原子操作 + 协调信号
 # v1.8: PRD/DoD 归档到 .history/ 目录（而非直接删除）
 # v1.7: rm -rf 安全验证
@@ -77,31 +78,47 @@ archive_prd_dod() {
     date_str=$(date +%Y%m%d-%H%M)
     local archived=0
 
+    # v2.0: 检测主仓库根目录（worktree 场景下与 project_root 不同）
+    local main_repo_root="$project_root"
+    local git_common_dir
+    git_common_dir=$(git rev-parse --git-common-dir 2>/dev/null || echo ".git")
+    if [[ "$git_common_dir" != ".git" && "$git_common_dir" != "$project_root/.git" ]]; then
+        main_repo_root=$(dirname "$git_common_dir")
+    fi
+
     # 创建 .history 目录
     mkdir -p "$history_dir"
 
-    # 归档 PRD 文件
+    # 归档 PRD 文件（worktree + 主仓库都检查）
     local prd_files=(".prd.md" ".prd-${branch}.md")
-    for prd in "${prd_files[@]}"; do
-        if [[ -f "$project_root/$prd" ]]; then
-            local archive_name="${branch}-${date_str}.prd.md"
-            if cp "$project_root/$prd" "$history_dir/$archive_name" 2>/dev/null; then
-                archived=$((archived + 1))
+    local prd_archived=false
+    for search_root in "$project_root" "$main_repo_root"; do
+        for prd in "${prd_files[@]}"; do
+            if [[ -f "$search_root/$prd" ]]; then
+                if ! $prd_archived; then
+                    local archive_name="${branch}-${date_str}.prd.md"
+                    cp "$search_root/$prd" "$history_dir/$archive_name" 2>/dev/null && archived=$((archived + 1))
+                    prd_archived=true
+                fi
+                rm -f "$search_root/$prd" 2>/dev/null
             fi
-            break  # 只归档一个 PRD
-        fi
+        done
     done
 
-    # 归档 DoD 文件
+    # 归档 DoD 文件（worktree + 主仓库都检查）
     local dod_files=(".dod.md" ".dod-${branch}.md")
-    for dod in "${dod_files[@]}"; do
-        if [[ -f "$project_root/$dod" ]]; then
-            local archive_name="${branch}-${date_str}.dod.md"
-            if cp "$project_root/$dod" "$history_dir/$archive_name" 2>/dev/null; then
-                archived=$((archived + 1))
+    local dod_archived=false
+    for search_root in "$project_root" "$main_repo_root"; do
+        for dod in "${dod_files[@]}"; do
+            if [[ -f "$search_root/$dod" ]]; then
+                if ! $dod_archived; then
+                    local archive_name="${branch}-${date_str}.dod.md"
+                    cp "$search_root/$dod" "$history_dir/$archive_name" 2>/dev/null && archived=$((archived + 1))
+                    dod_archived=true
+                fi
+                rm -f "$search_root/$dod" 2>/dev/null
             fi
-            break  # 只归档一个 DoD
-        fi
+        done
     done
 
     echo "$archived"
@@ -414,6 +431,28 @@ if [[ $DELETED_COUNT -gt 0 ]]; then
     echo -e "   ${GREEN}[OK] 已删除 $DELETED_COUNT 个运行时文件${NC}"
 else
     echo -e "   ${GREEN}[OK] 无运行时文件需要删除${NC}"
+fi
+
+# v2.0: 清理主仓库的 PRD/DoD 孤儿文件（worktree 场景专用）
+MAIN_REPO_ROOT=""
+GIT_COMMON_FOR_MAIN=$(git rev-parse --git-common-dir 2>/dev/null || echo ".git")
+if [[ "$GIT_COMMON_FOR_MAIN" != ".git" ]]; then
+    _main_candidate=$(dirname "$GIT_COMMON_FOR_MAIN")
+    if [[ "$_main_candidate" != "$(git rev-parse --show-toplevel 2>/dev/null)" ]]; then
+        MAIN_REPO_ROOT="$_main_candidate"
+    fi
+fi
+
+if [[ -n "$MAIN_REPO_ROOT" ]]; then
+    MAIN_DELETED=0
+    for prd_dod in ".prd.md" ".dod.md" ".prd-${CP_BRANCH}.md" ".dod-${CP_BRANCH}.md"; do
+        if [[ -f "$MAIN_REPO_ROOT/$prd_dod" ]]; then
+            rm -f "$MAIN_REPO_ROOT/$prd_dod" 2>/dev/null && MAIN_DELETED=$((MAIN_DELETED + 1))
+        fi
+    done
+    if [[ $MAIN_DELETED -gt 0 ]]; then
+        echo -e "   ${GREEN}[OK] 已清理主仓库 $MAIN_DELETED 个 PRD/DoD 孤儿文件${NC}"
+    fi
 fi
 
 # ========================================
