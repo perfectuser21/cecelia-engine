@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "2.99.0"
-updated: "2026-03-03"
+version: "3.0.0"
+updated: "2026-03-09"
 changelog:
+  - 3.0.0: v12.30.7 - /dev Step 6 融入 Simplify 步骤（Step 6.5 写完代码后立即清理冗余，防止史山积累）
   - 2.99.0: v12.30.6 - cleanup.sh 修复 worktree 场景下主仓库 PRD/DoD 孤儿文件积累（git-common-dir 检测主仓库路径 + 双路径清理）
   - 2.98.0: v12.30.4 - Skills 中 --base develop 改为自动检测（有 develop 用 develop，否则用 main）
   - 2.97.0: v12.30.1 - cleanup.sh Step [9] 自动删除已合并 cp-* 分支（git branch --merged 检测 + W6-005）
