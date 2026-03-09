@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [12.30.7] - 2026-03-09
+
+### feat
+- dev Step 6 融入 Simplify 步骤，防止史山积累：改已有代码时同步删旧实现，新增 Step 6.5 对 diff 文件扫描清理
+
 ## [12.30.6] - 2026-03-03
 
 ### Fixed
