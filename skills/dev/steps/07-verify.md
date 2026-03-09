@@ -56,11 +56,34 @@ fi
 **标记步骤完成**：
 
 ```bash
-sed -i 's/^step_7_verify: pending/step_7_verify: done/' .dev-mode
-echo "✅ Step 7 完成标记已写入 .dev-mode"
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+DEV_MODE_FILE=".dev-mode.${BRANCH}"
+[[ -f "$DEV_MODE_FILE" ]] || DEV_MODE_FILE=".dev-mode"
+
+# 标记步骤完成
+sed -i "s/^step_7_verify: pending/step_7_verify: done/" "$DEV_MODE_FILE"
+
+# 根据测试结果写入 local_test_status（Stop Hook 依赖此字段）
+if [[ "$TESTS_PASSED" == "true" ]]; then
+  sed -i "s/^local_test_status: .*/local_test_status: passed/" "$DEV_MODE_FILE" 2>/dev/null \
+    || echo "local_test_status: passed" >> "$DEV_MODE_FILE"
+  echo "✅ Step 7 完成，本地测试通过（local_test_status: passed）"
+else
+  sed -i "s/^local_test_status: .*/local_test_status: failed/" "$DEV_MODE_FILE" 2>/dev/null \
+    || echo "local_test_status: failed" >> "$DEV_MODE_FILE"
+  echo "❌ Step 7 本地测试失败，已记录 local_test_status: failed"
+  echo "   Stop Hook 将阻止创建 PR，必须修复测试后更新为 passed 才能继续"
+fi
 ```
 
 **Task Checkpoint**: `TaskUpdate({ taskId: "7", status: "completed" })`
+
+**判断 TESTS_PASSED 的规则：**
+- `npm run qa` 退出码 0 → `TESTS_PASSED=true`
+- `npm test` 退出码 0 → `TESTS_PASSED=true`
+- 任何测试失败（退出码非 0）→ `TESTS_PASSED=false`
+- 没有测试命令 → `TESTS_PASSED=true`（不阻止）
+- 所有 DoD 条目已标记 `[x]` → 才可以设 `TESTS_PASSED=true`
 
 **立即执行下一步**：
 

@@ -15,9 +15,10 @@
 # - product_features:  引擎核心能力（工作流、测试、报告、自动化）
 # ============================================================================
 
-version: "3.0.0"
+version: "3.1.0"
 updated: "2026-03-09"
 changelog:
+  - 3.1.0: v12.30.8 - 添加 local_test_status 门禁机制（Step 7 写入测试状态字段，Stop Hook PR 创建前检查，测试失败时阻止 PR 创建）
   - 3.0.0: v12.30.7 - /dev Step 6 融入 Simplify 步骤（Step 6.5 写完代码后立即清理冗余，防止史山积累）
   - 2.99.0: v12.30.6 - cleanup.sh 修复 worktree 场景下主仓库 PRD/DoD 孤儿文件积累（git-common-dir 检测主仓库路径 + 双路径清理）
   - 2.98.0: v12.30.4 - Skills 中 --base develop 改为自动检测（有 develop 用 develop，否则用 main）
@@ -172,8 +173,8 @@ platform_features:
     name: Stop Hook Router (v13.0.0)
     status: Committed
     priority: P0
-    version: "12.30.3"
-    updated: "2026-02-23"
+    version: "12.30.8"
+    updated: "2026-03-09"
     description: |
       Stop Hook 路由器架构，检测 mode 文件分发到对应 handler：
       - 路由器：stop.sh（~46 lines）检测 .dev-mode/.okr-mode 等，调用对应 handler
@@ -181,6 +182,7 @@ platform_features:
       - stop-okr.sh：/okr 工作流完成条件检查（Feature + Task + PRD + DoD + KR 状态）
       - 职责分离：路由器只负责分发，具体逻辑在 handler 中
       - 写死逻辑：有 .dev-mode 时，任何情况（包括 headless、锁失败）都必须 exit 2，只有真正完成才 exit 0
+      v12.30.8: local_test_status 门禁 - PR 创建前检查 .dev-mode 中的 local_test_status 字段，failed 时 exit 2 阻止 PR 创建（pending/passed 放行，向后兼容）
       v12.30.3: 修复泄漏路径 - .dev-lock 丢失但 .dev-mode 存在时，先调 force_cleanup_worktree() 再删 .dev-mode，防止孤立 worktree（W6-006）
       v12.17.1: 双钥匙状态机 - .dev-lock（硬钥匙）+ .dev-mode（软状态）+ sentinel（三重保险），修复 .dev-mode 创建失败/被删除导致会话退出的漏洞，Step 3 改用 Bash 原子写入，cleanup.sh 不删除状态文件
       v12.11.1: 写死逻辑修复 - 删除 headless 模式的 exit 0 旁路 + 锁失败返回 exit 2（不是 exit 0）+ 更新注释

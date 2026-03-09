@@ -219,6 +219,7 @@ DEV_MODE_TMP="$(mktemp .dev-mode.XXXXXX)"
   echo "step_9_ci: pending"
   echo "step_10_learning: pending"
   echo "step_11_cleanup: pending"
+  echo "local_test_status: pending"
   # 如果有 task_id，追加 task_id 字段
   if [[ -n "$task_id" ]]; then
     echo "task_id: $task_id"
@@ -280,6 +281,7 @@ step_8_pr: pending
 step_9_ci: pending
 step_10_learning: pending
 step_11_cleanup: pending
+local_test_status: pending
 
 # 从 Brain Task 创建（有 task_id）
 dev
@@ -299,6 +301,7 @@ step_8_pr: pending
 step_9_ci: pending
 step_10_learning: pending
 step_11_cleanup: pending
+local_test_status: pending
 task_id: abc-123
 ```
 

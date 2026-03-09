@@ -337,6 +337,14 @@ echo "" >&2
 echo "  分支: $BRANCH_NAME" >&2
 echo "" >&2
 
+# ===== local_test_status 门禁（Step 7 必须通过才能创建 PR）=====
+LOCAL_TEST_STATUS=$(grep "^local_test_status:" "$DEV_MODE_FILE" 2>/dev/null | awk '{print $2}' || echo "pending")
+if [[ "$LOCAL_TEST_STATUS" == "failed" ]]; then
+  echo "  ❌ 本地测试未通过（local_test_status: failed）" >&2
+  echo "  请修复测试后执行：npm run qa 直到通过，然后更新 .dev-mode: local_test_status: passed" >&2
+  exit 2
+fi
+
 # ===== 条件 1: PR 创建？ =====
 PR_NUMBER=""
 PR_STATE=""
